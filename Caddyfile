@@ -1,0 +1,14 @@
+{
+	# Automatic HTTPS for a wildcard subdomain needs a DNS-01 challenge (a
+	# Caddy DNS provider module, built in via xcaddy) and on-demand TLS for
+	# merchant custom domains needs an /ask verification endpoint backed by
+	# the stores table — both are Phase 1 work (PROJECT_PLAN.md §3, §6).
+	# This Phase 0 config is a plain HTTP reverse proxy so `docker compose
+	# up` has something real to hit end to end; replace before this ever
+	# serves traffic outside a dev/staging box.
+	auto_https off
+}
+
+:80 {
+	reverse_proxy app:3000
+}

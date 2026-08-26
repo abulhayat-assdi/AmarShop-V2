@@ -1,0 +1,28 @@
+import { pgTable, uuid, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { storeStatusEnum } from "./enums";
+
+// The tenant table itself — never store_id-scoped or RLS-restricted by
+// app.current_store_id, since resolving *which* store a request belongs to
+// (proxy.ts, by slug or custom domain) has to run before that session
+// variable can be set. See src/db/context.ts for the RLS boundary this
+// table deliberately sits outside of.
+export const stores = pgTable(
+  "stores",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    customDomain: text("custom_domain"),
+    status: storeStatusEnum("status").notNull().default("pending"),
+    locale: text("locale").notNull().default("bn"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("stores_slug_idx").on(table.slug),
+    uniqueIndex("stores_custom_domain_idx").on(table.customDomain),
+  ]
+);
+
+export type Store = typeof stores.$inferSelect;
+export type NewStore = typeof stores.$inferInsert;

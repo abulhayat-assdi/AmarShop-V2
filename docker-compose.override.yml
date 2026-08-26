@@ -1,0 +1,14 @@
+# Auto-loaded alongside docker-compose.yml by `docker compose up` for local
+# development only — publishes Postgres/Redis to the host so `pnpm dev`
+# (running directly on the host, outside Docker) and tools like `drizzle-kit
+# studio` can reach them. Production deploys should NOT ship this file, or
+# should run `docker compose -f docker-compose.yml up -d` explicitly to
+# exclude it — PROJECT_PLAN.md §6 requires Postgres/Redis never be exposed
+# outside the internal Docker network in production.
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+  redis:
+    ports:
+      - "6379:6379"
