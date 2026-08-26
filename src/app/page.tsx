@@ -1,24 +1,71 @@
 import Link from "next/link";
+import { desc, eq, and } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { auth } from "@/lib/auth/config";
+import { withStoreContext } from "@/db/context";
+import { categories, products, productVariants } from "@/db/schema";
+import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
 import { signOutAction } from "./actions";
 
-// Phase 0 placeholder. If proxy.ts resolved a store for this request's Host
-// header, show it — a real storefront theme is Phase 1 (SITE_STRUCTURE.md
-// Part C). Otherwise this is the platform's own root (marketing site, later).
+// The one URL shared between the storefront and the platform root (App
+// Router route groups can't conditionally re-layout the same path based on
+// runtime data) — see src/app/(storefront)/layout.tsx for everywhere else.
 export default async function Home() {
   const store = await getCurrentStore();
 
   if (store) {
+    const { categoryRows, productRows } = await withStoreContext(store.id, async (tx) => {
+      const categoryRows = await tx.select().from(categories).where(eq(categories.storeId, store.id));
+      const productRows = await tx
+        .select({
+          id: products.id,
+          slug: products.slug,
+          name: products.name,
+          price: productVariants.price,
+          discountedPrice: productVariants.discountedPrice,
+        })
+        .from(products)
+        .innerJoin(productVariants, eq(productVariants.productId, products.id))
+        .where(and(eq(products.storeId, store.id), eq(products.status, "active")))
+        .orderBy(desc(products.createdAt));
+      return { categoryRows, productRows };
+    });
+
     return (
-      <main className="mx-auto flex max-w-2xl flex-col gap-4 p-8">
-        <h1 className="text-2xl font-semibold">Welcome to {store.name}</h1>
-        <p className="text-gray-600">
-          Store resolved via proxy.ts tenant resolution — slug{" "}
-          <code className="rounded bg-gray-100 px-1">{store.slug}</code>, locale{" "}
-          <code className="rounded bg-gray-100 px-1">{store.locale}</code>.
-        </p>
-      </main>
+      <>
+        <StorefrontHeader store={store} categories={categoryRows} />
+        <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4">
+          {categoryRows.length > 0 && (
+            <section className="flex flex-col gap-4">
+              <h2 className="text-lg font-semibold">Categories</h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                {categoryRows.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/category/${category.slug}`}
+                    className="rounded border p-4 text-center hover:border-gray-400"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+          <section className="flex flex-col gap-4">
+            <h2 className="text-lg font-semibold">New Arrivals</h2>
+            {productRows.length === 0 ? (
+              <p className="text-gray-500">No products yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                {productRows.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </section>
+        </main>
+        <StorefrontFooter store={store} />
+      </>
     );
   }
 
