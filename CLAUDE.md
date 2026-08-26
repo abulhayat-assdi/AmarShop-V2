@@ -38,8 +38,9 @@ Don't add these back "for completeness" — if a later phase seems to need them,
 
 Track progress here — update this section as phases complete. Start here:
 
-- [ ] **Phase 0 — Foundation:** Next.js 16 scaffold, Postgres \+ RLS, Redis, Docker Compose, VPS hardening \+ CI/CD, staff auth with roles, store creation flow, `proxy.ts` host-based tenant resolution.  
-- [ ] Phase 1 — Core commerce MVP  
+- [x] **Phase 0 — Foundation (local dev complete):** Next.js 16 scaffold, Postgres \+ RLS (verified: `amarshop_app` role genuinely bound by RLS, migration role bypasses as expected), Redis, Docker Compose, staff auth with roles (Auth.js, owner/admin/staff \+ platform-admin flag), store creation flow, `proxy.ts` host-based tenant resolution — all built and tested against the local Docker stack.  
+  - [ ] **Deferred — needs a real VPS:** server hardening (UFW/fail2ban/unattended-upgrades) and the GitHub Actions CI/CD deploy pipeline. Come back to these the moment a VPS is provisioned, before real users touch it — don't let "we're on Phase 1 now" become a reason to skip them later.  
+- [ ] Phase 1 — Core commerce MVP (**current**)  
 - [ ] Phase 2 — Growth features  
 - [ ] Phase 3 — AI features  
 - [ ] Phase 4 — Multi-warehouse expansion (no POS — see "Out of scope" above)  

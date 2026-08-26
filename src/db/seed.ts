@@ -1,9 +1,10 @@
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "./client";
-import { stores, staffMembers, type NewStore } from "./schema";
+import { stores, staffMembers, categories, products, productVariants, type NewStore } from "./schema";
 import { withStoreContext } from "./context";
+import { slugify } from "../lib/slugify";
 
 // Dev-only convenience script — never run against a production database.
 // Seeds two accounts to log in with while developing locally:
@@ -16,7 +17,9 @@ import { withStoreContext } from "./context";
 //        admin@amarshop.test / AmarShopAdmin!23
 //
 //   2. Merchant / customer — an ordinary store owner, exactly what someone
-//      who signs up and pays for AmarShop ends up with. Store slug "demo".
+//      who signs up and pays for AmarShop ends up with. Store slug "demo",
+//      with a couple of categories/products so the admin catalog pages
+//      have real data to look at immediately.
 //        owner@demo.amarshop.test / password123
 async function upsertStore(values: NewStore) {
   const [existing] = await db.select().from(stores).where(eq(stores.slug, values.slug)).limit(1);
@@ -45,6 +48,60 @@ async function upsertStaff(
       passwordHash,
       role: values.role,
       isPlatformAdmin: values.isPlatformAdmin,
+    });
+  });
+}
+
+async function upsertCategory(storeId: string, name: string, description?: string) {
+  const slug = slugify(name);
+  return withStoreContext(storeId, async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(categories)
+      .where(and(eq(categories.storeId, storeId), eq(categories.slug, slug)))
+      .limit(1);
+    if (existing) return existing;
+
+    const [created] = await tx
+      .insert(categories)
+      .values({ storeId, name, slug, description })
+      .returning();
+    return created;
+  });
+}
+
+async function upsertProduct(
+  storeId: string,
+  categoryId: string | null,
+  values: { name: string; brand?: string; sku: string; price: string; quantity: number }
+) {
+  const slug = slugify(values.name);
+  await withStoreContext(storeId, async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(products)
+      .where(and(eq(products.storeId, storeId), eq(products.slug, slug)))
+      .limit(1);
+    if (existing) return;
+
+    const [product] = await tx
+      .insert(products)
+      .values({
+        storeId,
+        categoryId,
+        name: values.name,
+        slug,
+        brand: values.brand,
+        status: "active",
+      })
+      .returning();
+
+    await tx.insert(productVariants).values({
+      storeId,
+      productId: product.id,
+      sku: values.sku,
+      price: values.price,
+      quantity: values.quantity,
     });
   });
 }
@@ -78,6 +135,31 @@ async function main() {
     isPlatformAdmin: false,
   });
 
+  const shirts = await upsertCategory(demoStore.id, "Shirts");
+  const accessories = await upsertCategory(demoStore.id, "Accessories");
+
+  await upsertProduct(demoStore.id, shirts.id, {
+    name: "Classic Cotton Panjabi",
+    brand: "AmarShop Basics",
+    sku: "PANJABI-001",
+    price: "1200.00",
+    quantity: 25,
+  });
+  await upsertProduct(demoStore.id, shirts.id, {
+    name: "Slim Fit Formal Shirt",
+    brand: "AmarShop Basics",
+    sku: "SHIRT-001",
+    price: "950.00",
+    quantity: 40,
+  });
+  await upsertProduct(demoStore.id, accessories.id, {
+    name: "Leather Belt",
+    brand: "AmarShop Basics",
+    sku: "BELT-001",
+    price: "550.00",
+    quantity: 60,
+  });
+
   console.log(`
 Seeded two local dev accounts:
 
@@ -90,6 +172,7 @@ Seeded two local dev accounts:
     email:    owner@demo.amarshop.test
     password: password123
     store:    demo.localhost:3000
+    catalog:  2 categories, 3 products
 `);
   process.exit(0);
 }

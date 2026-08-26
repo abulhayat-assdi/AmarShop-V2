@@ -15,6 +15,13 @@
       "when": 1787766537851,
       "tag": "0001_add_platform_admin_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787770071775,
+      "tag": "0002_add_products_catalog",
+      "breakpoints": true
     }
   ]
 }

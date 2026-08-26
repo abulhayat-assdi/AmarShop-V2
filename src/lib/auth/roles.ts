@@ -4,6 +4,19 @@ type StaffRole = "owner" | "admin" | "staff";
 
 const ROLE_RANK: Record<StaffRole, number> = { staff: 0, admin: 1, owner: 2 };
 
+// The admin dashboard's "current store" — the logged-in staff member's own
+// store (session.user.storeId), NOT src/lib/tenant/current.ts's
+// getCurrentStore(), which is proxy.ts's host-based resolution for the
+// public storefront. Two different questions: "which store is this staff
+// session for" vs. "which store does this Host header belong to."
+export async function requireStaffSession() {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not authenticated");
+  }
+  return session;
+}
+
 // Basic role gating for Phase 0 — enforced server-side, at the call site of
 // every admin action (Server Action / Route Handler), never in the UI alone
 // (CLAUDE.md rule #8 on staff permissions). Granular per-resource RBAC is a

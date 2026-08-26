@@ -7,3 +7,9 @@ export const storeStatusEnum = pgEnum("store_status", [
   "active",
   "suspended",
 ]);
+
+export const productStatusEnum = pgEnum("product_status", [
+  "draft",
+  "active",
+  "archived",
+]);
