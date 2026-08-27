@@ -26,6 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="flex w-56 flex-col gap-6 border-r p-4">
         <div className="font-semibold">{store?.name ?? "AmarShop"}</div>
         <nav className="flex flex-col gap-2 text-sm">
+          <Link href="/orders" className="underline">
+            Orders
+          </Link>
           <Link href="/products" className="underline">
             Products
           </Link>
