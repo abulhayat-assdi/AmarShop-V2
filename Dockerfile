@@ -20,6 +20,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
+# Storage-adapter target (product images, generated invoice PDFs). Created
+# owned by nextjs so a fresh `uploads` Docker volume initialises with that
+# ownership — the app runs as nextjs and must be able to mkdir subdirs here.
+RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

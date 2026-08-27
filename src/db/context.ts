@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "./client";
 
-type TenantTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type TenantTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
  * The only sanctioned way to run a query against a tenant-scoped table

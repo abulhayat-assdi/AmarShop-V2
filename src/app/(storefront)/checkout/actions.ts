@@ -17,8 +17,10 @@ import {
   orderItems,
   orderStatusEvents,
   payments,
+  invoices,
 } from "@/db/schema";
 import { getPaymentAdapter } from "@/lib/payments";
+import { allocateInvoiceNumber } from "@/lib/invoices/number";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId";
 export type PlaceOrderState = { error?: string; field?: PlaceOrderField };
@@ -114,6 +116,14 @@ async function createOrderRecords(
     method: params.paymentMethod,
     amount: params.total.toFixed(2),
     transactionId: params.tranId,
+  });
+
+  // Cheap "pending" row only — the PDF is rendered lazily on first download
+  // (src/lib/invoices/service.ts), never in the request path.
+  await tx.insert(invoices).values({
+    storeId: params.storeId,
+    orderId: order.id,
+    number: await allocateInvoiceNumber(tx, params.storeId),
   });
 
   await tx

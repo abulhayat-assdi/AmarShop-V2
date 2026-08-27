@@ -90,6 +90,15 @@ export default async function OrderConfirmationPage({
         <p>Delivering to: {order.customerAddress}</p>
         <p>Phone: {order.customerPhone}</p>
       </div>
+
+      <a
+        href={`/order/${tranId}/invoice`}
+        target="_blank"
+        rel="noopener"
+        className="text-sm underline"
+      >
+        Download invoice (PDF)
+      </a>
     </div>
   );
 }

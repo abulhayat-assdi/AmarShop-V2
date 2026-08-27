@@ -103,6 +103,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div>
           <p className="font-semibold uppercase">Payment: {payment?.method}</p>
           <p className="text-sm capitalize text-gray-600">Status: {payment?.status}</p>
+          <a
+            href={`/orders/${order.id}/invoice`}
+            target="_blank"
+            rel="noopener"
+            className="text-sm underline"
+          >
+            Download invoice (PDF)
+          </a>
         </div>
         {payment && payment.status !== "paid" && (
           <form action={markPaymentReceived.bind(null, order.id)}>

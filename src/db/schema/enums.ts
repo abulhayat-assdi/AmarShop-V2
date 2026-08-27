@@ -38,3 +38,8 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "failed",
   "refunded",
 ]);
+
+// "pending"   = invoice row exists, its PDF hasn't been rendered yet
+// "generated" = PDF rendered and persisted via the storage adapter
+//               (invoices.storage_key is set)
+export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "generated"]);
