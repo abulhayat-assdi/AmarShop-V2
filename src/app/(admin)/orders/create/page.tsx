@@ -2,10 +2,12 @@ import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { products, productVariants, deliveryZones } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 import { ManualOrderForm } from "./ManualOrderForm";
 
 export default async function CreateOrderPage() {
   const session = await requireStaffSession();
+  const { t } = await getTranslator();
 
   const { productRows, zoneRows } = await withStoreContext(session.user.storeId, async (tx) => {
     const productRows = await tx
@@ -35,7 +37,7 @@ export default async function CreateOrderPage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">New order</h1>
+      <h1 className="text-2xl font-semibold">{t("admin.orders.newOrder")}</h1>
       <ManualOrderForm products={productRows} zones={zoneRows} />
     </div>
   );

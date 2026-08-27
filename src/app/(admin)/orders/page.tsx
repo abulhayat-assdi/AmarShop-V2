@@ -3,6 +3,15 @@ import { and, eq, desc, sql } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
+import { ORDER_STATUS_KEYS } from "./status-pipeline";
+
+const PAY_STATUS_KEYS: Record<string, string> = {
+  pending: "admin.orders.payPending",
+  paid: "admin.orders.payPaid",
+  failed: "admin.orders.payFailed",
+  refunded: "admin.orders.payRefunded",
+};
 
 const ORDER_STATUSES = [
   "placed",
@@ -30,6 +39,7 @@ export default async function OrdersPage({
     ? (rawStatus as OrderStatusValue)
     : "all";
   const session = await requireStaffSession();
+  const { t } = await getTranslator();
 
   const rows = await withStoreContext(session.user.storeId, (tx) => {
     const conditions = [eq(orders.storeId, session.user.storeId)];
@@ -58,12 +68,12 @@ export default async function OrdersPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Orders</h1>
+        <h1 className="text-2xl font-semibold">{t("admin.orders.title")}</h1>
         <Link
           href="/orders/create"
           className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
         >
-          Add order
+          {t("admin.orders.addOrder")}
         </Link>
       </div>
       <nav className="flex flex-wrap gap-1 border-b text-sm">
@@ -71,30 +81,32 @@ export default async function OrdersPage({
           <Link
             key={tab}
             href={tab === "all" ? "/orders" : `/orders?status=${tab}`}
-            className={`px-3 py-2 capitalize ${
+            className={`px-3 py-2 ${
               activeStatus === tab ? "border-b-2 border-black font-semibold" : "text-gray-500"
             }`}
           >
-            {tab}
+            {tab === "all" ? t("admin.orders.tabAll") : t(ORDER_STATUS_KEYS[tab])}
           </Link>
         ))}
       </nav>
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="py-2">Date</th>
-            <th className="py-2">Customer</th>
-            <th className="py-2">Items</th>
-            <th className="py-2">Total</th>
-            <th className="py-2">Payment</th>
-            <th className="py-2">Status</th>
+            <th className="py-2">{t("admin.orders.colDate")}</th>
+            <th className="py-2">{t("admin.orders.colCustomer")}</th>
+            <th className="py-2">{t("admin.orders.colItems")}</th>
+            <th className="py-2">{t("admin.orders.colTotal")}</th>
+            <th className="py-2">{t("admin.orders.colPayment")}</th>
+            <th className="py-2">{t("admin.orders.colStatus")}</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
               <td colSpan={6} className="py-4 text-gray-500">
-                No orders{activeStatus !== "all" ? ` with status "${activeStatus}"` : " yet"}.
+                {activeStatus === "all"
+                  ? t("admin.orders.noOrders")
+                  : t("admin.orders.noOrdersInStatus", { status: t(ORDER_STATUS_KEYS[activeStatus]) })}
               </td>
             </tr>
           ) : (
@@ -108,11 +120,13 @@ export default async function OrdersPage({
                 <td className="py-2">{order.customerName}</td>
                 <td className="py-2">{order.itemCount}</td>
                 <td className="py-2">৳{order.total}</td>
-                <td className="py-2 uppercase">
-                  {order.paymentMethod}
-                  <span className="ml-1 text-xs capitalize text-gray-500">({order.paymentStatus})</span>
+                <td className="py-2">
+                  <span className="uppercase">{order.paymentMethod}</span>
+                  <span className="ml-1 text-xs text-gray-500">
+                    ({order.paymentStatus ? t(PAY_STATUS_KEYS[order.paymentStatus] ?? order.paymentStatus) : "—"})
+                  </span>
                 </td>
-                <td className="py-2 capitalize">{order.status}</td>
+                <td className="py-2">{t(ORDER_STATUS_KEYS[order.status] ?? order.status)}</td>
               </tr>
             ))
           )}

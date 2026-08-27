@@ -1,12 +1,13 @@
 export const PERIODS = ["today", "week", "month", "custom", "all"] as const;
 export type Period = (typeof PERIODS)[number];
 
-export const PERIOD_LABELS: Record<Period, string> = {
-  today: "Today",
-  week: "This Week",
-  month: "This Month",
-  custom: "Custom Range",
-  all: "All Time",
+// i18n key per period — see admin.dashboard.* in the message files.
+export const PERIOD_LABEL_KEYS: Record<Period, string> = {
+  today: "admin.dashboard.periodToday",
+  week: "admin.dashboard.periodWeek",
+  month: "admin.dashboard.periodMonth",
+  custom: "admin.dashboard.periodCustom",
+  all: "admin.dashboard.periodAll",
 };
 
 export function parsePeriod(value: string | undefined): Period {

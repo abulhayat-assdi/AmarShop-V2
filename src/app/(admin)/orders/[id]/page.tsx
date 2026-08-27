@@ -5,9 +5,17 @@ import { withStoreContext } from "@/db/context";
 import { orders, orderItems, orderStatusEvents, payments, deliveryZones } from "@/db/schema";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
 import { getCourierSettingsView } from "@/lib/courier/settings";
+import { getTranslator } from "@/lib/i18n/server";
 import { advanceOrderStatus, cancelOrder, markPaymentReceived } from "../actions";
-import { nextStatus } from "../status-pipeline";
+import { nextStatus, ORDER_STATUS_KEYS } from "../status-pipeline";
 import { ShipmentPanel } from "./ShipmentPanel";
+
+const PAY_STATUS_KEYS: Record<string, string> = {
+  pending: "admin.orders.payPending",
+  paid: "admin.orders.payPaid",
+  failed: "admin.orders.payFailed",
+  refunded: "admin.orders.payRefunded",
+};
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,29 +65,34 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     getShipmentForOrder(session.user.storeId, order.id),
     getCourierSettingsView(session.user.storeId),
   ]);
+  const { t } = await getTranslator();
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Order #{order.id.slice(0, 8)}</h1>
+      <h1 className="text-2xl font-semibold">
+        {t("admin.orders.orderNo", { id: order.id.slice(0, 8) })}
+      </h1>
 
       <div className="grid grid-cols-2 gap-6">
         <div className="rounded border p-4">
-          <h2 className="mb-2 font-semibold">Customer</h2>
+          <h2 className="mb-2 font-semibold">{t("admin.orders.customer")}</h2>
           <p>{order.customerName}</p>
           <p>{order.customerPhone}</p>
           {order.customerEmail && <p>{order.customerEmail}</p>}
           <p className="text-gray-600">{order.customerAddress}</p>
         </div>
         <div className="rounded border p-4">
-          <h2 className="mb-2 font-semibold">Delivery</h2>
-          <p>{zone?.name ?? "—"}</p>
+          <h2 className="mb-2 font-semibold">{t("admin.orders.delivery")}</h2>
+          <p>{zone?.name ?? t("admin.common.none")}</p>
           <p>৳{order.deliveryCharge}</p>
-          {order.notes && <p className="mt-2 text-gray-600">Note: {order.notes}</p>}
+          {order.notes && (
+            <p className="mt-2 text-gray-600">{t("admin.orders.note", { note: order.notes })}</p>
+          )}
         </div>
       </div>
 
       <div className="rounded border p-4">
-        <h2 className="mb-2 font-semibold">Items</h2>
+        <h2 className="mb-2 font-semibold">{t("admin.orders.items")}</h2>
         <ul className="flex flex-col gap-1 text-sm">
           {items.map((item) => (
             <li key={item.id} className="flex justify-between">
@@ -93,15 +106,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </ul>
         <div className="mt-3 flex flex-col gap-1 border-t pt-3 text-sm">
           <div className="flex justify-between">
-            <span>Subtotal</span>
+            <span>{t("admin.orders.subtotal")}</span>
             <span>৳{order.subtotal}</span>
           </div>
           <div className="flex justify-between">
-            <span>Delivery</span>
+            <span>{t("admin.orders.deliveryCharge")}</span>
             <span>৳{order.deliveryCharge}</span>
           </div>
           <div className="flex justify-between text-base font-semibold">
-            <span>Total</span>
+            <span>{t("admin.orders.total")}</span>
             <span>৳{order.total}</span>
           </div>
         </div>
@@ -109,21 +122,29 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="flex items-center justify-between rounded border p-4">
         <div>
-          <p className="font-semibold uppercase">Payment: {payment?.method}</p>
-          <p className="text-sm capitalize text-gray-600">Status: {payment?.status}</p>
+          <p className="font-semibold">
+            {t("admin.orders.payment", { method: (payment?.method ?? "").toUpperCase() })}
+          </p>
+          <p className="text-sm text-gray-600">
+            {t("admin.orders.paymentStatus", {
+              status: payment?.status
+                ? t(PAY_STATUS_KEYS[payment.status] ?? payment.status)
+                : "—",
+            })}
+          </p>
           <a
             href={`/orders/${order.id}/invoice`}
             target="_blank"
             rel="noopener"
             className="text-sm underline"
           >
-            Download invoice (PDF)
+            {t("admin.orders.downloadInvoice")}
           </a>
         </div>
         {payment && payment.status !== "paid" && (
           <form action={markPaymentReceived.bind(null, order.id)}>
             <button type="submit" className="rounded border px-4 py-2 text-sm hover:bg-gray-50">
-              Mark payment received
+              {t("admin.orders.markPaymentReceived")}
             </button>
           </form>
         )}
@@ -151,14 +172,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="rounded border p-4">
         <h2 className="mb-2 font-semibold">
-          Status: <span className="capitalize">{order.status}</span>
+          {t("admin.orders.statusHeading", { status: t(ORDER_STATUS_KEYS[order.status] ?? order.status) })}
         </h2>
         {events.length > 0 && (
           <ul className="mb-4 flex flex-col gap-1 text-sm text-gray-600">
             {events.map((event) => (
               <li key={event.id}>
                 {new Date(event.createdAt).toLocaleString()} —{" "}
-                <span className="capitalize">{event.status}</span>
+                {t(ORDER_STATUS_KEYS[event.status] ?? event.status)}
               </li>
             ))}
           </ul>
@@ -168,9 +189,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <form action={advanceOrderStatus.bind(null, order.id)}>
               <button
                 type="submit"
-                className="rounded bg-black px-4 py-2 text-sm capitalize text-white hover:bg-gray-800"
+                className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
               >
-                Mark as {upcoming}
+                {t("admin.orders.markAs", { status: t(ORDER_STATUS_KEYS[upcoming] ?? upcoming) })}
               </button>
             </form>
           )}
@@ -180,7 +201,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 type="submit"
                 className="rounded border border-red-400 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
               >
-                Cancel Order
+                {t("admin.orders.cancelOrder")}
               </button>
             </form>
           )}

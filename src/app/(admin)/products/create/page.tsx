@@ -2,11 +2,13 @@ import { eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { categories } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 import { ProductForm } from "../ProductForm";
 import { createProduct } from "../actions";
 
 export default async function CreateProductPage() {
   const session = await requireStaffSession();
+  const { t } = await getTranslator();
 
   const categoryRows = await withStoreContext(session.user.storeId, (tx) =>
     tx
@@ -17,8 +19,12 @@ export default async function CreateProductPage() {
 
   return (
     <div className="flex max-w-md flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Add product</h1>
-      <ProductForm action={createProduct} categories={categoryRows} submitLabel="Create product" />
+      <h1 className="text-2xl font-semibold">{t("admin.products.addTitle")}</h1>
+      <ProductForm
+        action={createProduct}
+        categories={categoryRows}
+        submitLabel={t("admin.products.createProduct")}
+      />
     </div>
   );
 }

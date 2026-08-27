@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { ProductMedia } from "@/components/product-media";
 import { MEDIA_UPLOAD_HINT } from "@/lib/products/media-constants";
+import { useTranslator } from "@/components/i18n-provider";
 import { deleteProductMedia } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
 
@@ -59,6 +60,7 @@ export function ProductForm({
   existingMedia,
 }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const t = useTranslator();
   const values = initialValues ?? emptyValues;
 
   const [name, setName] = useState(values.name);
@@ -90,14 +92,14 @@ export function ProductForm({
     <div className="flex flex-col gap-6">
       {productId && existingMedia && existingMedia.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Current media</span>
+          <span className="text-sm font-medium">{t("admin.products.currentMedia")}</span>
           <div className="flex flex-wrap gap-3">
             {existingMedia.map((item) => (
               <div key={item.id} className="flex w-24 flex-col items-center gap-1">
                 <ProductMedia item={item} className="w-24 border" />
                 <form action={deleteProductMedia.bind(null, productId, item.id)}>
                   <button type="submit" className="text-xs text-red-600 underline">
-                    Remove
+                    {t("admin.products.remove")}
                   </button>
                 </form>
               </div>
@@ -113,7 +115,7 @@ export function ProductForm({
           </p>
         )}
         <label className="flex flex-col gap-1">
-          Product name
+          {t("admin.products.productName")}
           <input
             name="name"
             required
@@ -123,14 +125,14 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Category
+          {t("admin.products.category")}
           <select
             name="categoryId"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             className={`rounded border px-3 py-2 ${errorBorder("categoryId")}`}
           >
-            <option value="">No category</option>
+            <option value="">{t("admin.products.noCategory")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -139,7 +141,7 @@ export function ProductForm({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          Brand (optional)
+          {t("admin.products.brandOptional")}
           <input
             name="brand"
             value={brand}
@@ -148,7 +150,7 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Description (optional)
+          {t("admin.products.descriptionOptional")}
           <textarea
             name="description"
             rows={3}
@@ -158,7 +160,7 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          VAT %
+          {t("admin.products.vat")}
           <input
             name="vatPercent"
             type="number"
@@ -172,7 +174,8 @@ export function ProductForm({
         </label>
         <div className="flex flex-col gap-2">
           <label className="flex flex-col gap-1">
-            Photos {productId ? "(add more)" : "(optional)"}
+            {t("admin.products.photos")}{" "}
+            {productId ? t("admin.products.addMore") : t("admin.products.optional")}
             <input
               type="file"
               name="images"
@@ -182,7 +185,8 @@ export function ProductForm({
             />
           </label>
           <label className="flex flex-col gap-1">
-            Videos {productId ? "(add more)" : "(optional)"}
+            {t("admin.products.videos")}{" "}
+            {productId ? t("admin.products.addMore") : t("admin.products.optional")}
             <input
               type="file"
               name="videos"
@@ -195,7 +199,7 @@ export function ProductForm({
         </div>
         <hr />
         <label className="flex flex-col gap-1">
-          SKU
+          {t("admin.products.sku")}
           <input
             name="sku"
             required
@@ -205,7 +209,7 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Price
+          {t("admin.products.price")}
           <input
             name="price"
             type="number"
@@ -219,7 +223,7 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Discounted price (optional)
+          {t("admin.products.discountedPriceOptional")}
           <input
             name="discountedPrice"
             type="number"
@@ -232,7 +236,7 @@ export function ProductForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Stock quantity
+          {t("admin.products.stockQuantity")}
           <input
             name="quantity"
             type="number"
@@ -250,7 +254,7 @@ export function ProductForm({
           disabled={isPending}
           className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
         >
-          {isPending ? "Saving…" : submitLabel}
+          {isPending ? t("admin.common.saving") : submitLabel}
         </button>
       </form>
     </div>

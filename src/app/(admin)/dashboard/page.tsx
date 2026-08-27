@@ -4,8 +4,10 @@ import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, productVariants, products, categories } from "@/db/schema";
 import { WeeklySalesChart } from "./WeeklySalesChart";
-import { PERIODS, PERIOD_LABELS, parsePeriod, getDateRange, type Period } from "./period";
+import { PERIODS, PERIOD_LABEL_KEYS, parsePeriod, getDateRange, type Period } from "./period";
+import { ORDER_STATUS_KEYS } from "../orders/status-pipeline";
 import { DateInput } from "@/components/date-input";
+import { getTranslator } from "@/lib/i18n/server";
 
 // Hardcoded for now (no per-store setting for this yet) — a variant with
 // stock in (0, LOW_STOCK_THRESHOLD] counts as "low," 0 counts as out of
@@ -30,6 +32,8 @@ export default async function DashboardPage({
   const period = parsePeriod(rawPeriod);
   const { start, end } = getDateRange(period, from, to);
   const session = await requireStaffSession();
+  const { t, locale } = await getTranslator();
+  const weekdayLocale = locale === "bn" ? "bn-BD" : "en-US";
 
   const stats = await withStoreContext(session.user.storeId, async (tx) => {
     const storeId = session.user.storeId;
@@ -123,7 +127,7 @@ export default async function DashboardPage({
       date.setDate(date.getDate() + i);
       const key = date.toISOString().slice(0, 10);
       return {
-        label: date.toLocaleDateString(undefined, { weekday: "short" }),
+        label: date.toLocaleDateString(weekdayLocale, { weekday: "short" }),
         total: salesByDay.get(key) ?? 0,
       };
     });
@@ -175,10 +179,15 @@ export default async function DashboardPage({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold">{t("admin.dashboard.title")}</h1>
         <nav className="flex gap-1 text-sm">
           {PERIODS.map((tab) => (
-            <PeriodTab key={tab} tab={tab} active={period === tab} />
+            <PeriodTab
+              key={tab}
+              tab={tab}
+              active={period === tab}
+              label={t(PERIOD_LABEL_KEYS[tab])}
+            />
           ))}
         </nav>
       </div>
@@ -187,7 +196,7 @@ export default async function DashboardPage({
         <form action="/dashboard" className="flex flex-wrap items-center gap-2 text-sm">
           <input type="hidden" name="period" value="custom" />
           <label className="flex items-center gap-1">
-            From
+            {t("admin.common.from")}
             <DateInput
               name="from"
               defaultValue={from}
@@ -196,7 +205,7 @@ export default async function DashboardPage({
             />
           </label>
           <label className="flex items-center gap-1">
-            To
+            {t("admin.common.to")}
             <DateInput
               name="to"
               defaultValue={to}
@@ -205,42 +214,44 @@ export default async function DashboardPage({
             />
           </label>
           <button type="submit" className="rounded bg-black px-3 py-1 text-white hover:bg-gray-800">
-            Apply
+            {t("admin.common.apply")}
           </button>
         </form>
       )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard label="Total Sales" value={`৳${stats.totalSales}`} />
-        <StatCard label="Orders" value={stats.orderCount} href="/orders" />
-        <StatCard label="Customers" value={stats.customerCount} />
-        <StatCard label="Low Stock" value={stats.lowStockCount} href="/products" />
+        <StatCard label={t("admin.dashboard.totalSales")} value={`৳${stats.totalSales}`} />
+        <StatCard label={t("admin.dashboard.orders")} value={stats.orderCount} href="/orders" />
+        <StatCard label={t("admin.dashboard.customers")} value={stats.customerCount} />
+        <StatCard label={t("admin.dashboard.lowStock")} value={stats.lowStockCount} href="/products" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="rounded border p-4">
-          <h2 className="mb-3 font-semibold">Sales, Last 7 Days</h2>
+          <h2 className="mb-3 font-semibold">{t("admin.dashboard.salesLast7")}</h2>
           <WeeklySalesChart days={stats.chartDays} />
         </div>
 
         <div className="rounded border p-4">
-          <h2 className="mb-3 font-semibold">Customers ({PERIOD_LABELS[period]})</h2>
+          <h2 className="mb-3 font-semibold">
+            {t("admin.dashboard.customersIn", { period: t(PERIOD_LABEL_KEYS[period]) })}
+          </h2>
           {stats.customerBreakdown ? (
             <div className="flex gap-6 text-sm">
               <div>
                 <p className="text-2xl font-semibold">{stats.customerBreakdown.newCount}</p>
-                <p className="text-gray-500">New</p>
+                <p className="text-gray-500">{t("admin.dashboard.newCustomers")}</p>
               </div>
               <div>
                 <p className="text-2xl font-semibold">{stats.customerBreakdown.returningCount}</p>
-                <p className="text-gray-500">Returning</p>
+                <p className="text-gray-500">{t("admin.dashboard.returningCustomers")}</p>
               </div>
             </div>
           ) : (
             <p className="text-sm text-gray-500">
               {period === "custom"
-                ? "Pick a from/to date above to see a breakdown."
-                : "Select Today, This Week, This Month, or a Custom Range to see a breakdown."}
+                ? t("admin.dashboard.pickDates")
+                : t("admin.dashboard.selectPeriod")}
             </p>
           )}
         </div>
@@ -248,9 +259,9 @@ export default async function DashboardPage({
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="rounded border p-4">
-          <h2 className="mb-3 font-semibold">Recent Orders</h2>
+          <h2 className="mb-3 font-semibold">{t("admin.dashboard.recentOrders")}</h2>
           {stats.recentOrders.length === 0 ? (
-            <p className="text-sm text-gray-500">No orders yet.</p>
+            <p className="text-sm text-gray-500">{t("admin.dashboard.noOrders")}</p>
           ) : (
             <ul className="flex flex-col gap-3 text-sm">
               {stats.recentOrders.map((order) => (
@@ -259,7 +270,9 @@ export default async function DashboardPage({
                     <Link href={`/orders/${order.id}`} className="hover:underline">
                       {order.customerName}
                     </Link>
-                    <span className="text-xs capitalize text-gray-500">{order.status}</span>
+                    <span className="text-xs text-gray-500">
+                      {t(ORDER_STATUS_KEYS[order.status] ?? order.status)}
+                    </span>
                   </div>
                   <span>৳{order.total}</span>
                 </li>
@@ -269,15 +282,17 @@ export default async function DashboardPage({
         </div>
 
         <div className="rounded border p-4">
-          <h2 className="mb-3 font-semibold">Top-Selling Products</h2>
+          <h2 className="mb-3 font-semibold">{t("admin.dashboard.topProducts")}</h2>
           {stats.topProducts.length === 0 ? (
-            <p className="text-sm text-gray-500">No sales yet.</p>
+            <p className="text-sm text-gray-500">{t("admin.dashboard.noSales")}</p>
           ) : (
             <ul className="flex flex-col gap-2 text-sm">
               {stats.topProducts.map((product) => (
                 <li key={product.productName} className="flex items-center justify-between">
                   <span>{product.productName}</span>
-                  <span className="text-gray-500">{product.totalQuantity} sold</span>
+                  <span className="text-gray-500">
+                    {t("admin.common.soldCount", { count: product.totalQuantity })}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -285,15 +300,17 @@ export default async function DashboardPage({
         </div>
 
         <div className="rounded border p-4">
-          <h2 className="mb-3 font-semibold">Top Categories</h2>
+          <h2 className="mb-3 font-semibold">{t("admin.dashboard.topCategories")}</h2>
           {stats.topCategories.length === 0 ? (
-            <p className="text-sm text-gray-500">No sales yet.</p>
+            <p className="text-sm text-gray-500">{t("admin.dashboard.noSales")}</p>
           ) : (
             <ul className="flex flex-col gap-2 text-sm">
               {stats.topCategories.map((category) => (
                 <li key={category.categoryName} className="flex items-center justify-between">
                   <span>{category.categoryName}</span>
-                  <span className="text-gray-500">{category.totalQuantity} sold</span>
+                  <span className="text-gray-500">
+                    {t("admin.common.soldCount", { count: category.totalQuantity })}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -304,13 +321,13 @@ export default async function DashboardPage({
   );
 }
 
-function PeriodTab({ tab, active }: { tab: Period; active: boolean }) {
+function PeriodTab({ tab, active, label }: { tab: Period; active: boolean; label: string }) {
   return (
     <Link
       href={tab === "all" ? "/dashboard" : `/dashboard?period=${tab}`}
       className={`rounded px-3 py-1.5 ${active ? "bg-black text-white" : "text-gray-500 hover:bg-gray-100"}`}
     >
-      {PERIOD_LABELS[tab]}
+      {label}
     </Link>
   );
 }

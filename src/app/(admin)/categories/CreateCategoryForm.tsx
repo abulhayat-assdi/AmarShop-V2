@@ -1,12 +1,14 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslator } from "@/components/i18n-provider";
 import { createCategory, type CreateCategoryState } from "./actions";
 
 const initialState: CreateCategoryState = {};
 
 export function CreateCategoryForm() {
   const [state, formAction, isPending] = useActionState(createCategory, initialState);
+  const t = useTranslator();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -29,14 +31,14 @@ export function CreateCategoryForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded border p-4">
-      <h2 className="font-semibold">Add category</h2>
+      <h2 className="font-semibold">{t("admin.categories.addCategory")}</h2>
       {state.error && (
         <p className="rounded border border-red-400 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}
         </p>
       )}
       <label className="flex flex-col gap-1">
-        Name
+        {t("admin.categories.name")}
         <input
           name="name"
           required
@@ -46,7 +48,7 @@ export function CreateCategoryForm() {
         />
       </label>
       <label className="flex flex-col gap-1">
-        Description (optional)
+        {t("admin.categories.descriptionOptional")}
         <input
           name="description"
           value={description}
@@ -59,7 +61,7 @@ export function CreateCategoryForm() {
         disabled={isPending}
         className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
       >
-        {isPending ? "Adding…" : "Add category"}
+        {isPending ? t("admin.categories.adding") : t("admin.categories.addCategory")}
       </button>
     </form>
   );

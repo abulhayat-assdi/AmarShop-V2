@@ -4,6 +4,7 @@ import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { getProductMedia } from "@/lib/products/media";
+import { getTranslator } from "@/lib/i18n/server";
 import { ProductForm } from "../../ProductForm";
 import { updateProduct } from "../../actions";
 
@@ -41,14 +42,15 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   }
 
   const media = await getProductMedia(session.user.storeId, product.id);
+  const { t } = await getTranslator();
 
   return (
     <div className="flex max-w-md flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Edit product</h1>
+      <h1 className="text-2xl font-semibold">{t("admin.products.editTitle")}</h1>
       <ProductForm
         action={updateProduct.bind(null, product.id)}
         categories={categoryRows}
-        submitLabel="Save changes"
+        submitLabel={t("admin.products.saveChanges")}
         productId={product.id}
         existingMedia={media.map((m) => ({ id: m.id, kind: m.kind, url: m.url }))}
         initialValues={{

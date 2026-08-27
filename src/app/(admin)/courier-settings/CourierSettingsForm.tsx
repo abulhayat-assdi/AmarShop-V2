@@ -7,6 +7,7 @@ import {
   COURIER_PROVIDER_LABELS,
 } from "@/lib/courier/providers";
 import type { CourierProvider } from "@/lib/courier/types";
+import { useTranslator } from "@/components/i18n-provider";
 import { saveCourierSettingsAction, type CourierSettingsState } from "./actions";
 
 const initialState: CourierSettingsState = {};
@@ -21,6 +22,7 @@ export function CourierSettingsForm({
   configuredProviders: CourierProvider[];
 }) {
   const [state, formAction, isPending] = useActionState(saveCourierSettingsAction, initialState);
+  const t = useTranslator();
   const [provider, setProvider] = useState<string>(activeProvider ?? "");
   const [isSandbox, setIsSandbox] = useState(sandbox);
 
@@ -33,19 +35,19 @@ export function CourierSettingsForm({
       )}
       {state.ok && (
         <p className="rounded border border-green-400 bg-green-50 px-3 py-2 text-sm text-green-700">
-          Courier settings saved.
+          {t("admin.courier.settingsSaved")}
         </p>
       )}
 
       <label className="flex flex-col gap-1">
-        Active courier
+        {t("admin.courier.activeCourier")}
         <select
           name="activeProvider"
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
           className="rounded border border-gray-300 px-3 py-2"
         >
-          <option value="">None — courier booking disabled</option>
+          <option value="">{t("admin.courier.none")}</option>
           {COURIER_PROVIDERS.map((p) => (
             <option key={p} value={p}>
               {COURIER_PROVIDER_LABELS[p]}
@@ -61,7 +63,7 @@ export function CourierSettingsForm({
           checked={isSandbox}
           onChange={(e) => setIsSandbox(e.target.checked)}
         />
-        Sandbox / test mode
+        {t("admin.courier.sandbox")}
       </label>
 
       {COURIER_PROVIDERS.map((p) => {
@@ -69,18 +71,22 @@ export function CourierSettingsForm({
         return (
           <fieldset key={p} className="flex flex-col gap-2 rounded border p-4">
             <legend className="px-1 text-sm font-semibold">
-              {COURIER_PROVIDER_LABELS[p]} credentials
-              {configured && <span className="ml-2 text-xs text-green-700">saved</span>}
+              {t("admin.courier.credentials", { provider: COURIER_PROVIDER_LABELS[p] })}
+              {configured && (
+                <span className="ml-2 text-xs text-green-700">{t("admin.courier.saved")}</span>
+              )}
             </legend>
             {COURIER_CREDENTIAL_FIELDS[p].map((field) => (
               <label key={field.key} className="flex flex-col gap-1 text-sm">
                 {field.label}
-                {field.optional && <span className="text-xs text-gray-400"> (optional)</span>}
+                {field.optional && (
+                  <span className="text-xs text-gray-400">{t("admin.courier.optional")}</span>
+                )}
                 <input
                   type={field.type === "password" ? "password" : "text"}
                   name={`cred.${p}.${field.key}`}
                   autoComplete="off"
-                  placeholder={configured ? "•••• saved — leave blank to keep" : ""}
+                  placeholder={configured ? t("admin.courier.leaveBlank") : ""}
                   className="rounded border border-gray-300 px-3 py-2"
                 />
               </label>
@@ -94,7 +100,7 @@ export function CourierSettingsForm({
         disabled={isPending}
         className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
       >
-        {isPending ? "Saving…" : "Save settings"}
+        {isPending ? t("admin.common.saving") : t("admin.courier.saveSettings")}
       </button>
     </form>
   );

@@ -36,3 +36,15 @@ export async function resolveStoreForHost(host: string): Promise<Store | null> {
 
   return store ?? null;
 }
+
+// The public URL of a store's storefront — for the admin's "View Store"
+// link. custom domain if set, else {slug}.{PLATFORM_ROOT_DOMAIN}. Returns
+// null when PLATFORM_ROOT_DOMAIN isn't configured (and there's no custom
+// domain), so the caller can hide the link.
+export function storefrontUrlFor(store: Pick<Store, "slug" | "customDomain">): string | null {
+  const scheme = process.env.NODE_ENV === "production" ? "https" : "http";
+  if (store.customDomain) return `${scheme}://${store.customDomain}`;
+  const rootDomain = process.env.PLATFORM_ROOT_DOMAIN;
+  if (!rootDomain) return null;
+  return `${scheme}://${store.slug}.${rootDomain}`;
+}

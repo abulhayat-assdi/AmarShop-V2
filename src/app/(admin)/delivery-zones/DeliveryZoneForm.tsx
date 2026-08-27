@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTranslator } from "@/components/i18n-provider";
 import type { DeliveryZoneState } from "./actions";
 
 const initialState: DeliveryZoneState = {};
@@ -24,6 +25,7 @@ export function DeliveryZoneForm({
   clearOnSuccess,
 }: DeliveryZoneFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const t = useTranslator();
   const [name, setName] = useState(initialValues?.name ?? "");
   const [charge, setCharge] = useState(initialValues?.charge ?? "");
 
@@ -48,18 +50,18 @@ export function DeliveryZoneForm({
         </p>
       )}
       <label className="flex flex-col gap-1">
-        Zone name
+        {t("admin.deliveryZones.zoneName")}
         <input
           name="name"
           required
-          placeholder="e.g. Inside Dhaka"
+          placeholder={t("admin.deliveryZones.zoneNamePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="rounded border border-gray-300 px-3 py-2"
         />
       </label>
       <label className="flex flex-col gap-1">
-        Delivery charge (৳)
+        {t("admin.deliveryZones.deliveryCharge")}
         <input
           name="charge"
           type="number"
@@ -77,7 +79,7 @@ export function DeliveryZoneForm({
         disabled={isPending}
         className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
       >
-        {isPending ? "Saving…" : submitLabel}
+        {isPending ? t("admin.common.saving") : submitLabel}
       </button>
     </form>
   );

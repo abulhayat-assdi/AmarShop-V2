@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import Link from "next/link";
 import type { DeliveryZone } from "@/db/schema";
+import { useTranslator } from "@/components/i18n-provider";
 import { createManualOrder, type ManualOrderField, type ManualOrderState } from "../actions";
 
 type ProductRow = {
@@ -36,6 +37,7 @@ export function ManualOrderForm({
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const t = useTranslator();
   const [zoneId, setZoneId] = useState(zones[0]?.id ?? "");
   const [alreadyPaid, setAlreadyPaid] = useState(false);
   const [query, setQuery] = useState("");
@@ -116,9 +118,9 @@ export function ManualOrderForm({
       <input type="hidden" name="lines" value={linesPayload} />
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="font-semibold">Customer</legend>
+        <legend className="font-semibold">{t("admin.orders.customerSection")}</legend>
         <label className="flex flex-col gap-1">
-          Full Name
+          {t("admin.orders.fullName")}
           <input
             name="name"
             required
@@ -128,7 +130,7 @@ export function ManualOrderForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Phone Number
+          {t("admin.orders.phone")}
           <input
             name="phone"
             required
@@ -139,7 +141,7 @@ export function ManualOrderForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Complete Address
+          {t("admin.orders.completeAddress")}
           <textarea
             name="address"
             required
@@ -150,7 +152,7 @@ export function ManualOrderForm({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Email (optional)
+          {t("admin.orders.emailOptional")}
           <input
             name="email"
             type="email"
@@ -162,18 +164,20 @@ export function ManualOrderForm({
       </fieldset>
 
       <fieldset className="flex flex-col gap-3">
-        <legend className="font-semibold">Items</legend>
+        <legend className="font-semibold">{t("admin.orders.itemsSection")}</legend>
         <input
           type="text"
-          placeholder="Search products by name or SKU…"
+          placeholder={t("admin.orders.searchProducts")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className={`rounded border px-3 py-2 ${errorBorder("lines")}`}
         />
         {products.length === 0 ? (
           <p className="text-sm text-amber-600">
-            No active products yet — <Link href="/products/create" className="underline">add one</Link>{" "}
-            first.
+            {t("admin.orders.noActiveProducts")} —{" "}
+            <Link href="/products/create" className="underline">
+              {t("admin.orders.addFirst")}
+            </Link>
           </p>
         ) : (
           <ul className="flex flex-col divide-y rounded border text-sm">
@@ -182,7 +186,8 @@ export function ManualOrderForm({
                 <span>
                   {row.productName} <span className="text-gray-400">({row.sku})</span>
                   <span className="ml-2 text-xs text-gray-500">
-                    ৳{unitPriceOf(row).toFixed(2)} · {row.available} in stock
+                    ৳{unitPriceOf(row).toFixed(2)} ·{" "}
+                    {t("admin.orders.inStock", { count: row.available })}
                   </span>
                 </span>
                 <button
@@ -191,12 +196,14 @@ export function ManualOrderForm({
                   disabled={row.available < 1}
                   className="rounded border px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-40"
                 >
-                  Add
+                  {t("admin.orders.addItem")}
                 </button>
               </li>
             ))}
             {filtered.length === 0 && (
-              <li className="px-3 py-2 text-gray-500">No products match “{query}”.</li>
+              <li className="px-3 py-2 text-gray-500">
+                {t("admin.orders.noProductMatch", { query })}
+              </li>
             )}
           </ul>
         )}
@@ -214,7 +221,7 @@ export function ManualOrderForm({
                   <span className="flex-1">
                     {row.productName} <span className="text-gray-400">({row.sku})</span>
                     <span className="ml-2 text-xs text-gray-500">
-                      ৳{unitPriceOf(row).toFixed(2)} each
+                      {t("admin.orders.eachPrice", { price: unitPriceOf(row).toFixed(2) })}
                     </span>
                   </span>
                   <input
@@ -235,7 +242,7 @@ export function ManualOrderForm({
                     onClick={() => removeLine(line.variantId)}
                     className="text-xs text-red-600 underline"
                   >
-                    Remove
+                    {t("admin.orders.remove")}
                   </button>
                 </li>
               );
@@ -245,14 +252,14 @@ export function ManualOrderForm({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-semibold">Delivery</legend>
+        <legend className="font-semibold">{t("admin.orders.deliverySection")}</legend>
         {zones.length === 0 ? (
           <p className="text-sm text-amber-600">
-            No delivery zones configured —{" "}
+            {t("admin.orders.noZones")} —{" "}
             <Link href="/delivery-zones" className="underline">
-              add one
+              {t("admin.orders.addZoneLink")}
             </Link>{" "}
-            before creating an order.
+            {t("admin.orders.beforeOrder")}
           </p>
         ) : (
           zones.map((zone) => (
@@ -279,8 +286,8 @@ export function ManualOrderForm({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="font-semibold">Payment</legend>
-        <p className="text-sm text-gray-600">Cash on Delivery</p>
+        <legend className="font-semibold">{t("admin.orders.paymentSection")}</legend>
+        <p className="text-sm text-gray-600">{t("admin.orders.cod")}</p>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -288,12 +295,12 @@ export function ManualOrderForm({
             checked={alreadyPaid}
             onChange={(e) => setAlreadyPaid(e.target.checked)}
           />
-          Payment already received (cash / bKash in person)
+          {t("admin.orders.alreadyPaid")}
         </label>
       </fieldset>
 
       <label className="flex flex-col gap-1">
-        Order Notes (optional)
+        {t("admin.orders.orderNotes")}
         <textarea
           name="notes"
           rows={2}
@@ -305,15 +312,19 @@ export function ManualOrderForm({
 
       <div className="flex flex-col gap-1 rounded border p-4 text-sm">
         <div className="flex justify-between">
-          <span>Subtotal ({lines.length} item{lines.length === 1 ? "" : "s"})</span>
+          <span>
+            {t(lines.length === 1 ? "admin.orders.summaryItem" : "admin.orders.summaryItems", {
+              count: lines.length,
+            })}
+          </span>
           <span>৳{subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
-          <span>Delivery</span>
+          <span>{t("admin.orders.deliveryCharge")}</span>
           <span>৳{deliveryCharge.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-base font-semibold">
-          <span>Total</span>
+          <span>{t("admin.orders.total")}</span>
           <span>৳{total.toFixed(2)}</span>
         </div>
       </div>
@@ -323,7 +334,7 @@ export function ManualOrderForm({
         disabled={isPending || lines.length === 0 || zones.length === 0}
         className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
       >
-        {isPending ? "Creating order…" : "Create order"}
+        {isPending ? t("admin.orders.creatingOrder") : t("admin.orders.createOrder")}
       </button>
     </form>
   );

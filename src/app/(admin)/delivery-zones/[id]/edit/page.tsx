@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { deliveryZones } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 import { DeliveryZoneForm } from "../../DeliveryZoneForm";
 import { updateDeliveryZone } from "../../actions";
 
@@ -19,14 +20,15 @@ export default async function EditDeliveryZonePage({ params }: { params: Promise
   );
 
   if (!zone) notFound();
+  const { t } = await getTranslator();
 
   return (
     <div className="flex max-w-md flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Edit delivery zone</h1>
+      <h1 className="text-2xl font-semibold">{t("admin.deliveryZones.editZoneTitle")}</h1>
       <DeliveryZoneForm
         action={updateDeliveryZone.bind(null, zone.id)}
-        title="Edit delivery zone"
-        submitLabel="Save changes"
+        title={t("admin.deliveryZones.editZoneTitle")}
+        submitLabel={t("admin.deliveryZones.saveChanges")}
         initialValues={{ name: zone.name, charge: zone.charge }}
       />
     </div>
