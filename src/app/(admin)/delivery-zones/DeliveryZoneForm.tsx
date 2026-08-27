@@ -1,14 +1,31 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createDeliveryZone, type CreateDeliveryZoneState } from "./actions";
+import type { DeliveryZoneState } from "./actions";
 
-const initialState: CreateDeliveryZoneState = {};
+const initialState: DeliveryZoneState = {};
 
-export function CreateDeliveryZoneForm() {
-  const [state, formAction, isPending] = useActionState(createDeliveryZone, initialState);
-  const [name, setName] = useState("");
-  const [charge, setCharge] = useState("");
+type DeliveryZoneFormProps = {
+  action: (prevState: DeliveryZoneState, formData: FormData) => Promise<DeliveryZoneState>;
+  title: string;
+  submitLabel: string;
+  initialValues?: { name: string; charge: string };
+  // Create stays on the same page after success (clear the fields so the
+  // merchant can add another) — edit redirects away on success server-side
+  // (see updateDeliveryZone), so there's nothing to clear.
+  clearOnSuccess?: boolean;
+};
+
+export function DeliveryZoneForm({
+  action,
+  title,
+  submitLabel,
+  initialValues,
+  clearOnSuccess,
+}: DeliveryZoneFormProps) {
+  const [state, formAction, isPending] = useActionState(action, initialState);
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [charge, setCharge] = useState(initialValues?.charge ?? "");
 
   // Same pattern as CreateCategoryForm.tsx — clear fields only once `ok`
   // actually confirms success, adjusted during render rather than an
@@ -16,7 +33,7 @@ export function CreateDeliveryZoneForm() {
   const [handledState, setHandledState] = useState(state);
   if (state !== handledState) {
     setHandledState(state);
-    if (state.ok) {
+    if (state.ok && clearOnSuccess) {
       setName("");
       setCharge("");
     }
@@ -24,7 +41,7 @@ export function CreateDeliveryZoneForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded border p-4">
-      <h2 className="font-semibold">Add delivery zone</h2>
+      <h2 className="font-semibold">{title}</h2>
       {state.error && (
         <p className="rounded border border-red-400 bg-red-50 px-3 py-2 text-sm text-red-700">
           {state.error}
@@ -60,7 +77,7 @@ export function CreateDeliveryZoneForm() {
         disabled={isPending}
         className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
       >
-        {isPending ? "Adding…" : "Add zone"}
+        {isPending ? "Saving…" : submitLabel}
       </button>
     </form>
   );
