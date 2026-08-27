@@ -32,6 +32,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/categories" className="underline">
             Categories
           </Link>
+          <Link href="/delivery-zones" className="underline">
+            Delivery Zones
+          </Link>
         </nav>
         <form action={signOutAction} className="mt-auto">
           <button type="submit" className="text-sm underline">

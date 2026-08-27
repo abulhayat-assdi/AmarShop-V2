@@ -19,3 +19,22 @@ export const cartStatusEnum = pgEnum("cart_status", [
   "converted",
   "abandoned",
 ]);
+
+export const orderStatusEnum = pgEnum("order_status", [
+  "placed",
+  "confirmed",
+  "ready",
+  "shipped",
+  "delivered",
+  "completed",
+  "canceled",
+]);
+
+export const paymentMethodEnum = pgEnum("payment_method", ["cod", "sslcommerz"]);
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "pending",
+  "paid",
+  "failed",
+  "refunded",
+]);
