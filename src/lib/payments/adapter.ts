@@ -24,6 +24,10 @@ export type PaymentInitiationResult =
   | { kind: "immediate" }
   | { kind: "redirect"; redirectUrl: string };
 
+// Per-store SSLCommerz credentials, resolved from store_payment_settings
+// (src/lib/payments/settings.ts) — no longer read from env.
+export type SslcommerzConfig = { storeId: string; storePassword: string; sandbox: boolean };
+
 // One implementation per provider (CLAUDE.md rule #5) — the checkout action
 // (src/app/(storefront)/checkout/actions.ts) calls only this interface,
 // never a provider's SDK/API directly outside that provider's own file.

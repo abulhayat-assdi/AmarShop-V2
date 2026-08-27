@@ -1,4 +1,9 @@
-import type { PaymentAdapter, PaymentInitiationParams, PaymentInitiationResult } from "./adapter";
+import type {
+  PaymentAdapter,
+  PaymentInitiationParams,
+  PaymentInitiationResult,
+  SslcommerzConfig,
+} from "./adapter";
 
 const SANDBOX_URL = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php";
 const LIVE_URL = "https://securepay.sslcommerz.com/gwprocess/v4/api.php";
@@ -11,9 +16,8 @@ type SessionApiResponse = {
 
 // Built against SSLCommerz's published Session API contract
 // (https://developer.sslcommerz.com/doc/v4/) — NOT yet exercised against a
-// live sandbox, since no SSLCOMMERZ_* credentials exist in this
-// environment. Verify this end to end the first time real credentials are
-// added, before trusting it in production.
+// live sandbox. Credentials are per-store (store_payment_settings, resolved
+// via src/lib/payments/settings.ts), passed to the constructor.
 //
 // This is the outbound half (create a session, redirect to
 // GatewayPageURL). The inbound confirmation — IPN listener + Order
@@ -21,18 +25,16 @@ type SessionApiResponse = {
 // src/lib/payments/sslcommerz-confirm.ts (never trust the browser's
 // redirect back to success_url alone to mean money moved).
 export class SslcommerzAdapter implements PaymentAdapter {
-  async initiate(params: PaymentInitiationParams): Promise<PaymentInitiationResult> {
-    const storeId = process.env.SSLCOMMERZ_STORE_ID;
-    const storePassword = process.env.SSLCOMMERZ_STORE_PASSWORD;
+  constructor(private readonly config: SslcommerzConfig | null) {}
 
-    if (!storeId || !storePassword) {
+  async initiate(params: PaymentInitiationParams): Promise<PaymentInitiationResult> {
+    if (!this.config) {
       throw new Error(
         "Online payment isn't set up yet for this store — choose Cash on Delivery, or contact the merchant."
       );
     }
-
-    const isSandbox = process.env.SSLCOMMERZ_IS_SANDBOX !== "false";
-    const endpoint = isSandbox ? SANDBOX_URL : LIVE_URL;
+    const { storeId, storePassword, sandbox } = this.config;
+    const endpoint = sandbox ? SANDBOX_URL : LIVE_URL;
 
     // cus_city/cus_postcode are best-effort — our checkout only collects a
     // single free-text address (matching SITE_STRUCTURE.md), not the

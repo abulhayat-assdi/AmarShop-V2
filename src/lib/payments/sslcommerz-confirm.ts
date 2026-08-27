@@ -2,22 +2,16 @@ import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { and, eq } from "drizzle-orm";
 import { withStoreContext } from "@/db/context";
 import { payments } from "@/db/schema";
+import { getSslcommerzConfig } from "./settings";
 
 // Inbound half of the SSLCommerz integration — the trusted confirmation
 // (PROJECT_PLAN.md §5: never trust the browser redirect). The IPN listener
 // and the success-return handler both call confirmSslcommerzPayment(); the
 // Order Validation API is the only thing that flips payments.status.
+// Credentials are per-store (store_payment_settings).
 
 const SANDBOX_BASE = "https://sandbox.sslcommerz.com";
 const LIVE_BASE = "https://securepay.sslcommerz.com";
-
-function creds() {
-  return {
-    storeId: process.env.SSLCOMMERZ_STORE_ID ?? "",
-    storePassword: process.env.SSLCOMMERZ_STORE_PASSWORD ?? "",
-    sandbox: process.env.SSLCOMMERZ_IS_SANDBOX !== "false",
-  };
-}
 
 function md5(input: string): string {
   return createHash("md5").update(input).digest("hex");
@@ -52,8 +46,10 @@ export function buildSignatureBase(
 // Proves the IPN/return POST really came from SSLCommerz. A false result
 // is logged by the caller but doesn't block confirmation — the Order
 // Validation call (with our own credentials) is the real gate.
-export function verifyIpnSignature(fields: Record<string, string>): boolean {
-  const { storePassword } = creds();
+export function verifyIpnSignature(
+  fields: Record<string, string>,
+  storePassword: string
+): boolean {
   if (!storePassword) return false;
   const base = buildSignatureBase(fields, storePassword);
   if (!base) return false;
@@ -76,14 +72,16 @@ type ValidationResponse = {
   bank_tran_id?: string;
 };
 
-async function callValidator(valId: string): Promise<ValidationResponse> {
-  const { storeId, storePassword, sandbox } = creds();
+async function callValidator(
+  valId: string,
+  cfg: { storeId: string; storePassword: string; sandbox: boolean }
+): Promise<ValidationResponse> {
   const url =
-    `${sandbox ? SANDBOX_BASE : LIVE_BASE}/validator/api/validationserverAPI.php?` +
+    `${cfg.sandbox ? SANDBOX_BASE : LIVE_BASE}/validator/api/validationserverAPI.php?` +
     new URLSearchParams({
       val_id: valId,
-      store_id: storeId,
-      store_passwd: storePassword,
+      store_id: cfg.storeId,
+      store_passwd: cfg.storePassword,
       format: "json",
       v: "1",
     }).toString();
@@ -122,9 +120,11 @@ export async function confirmSslcommerzPayment(input: {
   tranId: string;
   valId: string | null;
 }): Promise<ConfirmResult> {
-  const { storeId: envStoreId, storePassword } = creds();
-  if (!envStoreId || !storePassword) {
-    console.warn("[sslcommerz] confirmation skipped — SSLCOMMERZ_STORE_ID / _PASSWORD not set");
+  const cfg = await getSslcommerzConfig(input.storeId);
+  if (!cfg) {
+    console.warn(
+      `[sslcommerz] confirmation skipped for store ${input.storeId} — no payment settings`
+    );
     return "ignored";
   }
 
@@ -152,7 +152,7 @@ export async function confirmSslcommerzPayment(input: {
     return "failed";
   }
 
-  const data = await callValidator(input.valId);
+  const data = await callValidator(input.valId, cfg);
 
   const accepted =
     (data.status === "VALID" || data.status === "VALIDATED") &&

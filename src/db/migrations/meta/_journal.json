@@ -64,6 +64,13 @@
       "when": 1787832044626,
       "tag": "0008_add_payment_gateway_ref",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787835665516,
+      "tag": "0009_add_payment_settings",
+      "breakpoints": true
     }
   ]
 }

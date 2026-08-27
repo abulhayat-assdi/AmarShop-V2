@@ -14,6 +14,7 @@ const NAV: AdminNavItem[] = [
   { href: "/categories", labelKey: "admin.nav.categories" },
   { href: "/delivery-zones", labelKey: "admin.nav.deliveryZones" },
   { href: "/courier-settings", labelKey: "admin.nav.courierSettings" },
+  { href: "/payment-settings", labelKey: "admin.nav.paymentSettings" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

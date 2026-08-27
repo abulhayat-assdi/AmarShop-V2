@@ -9,6 +9,7 @@ import { getCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { carts, cartItems, productVariants, products, deliveryZones } from "@/db/schema";
 import { getPaymentAdapter } from "@/lib/payments";
+import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId";
@@ -131,7 +132,9 @@ export async function placeOrder(
     // note. tranId is generated up front so every callback URL (and the
     // payments.transactionId column) can reference it before the order
     // row exists.
-    const adapter = getPaymentAdapter(paymentMethod);
+    const sslConfig =
+      paymentMethod === "sslcommerz" ? await getSslcommerzConfig(store.id) : null;
+    const adapter = getPaymentAdapter(paymentMethod, sslConfig);
     const initiation = await adapter.initiate({
       tranId,
       amount: total,

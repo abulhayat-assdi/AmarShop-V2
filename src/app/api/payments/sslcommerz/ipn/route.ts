@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentStore } from "@/lib/tenant/current";
+import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { confirmSslcommerzPayment, verifyIpnSignature } from "@/lib/payments/sslcommerz-confirm";
 
 // SSLCommerz's server-to-server notification. Configured as ipn_url on the
@@ -24,18 +25,24 @@ export async function POST(req: Request) {
   const tranId = fields.tran_id;
   if (!tranId) return new NextResponse("missing tran_id", { status: 400 });
 
-  if (!verifyIpnSignature(fields)) {
-    console.warn(`[sslcommerz ipn] signature check failed for tran ${tranId}`);
-    // Not fatal — the Order Validation call (with our credentials) is the
-    // real gate; a forged val_id fails validation.
-  }
-
   const resolvedStore = await getCurrentStore();
   const storeId =
     resolvedStore?.id ?? (UUID_RE.test(fields.value_a ?? "") ? fields.value_a : null);
   if (!storeId) {
     console.warn(`[sslcommerz ipn] could not resolve store for tran ${tranId}`);
     return new NextResponse("unknown store", { status: 400 });
+  }
+
+  const cfg = await getSslcommerzConfig(storeId);
+  if (!cfg) {
+    console.warn(`[sslcommerz ipn] store ${storeId} has no payment settings — ignoring`);
+    return new NextResponse("not configured", { status: 200 });
+  }
+
+  if (!verifyIpnSignature(fields, cfg.storePassword)) {
+    console.warn(`[sslcommerz ipn] signature check failed for tran ${tranId}`);
+    // Not fatal — the Order Validation call (with our credentials) is the
+    // real gate; a forged val_id fails validation.
   }
 
   try {

@@ -93,6 +93,7 @@ export const en = {
       categories: "Categories",
       deliveryZones: "Delivery Zones",
       courierSettings: "Courier Settings",
+      paymentSettings: "Payment Settings",
     },
     shell: {
       viewStore: "View Store",
@@ -304,6 +305,17 @@ export const en = {
       leaveBlank: "•••• saved — leave blank to keep",
       saveSettings: "Save settings",
       settingsSaved: "Courier settings saved.",
+    },
+    payment: {
+      title: "Payment Settings",
+      intro:
+        "Add your payment gateway's API credentials. Online payment at checkout uses these — Cash on Delivery always works and needs no setup. Credentials are stored encrypted and never shown back.",
+      sandbox: "Sandbox / test mode",
+      credentials: "{gateway} credentials",
+      saved: "saved",
+      leaveBlank: "•••• saved — leave blank to keep",
+      saveSettings: "Save settings",
+      settingsSaved: "Payment settings saved.",
     },
     login: {
       signIn: "Sign in",
