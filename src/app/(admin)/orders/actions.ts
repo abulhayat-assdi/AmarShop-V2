@@ -1,10 +1,20 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
+import { and, eq, inArray } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
-import { orders, orderStatusEvents, payments } from "@/db/schema";
+import {
+  orders,
+  orderStatusEvents,
+  payments,
+  products,
+  productVariants,
+  deliveryZones,
+} from "@/db/schema";
+import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
 import { nextStatus } from "./status-pipeline";
 
 // Bound with (orderId) from the detail page's buttons — see
@@ -79,4 +89,150 @@ export async function markPaymentReceived(orderId: string) {
   );
 
   revalidatePath(`/orders/${orderId}`);
+}
+
+// ---- manual (phone / walk-in) order entry — src/app/(admin)/orders/create ----
+
+export type ManualOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "lines";
+export type ManualOrderState = { error?: string; field?: ManualOrderField };
+
+type RequestedLine = { variantId: string; quantity: number };
+
+function parseLines(raw: string): RequestedLine[] | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const lines: RequestedLine[] = [];
+  for (const entry of parsed) {
+    const variantId = (entry as { variantId?: unknown })?.variantId;
+    const quantity = (entry as { quantity?: unknown })?.quantity;
+    if (typeof variantId !== "string" || !variantId) return null;
+    if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1) return null;
+    lines.push({ variantId, quantity });
+  }
+  return lines;
+}
+
+export async function createManualOrder(
+  _prevState: ManualOrderState,
+  formData: FormData
+): Promise<ManualOrderState> {
+  const session = await requireStaffSession();
+  const { storeId } = session.user;
+
+  const customerName = String(formData.get("name") ?? "").trim();
+  const customerPhone = String(formData.get("phone") ?? "").trim();
+  const customerAddress = String(formData.get("address") ?? "").trim();
+  const customerEmail = String(formData.get("email") ?? "").trim() || null;
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const deliveryZoneId = String(formData.get("deliveryZoneId") ?? "").trim();
+  const alreadyPaid = formData.get("alreadyPaid") === "on";
+
+  if (!customerName) return { error: "Customer name is required.", field: "name" };
+  if (!BD_PHONE_PATTERN.test(customerPhone)) {
+    return { error: "Enter a valid Bangladeshi mobile number (e.g. 017XXXXXXXX).", field: "phone" };
+  }
+  if (!customerAddress) return { error: "Delivery address is required.", field: "address" };
+  if (!deliveryZoneId) return { error: "Select a delivery zone.", field: "deliveryZoneId" };
+
+  const requested = parseLines(String(formData.get("lines") ?? ""));
+  if (!requested) return { error: "Add at least one product to the order.", field: "lines" };
+
+  let orderId: string;
+  try {
+    orderId = await withStoreContext(storeId, async (tx) => {
+      const variantRows = await tx
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          price: productVariants.price,
+          discountedPrice: productVariants.discountedPrice,
+          productName: products.name,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(
+          and(
+            eq(productVariants.storeId, storeId),
+            eq(products.status, "active"),
+            inArray(
+              productVariants.id,
+              requested.map((line) => line.variantId)
+            )
+          )
+        );
+      const byId = new Map(variantRows.map((row) => [row.id, row]));
+
+      const lines: OrderLine[] = [];
+      for (const line of requested) {
+        const variant = byId.get(line.variantId);
+        if (!variant) {
+          throw Object.assign(new Error("One of the selected products is no longer available."), {
+            isBadLine: true,
+          });
+        }
+        lines.push({
+          variantId: variant.id,
+          productName: variant.productName,
+          sku: variant.sku,
+          unitPrice: String(variant.discountedPrice ?? variant.price),
+          quantity: line.quantity,
+        });
+      }
+
+      const [zone] = await tx
+        .select()
+        .from(deliveryZones)
+        .where(and(eq(deliveryZones.storeId, storeId), eq(deliveryZones.id, deliveryZoneId)))
+        .limit(1);
+      if (!zone) {
+        throw Object.assign(new Error("That delivery zone no longer exists."), {
+          isInvalidZone: true,
+        });
+      }
+
+      const subtotal = lines.reduce(
+        (sum, line) => sum + Number(line.unitPrice) * line.quantity,
+        0
+      );
+      const deliveryCharge = Number(zone.charge);
+
+      const order = await createOrderRecords(tx, {
+        storeId,
+        cartId: null,
+        lines,
+        deliveryZoneId: zone.id,
+        deliveryCharge,
+        subtotal,
+        total: subtotal + deliveryCharge,
+        customerName,
+        customerPhone,
+        customerAddress,
+        customerEmail,
+        notes,
+        paymentMethod: "cod",
+        paymentStatus: alreadyPaid ? "paid" : "pending",
+        tranId: randomUUID(),
+      });
+      return order.id;
+    });
+  } catch (err) {
+    if ((err as { isBadLine?: boolean } | null)?.isBadLine) {
+      return { error: (err as Error).message, field: "lines" };
+    }
+    if ((err as { isInvalidZone?: boolean } | null)?.isInvalidZone) {
+      return { error: (err as Error).message, field: "deliveryZoneId" };
+    }
+    if ((err as { isOutOfStock?: boolean } | null)?.isOutOfStock) {
+      return { error: (err as Error).message, field: "lines" };
+    }
+    throw err;
+  }
+
+  revalidatePath("/orders");
+  redirect(`/orders/${orderId}`);
 }

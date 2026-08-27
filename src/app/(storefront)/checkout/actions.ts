@@ -3,29 +3,16 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
-import {
-  carts,
-  cartItems,
-  productVariants,
-  products,
-  deliveryZones,
-  orders,
-  orderItems,
-  orderStatusEvents,
-  payments,
-  invoices,
-} from "@/db/schema";
+import { carts, cartItems, productVariants, products, deliveryZones } from "@/db/schema";
 import { getPaymentAdapter } from "@/lib/payments";
-import { allocateInvoiceNumber } from "@/lib/invoices/number";
+import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId";
 export type PlaceOrderState = { error?: string; field?: PlaceOrderField };
-
-const BD_PHONE_PATTERN = /^01[3-9]\d{8}$/;
 
 type CartLine = {
   variantId: string;
@@ -36,103 +23,6 @@ type CartLine = {
   quantity: number;
   available: number;
 };
-
-async function createOrderRecords(
-  tx: Parameters<Parameters<typeof withStoreContext>[1]>[0],
-  params: {
-    storeId: string;
-    cartId: string;
-    items: CartLine[];
-    deliveryZoneId: string;
-    deliveryCharge: number;
-    subtotal: number;
-    total: number;
-    customerName: string;
-    customerPhone: string;
-    customerAddress: string;
-    customerEmail: string | null;
-    notes: string | null;
-    paymentMethod: "cod" | "sslcommerz";
-    tranId: string;
-  }
-) {
-  const [order] = await tx
-    .insert(orders)
-    .values({
-      storeId: params.storeId,
-      customerName: params.customerName,
-      customerPhone: params.customerPhone,
-      customerAddress: params.customerAddress,
-      customerEmail: params.customerEmail,
-      deliveryZoneId: params.deliveryZoneId,
-      deliveryCharge: params.deliveryCharge.toFixed(2),
-      subtotal: params.subtotal.toFixed(2),
-      total: params.total.toFixed(2),
-      paymentMethod: params.paymentMethod,
-      notes: params.notes,
-    })
-    .returning();
-
-  for (const item of params.items) {
-    const unitPrice = Number(item.discountedPrice ?? item.price);
-
-    await tx.insert(orderItems).values({
-      storeId: params.storeId,
-      orderId: order.id,
-      productVariantId: item.variantId,
-      productName: item.productName,
-      sku: item.sku,
-      unitPrice: unitPrice.toFixed(2),
-      quantity: item.quantity,
-      lineTotal: (unitPrice * item.quantity).toFixed(2),
-    });
-
-    // Atomic, re-checked decrement — protects against a concurrent order
-    // selling the last unit between this checkout's earlier stock check
-    // and this exact write. If nothing matched, stock ran out in that
-    // window; throwing here rolls back the whole order transaction.
-    const [decremented] = await tx
-      .update(productVariants)
-      .set({ quantity: sql`${productVariants.quantity} - ${item.quantity}`, updatedAt: new Date() })
-      .where(and(eq(productVariants.id, item.variantId), gte(productVariants.quantity, item.quantity)))
-      .returning({ id: productVariants.id });
-
-    if (!decremented) {
-      throw Object.assign(new Error(`"${item.productName}" just sold out — please try again.`), {
-        isOutOfStock: true,
-      });
-    }
-  }
-
-  await tx.insert(orderStatusEvents).values({
-    storeId: params.storeId,
-    orderId: order.id,
-    status: "placed",
-  });
-
-  await tx.insert(payments).values({
-    storeId: params.storeId,
-    orderId: order.id,
-    method: params.paymentMethod,
-    amount: params.total.toFixed(2),
-    transactionId: params.tranId,
-  });
-
-  // Cheap "pending" row only — the PDF is rendered lazily on first download
-  // (src/lib/invoices/service.ts), never in the request path.
-  await tx.insert(invoices).values({
-    storeId: params.storeId,
-    orderId: order.id,
-    number: await allocateInvoiceNumber(tx, params.storeId),
-  });
-
-  await tx
-    .update(carts)
-    .set({ status: "converted", updatedAt: new Date() })
-    .where(eq(carts.id, params.cartId));
-
-  return order;
-}
 
 export async function placeOrder(
   _prevState: PlaceOrderState,
@@ -222,8 +112,16 @@ export async function placeOrder(
       return { cart, items, zone };
     });
 
-    const subtotal = items.reduce(
-      (sum, item) => sum + Number(item.discountedPrice ?? item.price) * item.quantity,
+    const lines: OrderLine[] = items.map((item) => ({
+      variantId: item.variantId,
+      productName: item.productName,
+      sku: item.sku,
+      unitPrice: String(item.discountedPrice ?? item.price),
+      quantity: item.quantity,
+    }));
+
+    const subtotal = lines.reduce(
+      (sum, line) => sum + Number(line.unitPrice) * line.quantity,
       0
     );
     const deliveryCharge = Number(zone.charge);
@@ -251,7 +149,7 @@ export async function placeOrder(
       createOrderRecords(tx, {
         storeId: store.id,
         cartId: cart.id,
-        items,
+        lines,
         deliveryZoneId: zone.id,
         deliveryCharge,
         subtotal,

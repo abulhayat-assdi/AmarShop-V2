@@ -57,7 +57,15 @@ export default async function OrdersPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Orders</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Orders</h1>
+        <Link
+          href="/orders/create"
+          className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
+        >
+          Add order
+        </Link>
+      </div>
       <nav className="flex flex-wrap gap-1 border-b text-sm">
         {STATUS_TABS.map((tab) => (
           <Link
