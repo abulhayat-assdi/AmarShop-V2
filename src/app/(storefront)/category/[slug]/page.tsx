@@ -5,6 +5,7 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { ProductCard } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "@/lib/products/media";
+import { getTranslator } from "@/lib/i18n/server";
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -47,12 +48,13 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     store.id,
     items.map((item) => item.id)
   );
+  const { t } = await getTranslator(store.locale);
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">{category.name}</h1>
       {items.length === 0 ? (
-        <p className="text-gray-500">No products in this category yet.</p>
+        <p className="text-gray-500">{t("category.empty")}</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {items.map((item) => (

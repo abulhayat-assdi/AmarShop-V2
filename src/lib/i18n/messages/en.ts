@@ -1,0 +1,86 @@
+// The English source of truth for storefront copy. bn.ts mirrors this
+// shape. Keys are grouped by surface; {placeholders} are filled by the
+// translator.
+
+export const en = {
+  common: {
+    subtotal: "Subtotal",
+    total: "Total",
+    delivery: "Delivery",
+    outOfStock: "Out of stock",
+  },
+  nav: {
+    search: "Search",
+    cart: "Cart ({count})",
+  },
+  home: {
+    categories: "Categories",
+    newArrivals: "New Arrivals",
+    noProducts: "No products yet.",
+  },
+  category: {
+    empty: "No products in this category yet.",
+  },
+  pdp: {
+    inStock: "{count} in stock",
+    addToCart: "Add to Cart",
+    adding: "Adding…",
+    addedToCart: "Added to cart.",
+    quantity: "Quantity",
+  },
+  cart: {
+    title: "Your Cart",
+    empty: "Your cart is empty.",
+    each: "{price} each",
+    onlyNInStock: "Only {count} in stock",
+    decrease: "Decrease quantity",
+    increase: "Increase quantity",
+    remove: "Remove",
+    proceedToCheckout: "Proceed to Checkout",
+  },
+  checkout: {
+    title: "Checkout",
+    orderSummary: "Order Summary",
+    fullName: "Full Name",
+    phone: "Phone Number",
+    phonePlaceholder: "01XXXXXXXXX",
+    address: "Complete Address",
+    emailOptional: "Email (optional, for payment receipt)",
+    delivery: "Delivery",
+    noZones:
+      "No delivery zones configured yet — the merchant needs to add one before checkout can complete.",
+    paymentMethod: "Payment Method",
+    cod: "Cash on Delivery",
+    onlinePayment: "Online Payment — bKash, Nagad, DBBL Nexus, Visa, Mastercard",
+    onlineHint: "You'll be redirected to a secure payment page to complete this.",
+    orderNotes: "Order Notes (optional)",
+    placeOrder: "Place Order",
+    placingOrder: "Placing order…",
+  },
+  search: {
+    title: "Search products",
+    placeholder: "Search products…",
+    submit: "Search",
+    shopByCategory: "Shop by category",
+    showing: "Showing {shown} of {total} results for “{query}”",
+    showingOne: "Showing {shown} of {total} result for “{query}”",
+    loadMore: "Load More Products",
+    noResults: "No products found for “{query}”.",
+    backToSearch: "Back to search",
+    sort: "Sort",
+    sortRelevance: "Relevance",
+    sortPriceAsc: "Price: Low to High",
+    sortPriceDesc: "Price: High to Low",
+    sortNewest: "Newest",
+  },
+  confirmation: {
+    thankYou: "Thank you, {name}!",
+    placed: "Your order has been placed.",
+    payOnDelivery: "Pay on delivery.",
+    paymentConfirmed: "Payment confirmed.",
+    paymentPending: "Payment is being confirmed.",
+    orderSummary: "Order Summary",
+    deliveringTo: "Delivering to: {address}",
+    phone: "Phone: {phone}",
+  },
+};

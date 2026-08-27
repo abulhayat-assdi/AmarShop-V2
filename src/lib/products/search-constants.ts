@@ -5,13 +5,6 @@
 export const SEARCH_SORTS = ["relevance", "price_asc", "price_desc", "newest"] as const;
 export type SearchSort = (typeof SEARCH_SORTS)[number];
 
-export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
-  relevance: "Relevance",
-  price_asc: "Price: Low to High",
-  price_desc: "Price: High to Low",
-  newest: "Newest",
-};
-
 export function parseSort(raw: string | undefined): SearchSort {
   return (SEARCH_SORTS as readonly string[]).includes(raw ?? "")
     ? (raw as SearchSort)

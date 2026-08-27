@@ -5,6 +5,7 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { getProductMedia } from "@/lib/products/media";
 import { ProductMedia } from "@/components/product-media";
+import { getTranslator } from "@/lib/i18n/server";
 import { AddToCartForm } from "./AddToCartForm";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -40,6 +41,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const media = await getProductMedia(store.id, product.productId);
   const primary = media[0] ?? null;
+  const { t } = await getTranslator(store.locale);
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -71,7 +73,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
         <p className="text-sm text-gray-600">
-          {product.quantity > 0 ? `${product.quantity} in stock` : "Out of stock"}
+          {product.quantity > 0
+            ? t("pdp.inStock", { count: product.quantity })
+            : t("common.outOfStock")}
         </p>
         {product.description && <p className="text-gray-700">{product.description}</p>}
         <AddToCartForm productVariantId={product.variantId} maxQuantity={product.quantity} />

@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslator } from "@/components/i18n-provider";
 
 // Not live search — submitting navigates to the bookmarkable
 // /search/<query> URL (SITE_STRUCTURE.md Part C). Kept small and
 // self-contained so a later slice can reuse it in the storefront header.
 export function SearchBox({ defaultValue = "" }: { defaultValue?: string }) {
   const router = useRouter();
+  const t = useTranslator();
   const [value, setValue] = useState(defaultValue);
 
   function submit(e: React.FormEvent) {
@@ -24,15 +26,15 @@ export function SearchBox({ defaultValue = "" }: { defaultValue?: string }) {
         name="q"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search products…"
-        aria-label="Search products"
+        placeholder={t("search.placeholder")}
+        aria-label={t("search.title")}
         className="flex-1 rounded border border-gray-300 px-3 py-2"
       />
       <button
         type="submit"
         className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
       >
-        Search
+        {t("search.submit")}
       </button>
     </form>
   );

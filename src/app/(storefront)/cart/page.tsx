@@ -5,6 +5,7 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { getCart } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { cartItems, productVariants, products } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 import { updateCartItemQuantity, removeCartItem } from "./actions";
 
 export default async function CartPage() {
@@ -37,11 +38,13 @@ export default async function CartPage() {
     return sum + unitPrice * item.quantity;
   }, 0);
 
+  const { t } = await getTranslator(store.locale);
+
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Your Cart</h1>
+      <h1 className="text-2xl font-semibold">{t("cart.title")}</h1>
       {items.length === 0 ? (
-        <p className="text-gray-500">Your cart is empty.</p>
+        <p className="text-gray-500">{t("cart.empty")}</p>
       ) : (
         <>
           <div className="flex flex-col gap-4">
@@ -51,9 +54,13 @@ export default async function CartPage() {
                   <Link href={`/product/${item.productSlug}`} className="font-medium hover:underline">
                     {item.productName}
                   </Link>
-                  <span className="text-sm text-gray-500">৳{item.discountedPrice ?? item.price} each</span>
+                  <span className="text-sm text-gray-500">
+                    {t("cart.each", { price: `৳${item.discountedPrice ?? item.price}` })}
+                  </span>
                   {item.quantity >= item.available && (
-                    <span className="text-xs text-amber-600">Only {item.available} in stock</span>
+                    <span className="text-xs text-amber-600">
+                      {t("cart.onlyNInStock", { count: item.available })}
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -61,7 +68,7 @@ export default async function CartPage() {
                     <button
                       type="submit"
                       className="rounded border px-2 py-1"
-                      aria-label="Decrease quantity"
+                      aria-label={t("cart.decrease")}
                     >
                       −
                     </button>
@@ -72,14 +79,14 @@ export default async function CartPage() {
                       type="submit"
                       disabled={item.quantity >= item.available}
                       className="rounded border px-2 py-1 disabled:opacity-40"
-                      aria-label="Increase quantity"
+                      aria-label={t("cart.increase")}
                     >
                       +
                     </button>
                   </form>
                   <form action={removeCartItem.bind(null, item.id)}>
                     <button type="submit" className="ml-2 text-sm text-red-600 underline">
-                      Remove
+                      {t("cart.remove")}
                     </button>
                   </form>
                 </div>
@@ -87,14 +94,14 @@ export default async function CartPage() {
             ))}
           </div>
           <div className="flex justify-between text-lg font-semibold">
-            <span>Subtotal</span>
+            <span>{t("common.subtotal")}</span>
             <span>৳{subtotal.toFixed(2)}</span>
           </div>
           <Link
             href="/checkout"
             className="self-start rounded bg-black px-4 py-2 text-white hover:bg-gray-800"
           >
-            Proceed to Checkout
+            {t("cart.proceedToCheckout")}
           </Link>
         </>
       )}

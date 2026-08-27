@@ -5,7 +5,7 @@ import type { ProductCardData } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "./media";
 import type { SearchSort } from "./search-constants";
 
-export { SEARCH_SORTS, SEARCH_SORT_LABELS, parseSort, type SearchSort } from "./search-constants";
+export { SEARCH_SORTS, parseSort, type SearchSort } from "./search-constants";
 
 // Escape LIKE/ILIKE metacharacters so a term like "50%" is matched
 // literally. `\` is Postgres's default ESCAPE for ILIKE.

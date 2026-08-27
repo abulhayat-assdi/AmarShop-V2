@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { ProductCard } from "@/components/storefront-chrome";
 import { searchProducts, parseSort } from "@/lib/products/search";
+import { getTranslator } from "@/lib/i18n/server";
 import { SearchBox } from "../SearchBox";
 import { SortSelect } from "./SortSelect";
 
@@ -41,6 +42,7 @@ export default async function SearchResultsPage({
       : PAGE_SIZE;
 
   const { items, total } = await searchProducts(store.id, { query: q, sort, limit: show });
+  const { t } = await getTranslator(store.locale);
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,16 +50,20 @@ export default async function SearchResultsPage({
 
       {total === 0 ? (
         <div className="flex flex-col gap-2 text-gray-600">
-          <p>No products found for “{q}”.</p>
+          <p>{t("search.noResults", { query: q })}</p>
           <Link href="/search" className="text-sm underline">
-            Back to search
+            {t("search.backToSearch")}
           </Link>
         </div>
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-gray-600">
-              Showing {items.length} of {total} result{total === 1 ? "" : "s"} for “{q}”
+              {t(total === 1 ? "search.showingOne" : "search.showing", {
+                shown: items.length,
+                total,
+                query: q,
+              })}
             </p>
             <SortSelect encodedQuery={encodedQuery} sort={sort} />
           </div>
@@ -74,7 +80,7 @@ export default async function SearchResultsPage({
               scroll={false}
               className="self-center rounded border px-4 py-2 text-sm hover:bg-gray-50"
             >
-              Load More Products
+              {t("search.loadMore")}
             </Link>
           )}
         </>

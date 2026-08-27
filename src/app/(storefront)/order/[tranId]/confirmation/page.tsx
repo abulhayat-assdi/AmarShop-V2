@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 
 // Reached from both COD's immediate redirect and SSLCommerz's success_url.
 // Looked up by tranId (payments.transactionId), generated before the order
@@ -45,21 +46,26 @@ export default async function OrderConfirmationPage({
 
   if (!result) notFound();
   const { order, items, payment } = result;
+  const { t } = await getTranslator(store.locale);
+
+  const paymentLine =
+    payment.method === "cod"
+      ? t("confirmation.payOnDelivery")
+      : payment.status === "paid"
+        ? t("confirmation.paymentConfirmed")
+        : t("confirmation.paymentPending");
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Thank you, {order.customerName}!</h1>
+      <h1 className="text-2xl font-semibold">
+        {t("confirmation.thankYou", { name: order.customerName })}
+      </h1>
       <p className="text-gray-600">
-        Your order has been placed.{" "}
-        {payment.method === "cod"
-          ? "Pay on delivery."
-          : payment.status === "paid"
-            ? "Payment confirmed."
-            : "Payment is being confirmed."}
+        {t("confirmation.placed")} {paymentLine}
       </p>
 
       <div className="rounded border p-4">
-        <h2 className="mb-2 font-semibold">Order Summary</h2>
+        <h2 className="mb-2 font-semibold">{t("confirmation.orderSummary")}</h2>
         <ul className="flex flex-col gap-1 text-sm">
           {items.map((item) => (
             <li key={item.id} className="flex justify-between">
@@ -72,23 +78,23 @@ export default async function OrderConfirmationPage({
         </ul>
         <div className="mt-3 flex flex-col gap-1 border-t pt-3 text-sm">
           <div className="flex justify-between">
-            <span>Subtotal</span>
+            <span>{t("common.subtotal")}</span>
             <span>৳{order.subtotal}</span>
           </div>
           <div className="flex justify-between">
-            <span>Delivery</span>
+            <span>{t("common.delivery")}</span>
             <span>৳{order.deliveryCharge}</span>
           </div>
           <div className="flex justify-between text-base font-semibold">
-            <span>Total</span>
+            <span>{t("common.total")}</span>
             <span>৳{order.total}</span>
           </div>
         </div>
       </div>
 
       <div className="text-sm text-gray-600">
-        <p>Delivering to: {order.customerAddress}</p>
-        <p>Phone: {order.customerPhone}</p>
+        <p>{t("confirmation.deliveringTo", { address: order.customerAddress })}</p>
+        <p>{t("confirmation.phone", { phone: order.customerPhone })}</p>
       </div>
 
       <a

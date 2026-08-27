@@ -1,13 +1,16 @@
 import Link from "next/link";
 import type { Store, Category } from "@/db/schema";
 import { ProductMedia } from "@/components/product-media";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { getTranslator } from "@/lib/i18n/server";
 
 // Shared by both src/app/(storefront)/layout.tsx and the storefront branch
 // of src/app/page.tsx (the root path is reached from both a resolved store
 // AND the platform root, so it can't live inside the (storefront) route
 // group's own layout — see the plan's routing note). Plain, data-in
-// components so neither caller re-fetches on the other's behalf.
-export function StorefrontHeader({
+// components so neither caller re-fetches on the other's behalf. Async:
+// each resolves the locale from its own store.locale + the cookie.
+export async function StorefrontHeader({
   store,
   categories,
   cartItemCount,
@@ -16,24 +19,26 @@ export function StorefrontHeader({
   categories: Category[];
   cartItemCount: number;
 }) {
+  const { locale, t } = await getTranslator(store.locale);
   return (
     <header className="border-b">
-      <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 p-4">
         <Link href="/" className="text-lg font-semibold">
           {store.name}
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
+        <nav className="flex flex-wrap items-center gap-4 text-sm">
           {categories.map((category) => (
             <Link key={category.id} href={`/category/${category.slug}`} className="hover:underline">
               {category.name}
             </Link>
           ))}
           <Link href="/search" className="hover:underline">
-            Search
+            {t("nav.search")}
           </Link>
           <Link href="/cart" className="hover:underline">
-            Cart ({cartItemCount})
+            {t("nav.cart", { count: cartItemCount })}
           </Link>
+          <LocaleToggle current={locale} />
         </nav>
       </div>
     </header>

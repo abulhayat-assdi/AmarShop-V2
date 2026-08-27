@@ -7,6 +7,8 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "@/lib/products/media";
+import { I18nProvider } from "@/components/i18n-provider";
+import { getTranslator } from "@/lib/i18n/server";
 import { signOutAction } from "./actions";
 
 // The one URL shared between the storefront and the platform root (App
@@ -37,14 +39,15 @@ export default async function Home() {
       productRows.map((product) => product.id)
     );
     const cartItemCount = await getCartItemCount(store.id);
+    const { locale, messages, t } = await getTranslator(store.locale);
 
     return (
-      <>
+      <I18nProvider locale={locale} messages={messages}>
         <StorefrontHeader store={store} categories={categoryRows} cartItemCount={cartItemCount} />
         <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4">
           {categoryRows.length > 0 && (
             <section className="flex flex-col gap-4">
-              <h2 className="text-lg font-semibold">Categories</h2>
+              <h2 className="text-lg font-semibold">{t("home.categories")}</h2>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 {categoryRows.map((category) => (
                   <Link
@@ -59,9 +62,9 @@ export default async function Home() {
             </section>
           )}
           <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">New Arrivals</h2>
+            <h2 className="text-lg font-semibold">{t("home.newArrivals")}</h2>
             {productRows.length === 0 ? (
-              <p className="text-gray-500">No products yet.</p>
+              <p className="text-gray-500">{t("home.noProducts")}</p>
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {productRows.map((product) => (
@@ -75,7 +78,7 @@ export default async function Home() {
           </section>
         </main>
         <StorefrontFooter store={store} />
-      </>
+      </I18nProvider>
     );
   }
 

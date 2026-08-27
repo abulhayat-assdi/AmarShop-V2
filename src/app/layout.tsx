@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { I18nProvider } from "@/components/i18n-provider";
+import { getTranslator } from "@/lib/i18n/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,13 +19,21 @@ export const metadata: Metadata = {
   description: "Multi-tenant e-commerce platform for Bangladesh merchants",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Cookie-only at the root — the storefront layout re-provides with the
+  // resolved store.locale for its subtree.
+  const { locale, messages } = await getTranslator();
+
   return (
     <html
-      lang="en"
+      lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <I18nProvider locale={locale} messages={messages}>
+          {children}
+        </I18nProvider>
+      </body>
     </html>
   );
 }

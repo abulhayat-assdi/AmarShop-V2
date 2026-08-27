@@ -4,6 +4,7 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { getCart } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { cartItems, productVariants, products, deliveryZones } from "@/db/schema";
+import { getTranslator } from "@/lib/i18n/server";
 import { CheckoutForm } from "./CheckoutForm";
 
 export default async function CheckoutPage() {
@@ -41,12 +42,13 @@ export default async function CheckoutPage() {
     (sum, item) => sum + Number(item.discountedPrice ?? item.price) * item.quantity,
     0
   );
+  const { t } = await getTranslator(store.locale);
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Checkout</h1>
+      <h1 className="text-2xl font-semibold">{t("checkout.title")}</h1>
       <div className="rounded border p-4">
-        <h2 className="mb-2 font-semibold">Order Summary</h2>
+        <h2 className="mb-2 font-semibold">{t("checkout.orderSummary")}</h2>
         <ul className="flex flex-col gap-1 text-sm">
           {items.map((item) => (
             <li key={item.id} className="flex justify-between">
