@@ -15,11 +15,11 @@ type SessionApiResponse = {
 // environment. Verify this end to end the first time real credentials are
 // added, before trusting it in production.
 //
-// This is only the outbound half (create a session, redirect the customer
-// to GatewayPageURL). Confirming a payment actually completed requires
-// SSLCommerz's IPN listener + Order Validation API — a separate, later
-// slice (never trust the browser's redirect back to success_url alone to
-// mean money moved).
+// This is the outbound half (create a session, redirect to
+// GatewayPageURL). The inbound confirmation — IPN listener + Order
+// Validation API, the only thing that flips payments.status — lives in
+// src/lib/payments/sslcommerz-confirm.ts (never trust the browser's
+// redirect back to success_url alone to mean money moved).
 export class SslcommerzAdapter implements PaymentAdapter {
   async initiate(params: PaymentInitiationParams): Promise<PaymentInitiationResult> {
     const storeId = process.env.SSLCOMMERZ_STORE_ID;
@@ -45,9 +45,13 @@ export class SslcommerzAdapter implements PaymentAdapter {
       total_amount: params.amount.toFixed(2),
       currency: "BDT",
       tran_id: params.tranId,
-      success_url: params.successUrl,
+      success_url: params.returnUrl,
       fail_url: params.failUrl,
       cancel_url: params.cancelUrl,
+      ipn_url: params.ipnUrl,
+      // Echoed back on IPN/return so the notification resolves to a store
+      // even when it doesn't arrive on that store's host.
+      value_a: params.storeId,
       cus_name: params.customerName,
       cus_email: params.customerEmail || `${params.customerPhone}@guest.amarshop.invalid`,
       cus_phone: params.customerPhone,

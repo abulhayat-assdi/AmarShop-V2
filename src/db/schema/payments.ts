@@ -10,9 +10,10 @@ import { paymentMethodEnum, paymentStatusEnum } from "./enums";
 // #3) — never to be confused with or merged into Store.subscription /
 // PlatformInvoice (the merchant-paying-the-platform system, Phase 5).
 //
-// status stays "pending" for both COD (until delivery, no admin UI to flip
-// it yet — later slice) and SSLCommerz (until its IPN listener confirms
-// it — also a later slice, see src/lib/payments/sslcommerz.ts).
+// A COD payment stays "pending" until staff mark it received. An
+// SSLCommerz payment stays "pending" until the IPN listener + Order
+// Validation API confirm it (src/lib/payments/sslcommerz-confirm.ts) —
+// flipping it to "paid" or "failed".
 export const payments = pgTable(
   "payments",
   {
@@ -26,7 +27,12 @@ export const payments = pgTable(
     method: paymentMethodEnum("method").notNull(),
     status: paymentStatusEnum("status").notNull().default("pending"),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    // Our own transaction id (a UUID generated at checkout), passed to the
+    // gateway as tran_id and echoed back on IPN / return.
     transactionId: text("transaction_id"),
+    // The gateway's own reference (SSLCommerz bank_tran_id), captured on
+    // confirmation for reconciliation / refunds.
+    gatewayReference: text("gateway_reference"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

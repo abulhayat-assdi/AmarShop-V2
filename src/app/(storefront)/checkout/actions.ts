@@ -140,7 +140,11 @@ export async function placeOrder(
       customerAddress,
       customerEmail: customerEmail ?? undefined,
       deliveryZoneName: zone.name,
-      successUrl: `${baseUrl}/order/${tranId}/confirmation`,
+      storeId: store.id,
+      // On the store's own host so the handlers can resolve the store via
+      // getCurrentStore(); value_a carries the store id as a fallback.
+      ipnUrl: `${baseUrl}/api/payments/sslcommerz/ipn`,
+      returnUrl: `${baseUrl}/api/payments/sslcommerz/return`,
       failUrl: `${baseUrl}/checkout?error=payment_failed`,
       cancelUrl: `${baseUrl}/checkout?error=payment_canceled`,
     });

@@ -6,10 +6,16 @@ export type PaymentInitiationParams = {
   customerAddress: string;
   // Optional — our checkout form doesn't require an email (matching
   // SITE_STRUCTURE.md's audited checkout), but SSLCommerz's Session API
-  // mandates one. CodAdapter ignores both of these entirely.
+  // mandates one. CodAdapter ignores all of the fields below entirely.
   customerEmail?: string;
   deliveryZoneName?: string;
-  successUrl: string;
+  // The store this order belongs to — echoed back on IPN/return so the
+  // notification can be resolved to a tenant.
+  storeId: string;
+  // Where the gateway sends its server-to-server notification, and where it
+  // redirects the customer after payment. Both on the store's own host.
+  ipnUrl: string;
+  returnUrl: string;
   failUrl: string;
   cancelUrl: string;
 };
