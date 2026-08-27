@@ -28,6 +28,9 @@ export function StorefrontHeader({
               {category.name}
             </Link>
           ))}
+          <Link href="/search" className="hover:underline">
+            Search
+          </Link>
           <Link href="/cart" className="hover:underline">
             Cart ({cartItemCount})
           </Link>
