@@ -31,8 +31,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip static assets and image optimization — tenant resolution never
-    // needs to run for these, and running it would just slow them down.
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    // Skip static assets, image optimization, and uploaded media — tenant
+    // resolution never needs to run for these, and running it would just
+    // slow them down. /uploads is served by a public, store-agnostic route
+    // handler (src/app/uploads/[...key]/route.ts).
+    "/((?!_next/static|_next/image|favicon.ico|uploads/).*)",
   ],
 };

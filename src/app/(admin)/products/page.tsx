@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { products, productVariants, categories } from "@/db/schema";
+import { getPrimaryImageUrls } from "@/lib/products/media";
+import { ProductMedia } from "@/components/product-media";
 
 export default async function ProductsPage() {
   const session = await requireStaffSession();
@@ -23,6 +25,11 @@ export default async function ProductsPage() {
       .where(eq(products.storeId, session.user.storeId))
   );
 
+  const imageUrls = await getPrimaryImageUrls(
+    session.user.storeId,
+    rows.map((row) => row.id)
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -37,6 +44,7 @@ export default async function ProductsPage() {
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b">
+            <th className="py-2" />
             <th className="py-2">Name</th>
             <th className="py-2">Category</th>
             <th className="py-2">Price</th>
@@ -48,13 +56,16 @@ export default async function ProductsPage() {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="py-4 text-gray-500">
+              <td colSpan={7} className="py-4 text-gray-500">
                 No products yet.
               </td>
             </tr>
           ) : (
             rows.map((product) => (
               <tr key={product.id} className="border-b">
+                <td className="py-2">
+                  <ProductMedia item={null} src={imageUrls[product.id] ?? null} className="w-10" />
+                </td>
                 <td className="py-2">{product.name}</td>
                 <td className="py-2 text-gray-500">{product.categoryName ?? "—"}</td>
                 <td className="py-2">৳{product.price}</td>

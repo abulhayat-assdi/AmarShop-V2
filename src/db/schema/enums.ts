@@ -43,3 +43,6 @@ export const paymentStatusEnum = pgEnum("payment_status", [
 // "generated" = PDF rendered and persisted via the storage adapter
 //               (invoices.storage_key is set)
 export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "generated"]);
+
+// A product_media row is one uploaded photo or video (see product-media.ts).
+export const mediaKindEnum = pgEnum("media_kind", ["image", "video"]);

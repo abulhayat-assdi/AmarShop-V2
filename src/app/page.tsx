@@ -6,6 +6,7 @@ import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
+import { getPrimaryImageUrls } from "@/lib/products/media";
 import { signOutAction } from "./actions";
 
 // The one URL shared between the storefront and the platform root (App
@@ -31,6 +32,10 @@ export default async function Home() {
         .orderBy(desc(products.createdAt));
       return { categoryRows, productRows };
     });
+    const imageUrls = await getPrimaryImageUrls(
+      store.id,
+      productRows.map((product) => product.id)
+    );
     const cartItemCount = await getCartItemCount(store.id);
 
     return (
@@ -60,7 +65,10 @@ export default async function Home() {
             ) : (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                 {productRows.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard
+                    key={product.id}
+                    product={{ ...product, imageUrl: imageUrls[product.id] ?? null }}
+                  />
                 ))}
               </div>
             )}

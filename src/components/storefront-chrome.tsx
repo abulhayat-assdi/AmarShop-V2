@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Store, Category } from "@/db/schema";
+import { ProductMedia } from "@/components/product-media";
 
 // Shared by both src/app/(storefront)/layout.tsx and the storefront branch
 // of src/app/page.tsx (the root path is reached from both a resolved store
@@ -52,6 +53,7 @@ export type ProductCardData = {
   name: string;
   price: string;
   discountedPrice: string | null;
+  imageUrl?: string | null;
 };
 
 export function ProductCard({ product }: { product: ProductCardData }) {
@@ -60,7 +62,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       href={`/product/${product.slug}`}
       className="flex flex-col gap-2 rounded border p-3 hover:border-gray-400"
     >
-      <div className="aspect-square rounded bg-gray-100" />
+      <ProductMedia item={null} src={product.imageUrl} alt={product.name} />
       <span className="text-sm font-medium">{product.name}</span>
       {product.discountedPrice ? (
         <span className="text-sm">

@@ -7,6 +7,18 @@ import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { uniqueSlug } from "@/lib/slugify";
+import {
+  countProductMedia,
+  removeProductMedia,
+  storeProductMedia,
+  validateMediaFiles,
+} from "@/lib/products/media";
+
+function formMediaFiles(formData: FormData): { images: File[]; videos: File[] } {
+  const pick = (name: string) =>
+    formData.getAll(name).filter((v): v is File => v instanceof File);
+  return { images: pick("images"), videos: pick("videos") };
+}
 
 export type ProductField = "name" | "categoryId" | "sku" | "price" | "quantity";
 export type ProductFormState = { error?: string; field?: ProductField };
@@ -82,8 +94,15 @@ export async function createProduct(
   const { name, categoryId, brand, description, vatPercent, sku, price, discountedPrice, quantity } =
     parsed.data;
 
+  // Validate media before creating anything — pure type/size/count checks,
+  // so a bad file never leaves a half-made product behind.
+  const newMedia = formMediaFiles(formData);
+  const mediaCheck = validateMediaFiles(newMedia.images, newMedia.videos);
+  if ("error" in mediaCheck) return { error: mediaCheck.error };
+
+  let newProductId: string;
   try {
-    await withStoreContext(session.user.storeId, async (tx) => {
+    newProductId = await withStoreContext(session.user.storeId, async (tx) => {
       if (categoryId) {
         // Confirms the category belongs to THIS store, not just that some
         // category with this id exists somewhere — RLS already guarantees
@@ -130,6 +149,8 @@ export async function createProduct(
         discountedPrice,
         quantity,
       });
+
+      return product.id;
     });
   } catch (err) {
     if (isUniqueViolation(err, "product_variants_store_sku_idx")) {
@@ -141,8 +162,11 @@ export async function createProduct(
     throw err;
   }
 
+  await storeProductMedia(session.user.storeId, newProductId, mediaCheck.ok);
+
   revalidatePath("/products");
-  redirect("/products");
+  // Land on the edit page — that's where media management lives.
+  redirect(`/products/${newProductId}/edit`);
 }
 
 export async function updateProduct(
@@ -155,6 +179,15 @@ export async function updateProduct(
   if ("error" in parsed) return parsed.error;
   const { name, categoryId, brand, description, vatPercent, sku, price, discountedPrice, quantity } =
     parsed.data;
+
+  const newMedia = formMediaFiles(formData);
+  let mediaToStore: { images: File[]; videos: File[] } = { images: [], videos: [] };
+  if (newMedia.images.length > 0 || newMedia.videos.length > 0) {
+    const existing = await countProductMedia(session.user.storeId, productId);
+    const mediaCheck = validateMediaFiles(newMedia.images, newMedia.videos, existing);
+    if ("error" in mediaCheck) return { error: mediaCheck.error };
+    mediaToStore = mediaCheck.ok;
+  }
 
   try {
     await withStoreContext(session.user.storeId, async (tx) => {
@@ -202,6 +235,20 @@ export async function updateProduct(
     throw err;
   }
 
+  if (mediaToStore.images.length > 0 || mediaToStore.videos.length > 0) {
+    await storeProductMedia(session.user.storeId, productId, mediaToStore);
+  }
+
+  revalidatePath(`/products/${productId}/edit`);
   revalidatePath("/products");
   redirect("/products");
+}
+
+// Bound with (productId, mediaId) from the edit form's per-item "Remove"
+// button — same bound-server-action pattern as the order detail page.
+export async function deleteProductMedia(productId: string, mediaId: string) {
+  const session = await requireStaffSession();
+  await removeProductMedia(session.user.storeId, productId, mediaId);
+  revalidatePath(`/products/${productId}/edit`);
+  revalidatePath("/products");
 }

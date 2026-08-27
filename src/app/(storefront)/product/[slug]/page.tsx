@@ -3,6 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
+import { getProductMedia } from "@/lib/products/media";
+import { ProductMedia } from "@/components/product-media";
 import { AddToCartForm } from "./AddToCartForm";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -13,6 +15,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await withStoreContext(store.id, async (tx) => {
     const [row] = await tx
       .select({
+        productId: products.id,
         variantId: productVariants.id,
         name: products.name,
         brand: products.brand,
@@ -35,9 +38,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   if (!product) notFound();
 
+  const media = await getProductMedia(store.id, product.productId);
+  const primary = media[0] ?? null;
+
   return (
     <div className="grid gap-8 md:grid-cols-2">
-      <div className="aspect-square rounded bg-gray-100" />
+      <div className="flex flex-col gap-2">
+        <ProductMedia item={primary} src={null} alt={product.name} />
+        {media.length > 1 && (
+          <div className="grid grid-cols-4 gap-2">
+            {media.map((item) => (
+              <ProductMedia key={item.id} item={item} alt={product.name} />
+            ))}
+          </div>
+        )}
+      </div>
       <div className="flex flex-col gap-3">
         <h1 className="text-2xl font-semibold">{product.name}</h1>
         {(product.brand || product.categoryName) && (

@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
+import { getProductMedia } from "@/lib/products/media";
 import { ProductForm } from "../../ProductForm";
 import { updateProduct } from "../../actions";
 
@@ -39,6 +40,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     notFound();
   }
 
+  const media = await getProductMedia(session.user.storeId, product.id);
+
   return (
     <div className="flex max-w-md flex-col gap-6">
       <h1 className="text-2xl font-semibold">Edit product</h1>
@@ -46,6 +49,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         action={updateProduct.bind(null, product.id)}
         categories={categoryRows}
         submitLabel="Save changes"
+        productId={product.id}
+        existingMedia={media.map((m) => ({ id: m.id, kind: m.kind, url: m.url }))}
         initialValues={{
           name: product.name,
           categoryId: product.categoryId ?? "",

@@ -4,6 +4,7 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { ProductCard } from "@/components/storefront-chrome";
+import { getPrimaryImageUrls } from "@/lib/products/media";
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -42,6 +43,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   if (!result) notFound();
   const { category, items } = result;
+  const imageUrls = await getPrimaryImageUrls(
+    store.id,
+    items.map((item) => item.id)
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,7 +56,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {items.map((item) => (
-            <ProductCard key={item.id} product={item} />
+            <ProductCard
+              key={item.id}
+              product={{ ...item, imageUrl: imageUrls[item.id] ?? null }}
+            />
           ))}
         </div>
       )}

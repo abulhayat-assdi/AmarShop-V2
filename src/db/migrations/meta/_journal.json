@@ -43,6 +43,13 @@
       "when": 1787813286538,
       "tag": "0005_add_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787819340239,
+      "tag": "0006_add_product_media",
+      "breakpoints": true
     }
   ]
 }

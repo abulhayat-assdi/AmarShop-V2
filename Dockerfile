@@ -18,6 +18,10 @@ RUN pnpm build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# ffmpeg + ffprobe: product video uploads are stream-copy remuxed
+# (-c copy -movflags +faststart) for web playback. No transcoding, so the
+# base package is enough.
+RUN apk add --no-cache ffmpeg
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
 # Storage-adapter target (product images, generated invoice PDFs). Created
