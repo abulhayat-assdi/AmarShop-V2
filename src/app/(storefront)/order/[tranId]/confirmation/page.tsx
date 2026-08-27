@@ -4,6 +4,7 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
+import { getShipmentForOrder } from "@/lib/courier/shipments";
 
 // Reached from both COD's immediate redirect and SSLCommerz's success_url.
 // Looked up by tranId (payments.transactionId), generated before the order
@@ -47,6 +48,12 @@ export default async function OrderConfirmationPage({
   if (!result) notFound();
   const { order, items, payment } = result;
   const { t } = await getTranslator(store.locale);
+
+  const shipment = await getShipmentForOrder(store.id, order.id);
+  const trackingUrl =
+    shipment && shipment.trackingUrl && shipment.status !== "cancelled" && shipment.status !== "failed"
+      ? shipment.trackingUrl
+      : null;
 
   const paymentLine =
     payment.method === "cod"
@@ -97,14 +104,26 @@ export default async function OrderConfirmationPage({
         <p>{t("confirmation.phone", { phone: order.customerPhone })}</p>
       </div>
 
-      <a
-        href={`/order/${tranId}/invoice`}
-        target="_blank"
-        rel="noopener"
-        className="text-sm underline"
-      >
-        Download invoice (PDF)
-      </a>
+      <div className="flex flex-col gap-1">
+        <a
+          href={`/order/${tranId}/invoice`}
+          target="_blank"
+          rel="noopener"
+          className="text-sm underline"
+        >
+          Download invoice (PDF)
+        </a>
+        {trackingUrl && (
+          <a
+            href={trackingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm underline"
+          >
+            {t("confirmation.trackDelivery")}
+          </a>
+        )}
+      </div>
     </div>
   );
 }

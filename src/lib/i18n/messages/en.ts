@@ -82,5 +82,6 @@ export const en = {
     orderSummary: "Order Summary",
     deliveringTo: "Delivering to: {address}",
     phone: "Phone: {phone}",
+    trackDelivery: "Track your delivery",
   },
 };

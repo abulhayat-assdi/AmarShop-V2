@@ -83,5 +83,6 @@ export const bn: Messages = {
     orderSummary: "অর্ডার সারাংশ",
     deliveringTo: "ডেলিভারি হবে: {address}",
     phone: "ফোন: {phone}",
+    trackDelivery: "আপনার ডেলিভারি ট্র্যাক করুন",
   },
 };

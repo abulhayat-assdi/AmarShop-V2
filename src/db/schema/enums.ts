@@ -46,3 +46,19 @@ export const invoiceStatusEnum = pgEnum("invoice_status", ["pending", "generated
 
 // A product_media row is one uploaded photo or video (see product-media.ts).
 export const mediaKindEnum = pgEnum("media_kind", ["image", "video"]);
+
+// One courier adapter per value (src/lib/courier). Adding a courier means
+// adding a value here + its adapter file.
+export const courierProviderEnum = pgEnum("courier_provider", ["steadfast", "pathao", "redx"]);
+
+// Internal, normalised shipment state — each courier adapter maps its own
+// provider vocabulary onto this (see src/lib/courier/*).
+export const shipmentStatusEnum = pgEnum("shipment_status", [
+  "pending",
+  "booked",
+  "in_transit",
+  "delivered",
+  "returned",
+  "cancelled",
+  "failed",
+]);

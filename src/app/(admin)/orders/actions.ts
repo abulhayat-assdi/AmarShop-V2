@@ -15,6 +15,11 @@ import {
   deliveryZones,
 } from "@/db/schema";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
+import {
+  bookShipment,
+  cancelShipment,
+  refreshShipmentStatus,
+} from "@/lib/courier/shipments";
 import { nextStatus } from "./status-pipeline";
 
 // Bound with (orderId) from the detail page's buttons — see
@@ -235,4 +240,50 @@ export async function createManualOrder(
 
   revalidatePath("/orders");
   redirect(`/orders/${orderId}`);
+}
+
+// ---- courier / shipment (src/lib/courier) — bound with an id from the
+// order detail page's buttons ----
+
+export type ShipmentActionState = { error?: string };
+
+// Bound with an id and dispatched via useActionState — the (prevState,
+// formData) args React passes are unused, so the params are omitted.
+export async function bookShipmentAction(orderId: string): Promise<ShipmentActionState> {
+  const session = await requireStaffSession();
+  try {
+    await bookShipment(session.user.storeId, orderId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not book the courier." };
+  }
+  revalidatePath(`/orders/${orderId}`);
+  return {};
+}
+
+export async function refreshShipmentAction(
+  orderId: string,
+  shipmentId: string
+): Promise<ShipmentActionState> {
+  const session = await requireStaffSession();
+  try {
+    await refreshShipmentStatus(session.user.storeId, shipmentId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not refresh status." };
+  }
+  revalidatePath(`/orders/${orderId}`);
+  return {};
+}
+
+export async function cancelShipmentAction(
+  orderId: string,
+  shipmentId: string
+): Promise<ShipmentActionState> {
+  const session = await requireStaffSession();
+  try {
+    await cancelShipment(session.user.storeId, shipmentId);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Could not cancel the shipment." };
+  }
+  revalidatePath(`/orders/${orderId}`);
+  return {};
 }

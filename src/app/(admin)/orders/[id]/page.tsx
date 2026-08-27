@@ -3,8 +3,11 @@ import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, orderStatusEvents, payments, deliveryZones } from "@/db/schema";
+import { getShipmentForOrder } from "@/lib/courier/shipments";
+import { getCourierSettingsView } from "@/lib/courier/settings";
 import { advanceOrderStatus, cancelOrder, markPaymentReceived } from "../actions";
 import { nextStatus } from "../status-pipeline";
+import { ShipmentPanel } from "./ShipmentPanel";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -49,6 +52,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!result) notFound();
   const { order, items, payment, events, zone } = result;
   const upcoming = nextStatus(order.status);
+
+  const [shipment, courierView] = await Promise.all([
+    getShipmentForOrder(session.user.storeId, order.id),
+    getCourierSettingsView(session.user.storeId),
+  ]);
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -120,6 +128,26 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </form>
         )}
       </div>
+
+      <ShipmentPanel
+        orderId={order.id}
+        hasActiveCourier={courierView.activeProvider !== null}
+        shipment={
+          shipment
+            ? {
+                id: shipment.id,
+                provider: shipment.provider,
+                status: shipment.status,
+                trackingCode: shipment.trackingCode,
+                trackingUrl: shipment.trackingUrl,
+                charge: shipment.charge,
+                codAmount: shipment.codAmount,
+                lastStatusRaw: shipment.lastStatusRaw,
+                failureReason: shipment.failureReason,
+              }
+            : null
+        }
+      />
 
       <div className="rounded border p-4">
         <h2 className="mb-2 font-semibold">

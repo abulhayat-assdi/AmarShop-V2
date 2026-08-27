@@ -14,3 +14,5 @@ export * from "./order-items";
 export * from "./order-status-events";
 export * from "./payments";
 export * from "./invoices";
+export * from "./shipments";
+export * from "./store-courier-settings";
