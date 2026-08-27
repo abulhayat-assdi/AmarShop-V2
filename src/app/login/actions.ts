@@ -13,6 +13,6 @@ export async function authenticate(formData: FormData) {
     // storefront homepage on a merchant's own subdomain, or a bare
     // marketing placeholder on the platform root — confusing either way
     // right after logging in).
-    redirectTo: "/orders",
+    redirectTo: "/dashboard",
   });
 }
