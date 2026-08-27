@@ -3,9 +3,8 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
+import { AddToCartForm } from "./AddToCartForm";
 
-// View-only — no "Add to Cart" here yet. A button that does nothing on
-// click is worse than no button; the cart slice adds this for real.
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const store = await getCurrentStore();
@@ -14,6 +13,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await withStoreContext(store.id, async (tx) => {
     const [row] = await tx
       .select({
+        variantId: productVariants.id,
         name: products.name,
         brand: products.brand,
         description: products.description,
@@ -59,6 +59,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {product.quantity > 0 ? `${product.quantity} in stock` : "Out of stock"}
         </p>
         {product.description && <p className="text-gray-700">{product.description}</p>}
+        <AddToCartForm productVariantId={product.variantId} maxQuantity={product.quantity} />
       </div>
     </div>
   );

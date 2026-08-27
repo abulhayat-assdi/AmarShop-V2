@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
+import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter } from "@/components/storefront-chrome";
@@ -17,10 +18,11 @@ export default async function StorefrontLayout({ children }: { children: React.R
   const categoryRows = await withStoreContext(store.id, (tx) =>
     tx.select().from(categories).where(eq(categories.storeId, store.id))
   );
+  const cartItemCount = await getCartItemCount(store.id);
 
   return (
     <>
-      <StorefrontHeader store={store} categories={categoryRows} />
+      <StorefrontHeader store={store} categories={categoryRows} cartItemCount={cartItemCount} />
       <main className="mx-auto max-w-5xl p-4">{children}</main>
       <StorefrontFooter store={store} />
     </>

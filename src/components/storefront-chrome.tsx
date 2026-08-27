@@ -6,19 +6,30 @@ import type { Store, Category } from "@/db/schema";
 // AND the platform root, so it can't live inside the (storefront) route
 // group's own layout — see the plan's routing note). Plain, data-in
 // components so neither caller re-fetches on the other's behalf.
-export function StorefrontHeader({ store, categories }: { store: Store; categories: Category[] }) {
+export function StorefrontHeader({
+  store,
+  categories,
+  cartItemCount,
+}: {
+  store: Store;
+  categories: Category[];
+  cartItemCount: number;
+}) {
   return (
     <header className="border-b">
       <div className="mx-auto flex max-w-5xl items-center justify-between p-4">
         <Link href="/" className="text-lg font-semibold">
           {store.name}
         </Link>
-        <nav className="flex gap-4 text-sm">
+        <nav className="flex items-center gap-4 text-sm">
           {categories.map((category) => (
             <Link key={category.id} href={`/category/${category.slug}`} className="hover:underline">
               {category.name}
             </Link>
           ))}
+          <Link href="/cart" className="hover:underline">
+            Cart ({cartItemCount})
+          </Link>
         </nav>
       </div>
     </header>

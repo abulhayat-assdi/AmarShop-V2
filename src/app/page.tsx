@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq, and } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { auth } from "@/lib/auth/config";
+import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
@@ -30,10 +31,11 @@ export default async function Home() {
         .orderBy(desc(products.createdAt));
       return { categoryRows, productRows };
     });
+    const cartItemCount = await getCartItemCount(store.id);
 
     return (
       <>
-        <StorefrontHeader store={store} categories={categoryRows} />
+        <StorefrontHeader store={store} categories={categoryRows} cartItemCount={cartItemCount} />
         <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4">
           {categoryRows.length > 0 && (
             <section className="flex flex-col gap-4">

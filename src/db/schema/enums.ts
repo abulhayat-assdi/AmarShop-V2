@@ -13,3 +13,9 @@ export const productStatusEnum = pgEnum("product_status", [
   "active",
   "archived",
 ]);
+
+export const cartStatusEnum = pgEnum("cart_status", [
+  "active",
+  "converted",
+  "abandoned",
+]);
