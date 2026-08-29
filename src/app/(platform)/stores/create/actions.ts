@@ -5,8 +5,8 @@ import { sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "@/db/client";
 import { stores, staffMembers } from "@/db/schema";
+import { isReservedSubdomain } from "@/lib/tenant/constants";
 
-const RESERVED_SLUGS = new Set(["www", "app", "api", "admin", "platform"]);
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 export type CreateStoreField = "name" | "slug" | "ownerName" | "ownerEmail" | "ownerPassword";
@@ -62,7 +62,7 @@ export async function createStore(
   if (ownerPassword.length < 8) {
     return { error: "Password must be at least 8 characters.", field: "ownerPassword" };
   }
-  if (!SLUG_PATTERN.test(slug) || RESERVED_SLUGS.has(slug)) {
+  if (!SLUG_PATTERN.test(slug) || isReservedSubdomain(slug)) {
     return {
       error: "Subdomain must be lowercase letters, numbers, and hyphens only.",
       field: "slug",

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useTranslator } from "@/components/i18n-provider";
 import type { TrackedOrderView } from "@/lib/orders/lookup";
+import { formatOrderCode } from "@/lib/orders/number";
 import { trackOrderAction, type TrackState } from "./actions";
 
 const initial: TrackState = {};
@@ -21,7 +22,7 @@ function OrderResult({ order }: { order: TrackedOrderView }) {
     <div className="flex flex-col gap-4 rounded border p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">
-          {t("track.orderNumberHeading", { number: `#${String(order.orderNumber).padStart(4, "0")}` })}
+          {t("track.orderNumberHeading", { number: formatOrderCode(order.orderCode) })}
         </h2>
         <span className="rounded bg-gray-100 px-2 py-0.5 text-xs">
           {t(`track.status.${order.status}`)}
@@ -93,7 +94,7 @@ export function TrackForm() {
           <input
             type="text"
             name="orderNumber"
-            inputMode="numeric"
+            autoCapitalize="characters"
             placeholder={t("track.orderNumberPlaceholder")}
             autoComplete="off"
             className="rounded border border-gray-300 px-3 py-2"

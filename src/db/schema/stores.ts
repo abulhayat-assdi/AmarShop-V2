@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { storeStatusEnum } from "./enums";
 
 // The tenant table itself — never store_id-scoped or RLS-restricted by
@@ -18,6 +18,10 @@ export const stores = pgTable(
     // serve on this host and /api/internal/domain-check authorize a cert.
     customDomainVerifiedAt: timestamp("custom_domain_verified_at", { withTimezone: true }),
     status: storeStatusEnum("status").notNull().default("pending"),
+    // Seed/demo fixtures that deliberately look like real stores. Kept out
+    // of any surface a real customer or merchant can reach in production
+    // (CLAUDE.md rule #9) — see resolveHost in src/lib/tenant/resolve.ts.
+    isDemo: boolean("is_demo").notNull().default(false),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

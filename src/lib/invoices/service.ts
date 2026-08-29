@@ -9,20 +9,13 @@ import {
   stores,
 } from "@/db/schema";
 import { getStorageAdapter } from "@/lib/storage";
-import { allocateInvoiceNumber, formatInvoiceNumber } from "./number";
+import { PAYMENT_METHOD_KEYS, PAYMENT_STATUS_KEYS } from "@/lib/enum-labels";
+import { isLocale, DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { messagesFor } from "@/lib/i18n/messages";
+import { createTranslator } from "@/lib/i18n/translate";
+import { formatOrderCode } from "@/lib/orders/number";
+import { allocateInvoiceNumber } from "./number";
 import { renderInvoicePdf } from "./pdf";
-
-// Never render a raw enum as a user-facing label (CLAUDE.md rule #7).
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cod: "Cash on Delivery",
-  sslcommerz: "SSLCommerz",
-};
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  pending: "Payment pending",
-  paid: "Paid",
-  failed: "Payment failed",
-  refunded: "Refunded",
-};
 
 function storageKeyFor(storeId: string, invoiceId: string): string {
   return `invoices/${storeId}/${invoiceId}.pdf`;
@@ -74,7 +67,7 @@ export async function getInvoicePdf(
     if (!order) return null;
 
     const invoice = await getOrCreateInvoice(tx, storeId, orderId);
-    const filename = `${formatInvoiceNumber(invoice.number)}.pdf`;
+    const filename = `${formatOrderCode(order.orderCode)}.pdf`;
 
     if (invoice.status === "generated" && invoice.storageKey) {
       const buffer = await storage.get(invoice.storageKey);
@@ -82,10 +75,16 @@ export async function getInvoicePdf(
     }
 
     const [store] = await tx
-      .select({ name: stores.name })
+      .select({ name: stores.name, locale: stores.locale })
       .from(stores)
       .where(eq(stores.id, storeId))
       .limit(1);
+
+    // The PDF has no request context, so it renders in the store's own
+    // locale, reading the same label keys the admin screens use.
+    const t = createTranslator(
+      messagesFor(isLocale(store?.locale) ? store.locale : DEFAULT_LOCALE)
+    );
 
     const items = await tx
       .select()
@@ -113,9 +112,8 @@ export async function getInvoicePdf(
 
     const buffer = await renderInvoicePdf({
       storeName: store?.name ?? "AmarShop",
-      invoiceNumber: formatInvoiceNumber(invoice.number),
       invoiceDate: invoice.createdAt,
-      orderRef: `#${order.id.slice(0, 8)}`,
+      orderRef: formatOrderCode(order.orderCode),
       customer: {
         name: order.customerName,
         phone: order.customerPhone,
@@ -133,10 +131,8 @@ export async function getInvoicePdf(
       deliveryCharge: order.deliveryCharge,
       deliveryZoneName: zone?.name ?? null,
       total: order.total,
-      paymentMethodLabel:
-        PAYMENT_METHOD_LABELS[payment?.method ?? order.paymentMethod] ??
-        (payment?.method ?? order.paymentMethod),
-      paymentStatusLabel: PAYMENT_STATUS_LABELS[payment?.status ?? "pending"] ?? "Payment pending",
+      paymentMethodLabel: t(PAYMENT_METHOD_KEYS[payment?.method ?? order.paymentMethod]),
+      paymentStatusLabel: t(PAYMENT_STATUS_KEYS[payment?.status ?? "pending"]),
     });
 
     const key = storageKeyFor(storeId, invoice.id);

@@ -5,7 +5,7 @@ import { withStoreContext } from "@/db/context";
 import { orders, orderItems, productVariants, products, categories } from "@/db/schema";
 import { WeeklySalesChart } from "./WeeklySalesChart";
 import { PERIODS, PERIOD_LABEL_KEYS, parsePeriod, getDateRange, type Period } from "./period";
-import { ORDER_STATUS_KEYS } from "../orders/status-pipeline";
+import { ORDER_STATUS_KEYS } from "@/lib/enum-labels";
 import { DateInput } from "@/components/date-input";
 import { getTranslator } from "@/lib/i18n/server";
 
@@ -271,7 +271,7 @@ export default async function DashboardPage({
                       {order.customerName}
                     </Link>
                     <span className="text-xs text-gray-500">
-                      {t(ORDER_STATUS_KEYS[order.status] ?? order.status)}
+                      {t(ORDER_STATUS_KEYS[order.status])}
                     </span>
                   </div>
                   <span>৳{order.total}</span>

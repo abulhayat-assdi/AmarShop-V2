@@ -6,6 +6,8 @@ import { signOutAction } from "@/app/actions";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useTranslator } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/i18n/config";
+import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
+import type { StaffMember } from "@/db/schema";
 
 export type AdminNavItem = { href: string; labelKey: string };
 
@@ -52,7 +54,7 @@ export function AdminShell({
 }: {
   storeName: string;
   storefrontUrl: string | null;
-  user: { name: string; role: string; isPlatformAdmin: boolean };
+  user: { name: string; role: StaffMember["role"]; isPlatformAdmin: boolean };
   nav: AdminNavItem[];
   locale: Locale;
   children: React.ReactNode;
@@ -148,8 +150,8 @@ export function AdminShell({
             <summary className="cursor-pointer list-none">{user.name}</summary>
             <div className="absolute right-0 z-10 mt-2 w-56 rounded border bg-white p-3 text-xs shadow">
               <p className="font-medium">{user.name}</p>
-              <p className="capitalize text-gray-500">
-                {user.role}
+              <p className="text-gray-500">
+                {t(STAFF_ROLE_KEYS[user.role])}
                 {user.isPlatformAdmin && ` · ${t("admin.shell.platformAdmin")}`}
               </p>
               <form action={signOutAction} className="mt-2">

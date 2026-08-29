@@ -16,8 +16,9 @@ import { mediaKindEnum } from "./enums";
 // +faststart). Real video re-encoding is a Phase 3 job-queue concern.
 //
 // sortOrder is a SINGLE ordering shared by images and videos — the lowest
-// is the primary/gallery-first item. Combined caps (7 media total, at most
-// 2 videos) are enforced in src/lib/products/media.ts, not the schema.
+// is the primary/gallery-first item. Combined caps (MAX_MEDIA_PER_PRODUCT,
+// MAX_VIDEOS_PER_PRODUCT in src/lib/products/media-constants.ts) are
+// enforced in src/lib/products/media.ts, not the schema.
 export const productMedia = pgTable(
   "product_media",
   {

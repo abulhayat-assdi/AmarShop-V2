@@ -287,7 +287,7 @@ export function ManualOrderForm({
 
       <fieldset className="flex flex-col gap-2">
         <legend className="font-semibold">{t("admin.orders.paymentSection")}</legend>
-        <p className="text-sm text-gray-600">{t("admin.orders.cod")}</p>
+        <p className="text-sm text-gray-600">{t("common.paymentCod")}</p>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"

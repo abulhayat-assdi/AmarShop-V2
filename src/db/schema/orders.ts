@@ -2,7 +2,6 @@ import {
   pgTable,
   uuid,
   text,
-  integer,
   numeric,
   timestamp,
   index,
@@ -28,10 +27,11 @@ export const orders = pgTable(
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id, { onDelete: "cascade" }),
-    // Per-store sequential, human-facing reference (#0042). Allocated in
-    // the order-creation transaction like the invoice number; the customer
-    // uses it + their phone on /track. Unique per store.
-    orderNumber: integer("order_number").notNull(),
+    // Per-store random, human-facing reference (K7M2-9XQ4). Deliberately
+    // not sequential — it doubles as the /track lookup key alongside the
+    // customer's phone, and a guessable one would be enumerable. See
+    // src/lib/orders/number.ts. Unique per store.
+    orderCode: text("order_code").notNull(),
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone").notNull(),
     customerAddress: text("customer_address").notNull(),
@@ -53,7 +53,7 @@ export const orders = pgTable(
   },
   (table) => [
     index("orders_store_id_idx").on(table.storeId),
-    uniqueIndex("orders_store_id_order_number_idx").on(table.storeId, table.orderNumber),
+    uniqueIndex("orders_store_id_order_code_idx").on(table.storeId, table.orderCode),
   ]
 );
 

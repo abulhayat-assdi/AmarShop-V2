@@ -6,6 +6,7 @@ import { products, productVariants, categories } from "@/db/schema";
 import { getPrimaryImageUrls } from "@/lib/products/media";
 import { ProductMedia } from "@/components/product-media";
 import { getTranslator } from "@/lib/i18n/server";
+import { PRODUCT_STATUS_KEYS } from "@/lib/enum-labels";
 
 export default async function ProductsPage() {
   const session = await requireStaffSession();
@@ -74,7 +75,7 @@ export default async function ProductsPage() {
                 </td>
                 <td className="py-2">৳{product.price}</td>
                 <td className="py-2">{product.quantity}</td>
-                <td className="py-2 text-gray-500">{product.status}</td>
+                <td className="py-2 text-gray-500">{t(PRODUCT_STATUS_KEYS[product.status])}</td>
                 <td className="py-2">
                   <Link href={`/products/${product.id}/edit`} className="underline">
                     {t("admin.common.edit")}

@@ -6,8 +6,9 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { getOrCreateCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { carts, cartItems, productVariants } from "@/db/schema";
+import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
-export type AddToCartState = { error?: string; notice?: string; ok?: boolean };
+export type AddToCartState = { error?: MessageRef; notice?: MessageRef; ok?: boolean };
 
 export async function addToCart(
   _prevState: AddToCartState,
@@ -15,14 +16,14 @@ export async function addToCart(
 ): Promise<AddToCartState> {
   const store = await getCurrentStore();
   if (!store) {
-    return { error: "Store not found." };
+    return { error: msg("pdp.errStore") };
   }
 
   const productVariantId = String(formData.get("productVariantId") ?? "");
   const requestedQuantity = Number(formData.get("quantity") ?? "1");
 
   if (!productVariantId || !Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
-    return { error: "Invalid quantity." };
+    return { error: msg("pdp.errQuantity") };
   }
 
   const token = await getOrCreateCartToken();
@@ -78,12 +79,12 @@ export async function addToCart(
     revalidatePath("/", "layout");
 
     if (result.capped) {
-      return { ok: true, notice: `Only ${result.available} in stock — added as many as available.` };
+      return { ok: true, notice: msg("pdp.noticeCapped", { count: result.available }) };
     }
     return { ok: true };
   } catch (err) {
     if ((err as { isNotFound?: boolean } | null)?.isNotFound) {
-      return { error: "Product not found." };
+      return { error: msg("pdp.errNotFound") };
     }
     throw err;
   }

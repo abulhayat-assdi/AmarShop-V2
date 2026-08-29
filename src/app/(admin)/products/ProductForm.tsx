@@ -2,7 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { ProductMedia } from "@/components/product-media";
-import { MEDIA_UPLOAD_HINT } from "@/lib/products/media-constants";
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_VIDEO_TYPES,
+  MEDIA_UPLOAD_HINT,
+} from "@/lib/products/media-constants";
 import { useTranslator } from "@/components/i18n-provider";
 import { deleteProductMedia } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
@@ -179,7 +183,7 @@ export function ProductForm({
             <input
               type="file"
               name="images"
-              accept="image/jpeg,image/png,image/webp"
+              accept={ALLOWED_IMAGE_TYPES.join(",")}
               multiple
               className="rounded border border-gray-300 px-3 py-2 text-sm"
             />
@@ -190,7 +194,7 @@ export function ProductForm({
             <input
               type="file"
               name="videos"
-              accept="video/mp4,video/webm"
+              accept={ALLOWED_VIDEO_TYPES.join(",")}
               multiple
               className="rounded border border-gray-300 px-3 py-2 text-sm"
             />

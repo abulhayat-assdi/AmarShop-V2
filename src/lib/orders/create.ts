@@ -11,7 +11,7 @@ import {
   type Order,
 } from "@/db/schema";
 import { allocateInvoiceNumber } from "@/lib/invoices/number";
-import { allocateOrderNumber } from "@/lib/orders/number";
+import { allocateOrderCode } from "@/lib/orders/number";
 
 export const BD_PHONE_PATTERN = /^01[3-9]\d{8}$/;
 
@@ -59,7 +59,7 @@ export async function createOrderRecords(
     .insert(orders)
     .values({
       storeId: params.storeId,
-      orderNumber: await allocateOrderNumber(tx, params.storeId),
+      orderCode: await allocateOrderCode(tx, params.storeId),
       customerName: params.customerName,
       customerPhone: params.customerPhone,
       customerAddress: params.customerAddress,
@@ -98,8 +98,12 @@ export async function createOrderRecords(
       .returning({ id: productVariants.id });
 
     if (!decremented) {
+      // productName rides along so the caller can build a translated
+      // message (src/app/(storefront)/checkout/actions.ts); the Error text
+      // itself is for logs.
       throw Object.assign(new Error(`"${line.productName}" just sold out — please try again.`), {
         isOutOfStock: true,
+        productName: line.productName,
       });
     }
   }

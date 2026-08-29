@@ -20,9 +20,8 @@ const FONT_DIR = path.join(process.cwd(), "src/lib/invoices/fonts");
 
 export type InvoicePdfData = {
   storeName: string;
-  invoiceNumber: string; // "INV-000123"
   invoiceDate: Date;
-  orderRef: string; // "#a1b2c3d4"
+  orderRef: string; // "K7M2-9XQ4" — the order code, the only reference shown
   customer: { name: string; phone: string; email: string | null; address: string };
   items: {
     name: string;
@@ -174,8 +173,11 @@ export async function renderInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
   drawRich(data.storeName, MARGIN, 20, { bold: true });
   text("TAX INVOICE", COL_RIGHT, 20, { bold: true, align: "right" });
   y -= 24;
-  text(data.invoiceNumber, COL_RIGHT, 11, { align: "right", color: MUTED });
-  y -= 14;
+  // One reference only, and it's the order code the customer already has
+  // on their confirmation page and types into /track. A sequential
+  // "INV-000123" here would have leaked the merchant's order volume to
+  // anyone comparing two invoices — the same reason the order code itself
+  // isn't sequential (src/lib/orders/number.ts).
   text(`Order ${data.orderRef}`, COL_RIGHT, 11, { align: "right", color: MUTED });
   y -= 14;
   text(`Date: ${formatDate(data.invoiceDate)}`, COL_RIGHT, 11, { align: "right", color: MUTED });

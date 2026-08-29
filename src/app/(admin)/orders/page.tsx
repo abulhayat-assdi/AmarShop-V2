@@ -4,24 +4,14 @@ import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
-import { ORDER_STATUS_KEYS } from "./status-pipeline";
+import { formatOrderCode } from "@/lib/orders/number";
+import {
+  ORDER_STATUS_KEYS,
+  ORDER_STATUSES,
+  PAYMENT_METHOD_KEYS,
+  PAYMENT_STATUS_KEYS,
+} from "@/lib/enum-labels";
 
-const PAY_STATUS_KEYS: Record<string, string> = {
-  pending: "admin.orders.payPending",
-  paid: "admin.orders.payPaid",
-  failed: "admin.orders.payFailed",
-  refunded: "admin.orders.payRefunded",
-};
-
-const ORDER_STATUSES = [
-  "placed",
-  "confirmed",
-  "ready",
-  "shipped",
-  "delivered",
-  "completed",
-  "canceled",
-] as const;
 type OrderStatusValue = (typeof ORDER_STATUSES)[number];
 const STATUS_TABS = ["all", ...ORDER_STATUSES] as const;
 
@@ -49,6 +39,7 @@ export default async function OrdersPage({
     return tx
       .select({
         id: orders.id,
+        orderCode: orders.orderCode,
         customerName: orders.customerName,
         total: orders.total,
         status: orders.status,
@@ -92,6 +83,7 @@ export default async function OrdersPage({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b">
+            <th className="py-2">{t("admin.orders.colOrderNo")}</th>
             <th className="py-2">{t("admin.orders.colDate")}</th>
             <th className="py-2">{t("admin.orders.colCustomer")}</th>
             <th className="py-2">{t("admin.orders.colItems")}</th>
@@ -103,7 +95,7 @@ export default async function OrdersPage({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="py-4 text-gray-500">
+              <td colSpan={7} className="py-4 text-gray-500">
                 {activeStatus === "all"
                   ? t("admin.orders.noOrders")
                   : t("admin.orders.noOrdersInStatus", { status: t(ORDER_STATUS_KEYS[activeStatus]) })}
@@ -112,21 +104,22 @@ export default async function OrdersPage({
           ) : (
             rows.map((order) => (
               <tr key={order.id} className="border-b hover:bg-gray-50">
-                <td className="py-2">
+                <td className="py-2 font-mono">
                   <Link href={`/orders/${order.id}`} className="block hover:underline">
-                    {new Date(order.createdAt).toLocaleDateString()}
+                    {formatOrderCode(order.orderCode)}
                   </Link>
                 </td>
+                <td className="py-2">{new Date(order.createdAt).toLocaleDateString()}</td>
                 <td className="py-2">{order.customerName}</td>
                 <td className="py-2">{order.itemCount}</td>
                 <td className="py-2">৳{order.total}</td>
                 <td className="py-2">
-                  <span className="uppercase">{order.paymentMethod}</span>
+                  <span>{t(PAYMENT_METHOD_KEYS[order.paymentMethod])}</span>
                   <span className="ml-1 text-xs text-gray-500">
-                    ({order.paymentStatus ? t(PAY_STATUS_KEYS[order.paymentStatus] ?? order.paymentStatus) : "—"})
+                    ({order.paymentStatus ? t(PAYMENT_STATUS_KEYS[order.paymentStatus]) : "—"})
                   </span>
                 </td>
-                <td className="py-2">{t(ORDER_STATUS_KEYS[order.status] ?? order.status)}</td>
+                <td className="py-2">{t(ORDER_STATUS_KEYS[order.status])}</td>
               </tr>
             ))
           )}

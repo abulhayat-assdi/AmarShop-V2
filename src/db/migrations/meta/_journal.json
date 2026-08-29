@@ -85,6 +85,27 @@
       "when": 1788026765836,
       "tag": "0011_add_order_number",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788028380371,
+      "tag": "0012_add_store_is_demo",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788029594068,
+      "tag": "0013_add_order_code",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788029617020,
+      "tag": "0014_drop_order_number",
+      "breakpoints": true
     }
   ]
 }

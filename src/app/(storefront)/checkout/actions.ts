@@ -11,9 +11,10 @@ import { carts, cartItems, productVariants, products, deliveryZones } from "@/db
 import { getPaymentAdapter } from "@/lib/payments";
 import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
+import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId";
-export type PlaceOrderState = { error?: string; field?: PlaceOrderField };
+export type PlaceOrderState = { error?: MessageRef; field?: PlaceOrderField };
 
 type CartLine = {
   variantId: string;
@@ -31,7 +32,7 @@ export async function placeOrder(
 ): Promise<PlaceOrderState> {
   const store = await getCurrentStore();
   if (!store) {
-    return { error: "Store not found." };
+    return { error: msg("checkout.errStore") };
   }
 
   const customerName = String(formData.get("name") ?? "").trim();
@@ -43,16 +44,16 @@ export async function placeOrder(
   const paymentMethod: "cod" | "sslcommerz" =
     String(formData.get("paymentMethod") ?? "cod") === "sslcommerz" ? "sslcommerz" : "cod";
 
-  if (!customerName) return { error: "Name is required.", field: "name" };
+  if (!customerName) return { error: msg("checkout.errName"), field: "name" };
   if (!BD_PHONE_PATTERN.test(customerPhone)) {
-    return { error: "Enter a valid Bangladeshi mobile number (e.g. 017XXXXXXXX).", field: "phone" };
+    return { error: msg("checkout.errPhone"), field: "phone" };
   }
-  if (!customerAddress) return { error: "Address is required.", field: "address" };
-  if (!deliveryZoneId) return { error: "Select a delivery option.", field: "deliveryZoneId" };
+  if (!customerAddress) return { error: msg("checkout.errAddress"), field: "address" };
+  if (!deliveryZoneId) return { error: msg("checkout.errZone"), field: "deliveryZoneId" };
 
   const token = await getCartToken();
   if (!token) {
-    return { error: "Your cart is empty." };
+    return { error: msg("checkout.errEmptyCart") };
   }
 
   const headerList = await headers();
@@ -96,7 +97,7 @@ export async function placeOrder(
         if (item.quantity > item.available) {
           throw Object.assign(
             new Error(`Only ${item.available} of "${item.productName}" left in stock.`),
-            { isOutOfStock: true }
+            { isOutOfStock: true, productName: item.productName, available: item.available }
           );
         }
       }
@@ -175,19 +176,27 @@ export async function placeOrder(
       initiation.kind === "redirect" ? initiation.redirectUrl : `/order/${tranId}/confirmation`;
   } catch (err) {
     if ((err as { isEmpty?: boolean } | null)?.isEmpty) {
-      return { error: "Your cart is empty." };
+      return { error: msg("checkout.errEmptyCart") };
     }
     if ((err as { isOutOfStock?: boolean } | null)?.isOutOfStock) {
-      return { error: (err as Error).message };
+      const e = err as { productName?: string; available?: number };
+      return {
+        error:
+          e.available === undefined
+            ? msg("checkout.errSoldOut", { name: e.productName ?? "" })
+            : msg("checkout.errStockLeft", { count: e.available, name: e.productName ?? "" }),
+      };
     }
     if ((err as { isInvalidZone?: boolean } | null)?.isInvalidZone) {
-      return { error: "Invalid delivery zone selected.", field: "deliveryZoneId" };
+      return { error: msg("checkout.errZoneInvalid"), field: "deliveryZoneId" };
     }
     if (err instanceof Error) {
-      // Covers adapter.initiate() failures — e.g. SSLCommerz not configured
-      // yet (src/lib/payments/sslcommerz.ts) — surfaced as-is since those
-      // messages are already written to be customer-friendly.
-      return { error: err.message };
+      // Covers adapter.initiate() failures — e.g. the gateway being down or
+      // not configured for this store (src/lib/payments/sslcommerz.ts).
+      // Those messages are already written for customers, but they're
+      // English-only, so they ride in as a var on a passthrough key.
+      console.error("[checkout] payment initiation failed", err);
+      return { error: msg("checkout.errPayment", { detail: err.message }) };
     }
     throw err;
   }

@@ -1,14 +1,18 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { stores, type Store } from "@/db/schema";
+import { isReservedSubdomain } from "./constants";
 
 // The platform's own admin/marketing surfaces (app.amarshop.com,
 // www.amarshop.com, and the bare root domain) are never a merchant
-// storefront — they skip tenant resolution entirely.
+// storefront — they skip tenant resolution entirely. The reserved list is
+// shared with store creation (./constants.ts) so the two can't drift.
 export function isPlatformHost(host: string): boolean {
   const rootDomain = process.env.PLATFORM_ROOT_DOMAIN;
   if (!rootDomain) return false;
-  return host === rootDomain || host === `www.${rootDomain}` || host === `app.${rootDomain}`;
+  if (host === rootDomain) return true;
+  const suffix = `.${rootDomain}`;
+  return host.endsWith(suffix) && isReservedSubdomain(host.slice(0, -suffix.length));
 }
 
 function extractSlug(host: string): string | null {
@@ -17,7 +21,7 @@ function extractSlug(host: string): string | null {
   const suffix = `.${rootDomain}`;
   if (!host.endsWith(suffix)) return null;
   const sub = host.slice(0, -suffix.length);
-  return sub && sub !== "www" && sub !== "app" ? sub : null;
+  return sub && !isReservedSubdomain(sub) ? sub : null;
 }
 
 function wwwSibling(host: string): string {
@@ -40,14 +44,34 @@ export type HostResolution = { store: Store; canonicalHost: string };
 // domain, the exact value the merchant saved — so a request arriving on
 // the www<->apex sibling (which also resolves here, so its TLS cert gets
 // issued) is 308-redirected to it by proxy.ts.
+//
+// Only an "active" store ever serves, and demo tenants serve only where
+// ALLOW_DEMO_STORES is explicitly set (CLAUDE.md rule #9) — the local
+// seed's "Demo Store" must never be reachable, or indexable, on a real
+// deployment. Deny-by-default on purpose: the local Docker stack runs a
+// production build, so keying this off NODE_ENV would either hide the demo
+// store from local testing or leak it in production. Forgetting the flag
+// fails closed.
+function servable() {
+  const conditions = [eq(stores.status, "active")];
+  if (process.env.ALLOW_DEMO_STORES !== "true") {
+    conditions.push(eq(stores.isDemo, false));
+  }
+  return and(...conditions);
+}
+
 export async function resolveHost(host: string): Promise<HostResolution | null> {
   const slug = extractSlug(host);
   if (slug) {
-    const [store] = await db.select().from(stores).where(eq(stores.slug, slug)).limit(1);
+    const [store] = await db
+      .select()
+      .from(stores)
+      .where(and(servable(), eq(stores.slug, slug)))
+      .limit(1);
     return store ? { store, canonicalHost: host } : null;
   }
 
-  const verified = isNotNull(stores.customDomainVerifiedAt);
+  const verified = and(servable(), isNotNull(stores.customDomainVerifiedAt));
   const [exact] = await db
     .select()
     .from(stores)

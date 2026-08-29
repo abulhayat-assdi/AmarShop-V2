@@ -21,6 +21,21 @@ import { slugify } from "../lib/slugify";
 //      with a couple of categories/products so the admin catalog pages
 //      have real data to look at immediately.
 //        owner@demo.amarshop.test / password123
+// Hard stop before anything is written. The comment above used to be the
+// only protection, and `pnpm db:seed` reads whatever DATABASE_URL is in
+// the environment — one misfired command on a prod shell would have
+// written live tenant rows plus a platform-admin account with a password
+// that is published in this file.
+function assertNotProduction() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "yes") {
+    console.error(
+      "Refusing to seed: NODE_ENV=production. This script writes demo tenants and " +
+        "well-known passwords. Set ALLOW_SEED=yes only if you are certain."
+    );
+    process.exit(1);
+  }
+}
+
 async function upsertStore(values: NewStore) {
   const [existing] = await db.select().from(stores).where(eq(stores.slug, values.slug)).limit(1);
   if (existing) return existing;
@@ -107,6 +122,8 @@ async function upsertProduct(
 }
 
 async function main() {
+  assertNotProduction();
+
   const platformStore = await upsertStore({
     slug: "platform",
     name: "AmarShop (Platform)",
@@ -126,6 +143,7 @@ async function main() {
     name: "Demo Store",
     status: "active",
     locale: "bn",
+    isDemo: true,
   });
   await upsertStaff(demoStore.id, {
     name: "Demo Owner",

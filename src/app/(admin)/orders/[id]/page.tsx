@@ -7,15 +7,10 @@ import { getShipmentForOrder } from "@/lib/courier/shipments";
 import { getCourierSettingsView } from "@/lib/courier/settings";
 import { getTranslator } from "@/lib/i18n/server";
 import { advanceOrderStatus, cancelOrder, markPaymentReceived } from "../actions";
-import { nextStatus, ORDER_STATUS_KEYS } from "../status-pipeline";
+import { nextStatus } from "../status-pipeline";
+import { formatOrderCode } from "@/lib/orders/number";
+import { ORDER_STATUS_KEYS, PAYMENT_METHOD_KEYS, PAYMENT_STATUS_KEYS } from "@/lib/enum-labels";
 import { ShipmentPanel } from "./ShipmentPanel";
-
-const PAY_STATUS_KEYS: Record<string, string> = {
-  pending: "admin.orders.payPending",
-  paid: "admin.orders.payPaid",
-  failed: "admin.orders.payFailed",
-  refunded: "admin.orders.payRefunded",
-};
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -70,7 +65,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">
-        {t("admin.orders.orderNo", { id: order.id.slice(0, 8) })}
+        {t("admin.orders.orderNo", { id: formatOrderCode(order.orderCode) })}
       </h1>
 
       <div className="grid grid-cols-2 gap-6">
@@ -123,13 +118,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <div className="flex items-center justify-between rounded border p-4">
         <div>
           <p className="font-semibold">
-            {t("admin.orders.payment", { method: (payment?.method ?? "").toUpperCase() })}
+            {t("admin.orders.payment", {
+              method: t(PAYMENT_METHOD_KEYS[payment?.method ?? order.paymentMethod]),
+            })}
           </p>
           <p className="text-sm text-gray-600">
             {t("admin.orders.paymentStatus", {
-              status: payment?.status
-                ? t(PAY_STATUS_KEYS[payment.status] ?? payment.status)
-                : "—",
+              status: payment?.status ? t(PAYMENT_STATUS_KEYS[payment.status]) : "—",
             })}
           </p>
           <a
@@ -172,14 +167,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="rounded border p-4">
         <h2 className="mb-2 font-semibold">
-          {t("admin.orders.statusHeading", { status: t(ORDER_STATUS_KEYS[order.status] ?? order.status) })}
+          {t("admin.orders.statusHeading", { status: t(ORDER_STATUS_KEYS[order.status]) })}
         </h2>
         {events.length > 0 && (
           <ul className="mb-4 flex flex-col gap-1 text-sm text-gray-600">
             {events.map((event) => (
               <li key={event.id}>
                 {new Date(event.createdAt).toLocaleString()} —{" "}
-                {t(ORDER_STATUS_KEYS[event.status] ?? event.status)}
+                {t(ORDER_STATUS_KEYS[event.status])}
               </li>
             ))}
           </ul>
@@ -191,7 +186,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 type="submit"
                 className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
               >
-                {t("admin.orders.markAs", { status: t(ORDER_STATUS_KEYS[upcoming] ?? upcoming) })}
+                {t("admin.orders.markAs", { status: t(ORDER_STATUS_KEYS[upcoming]) })}
               </button>
             </form>
           )}

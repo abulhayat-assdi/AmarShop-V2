@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { BD_PHONE_PATTERN } from "@/lib/orders/create";
+import { normalizeOrderCode } from "@/lib/orders/number";
 import { findTrackedOrder, type TrackedOrderView } from "@/lib/orders/lookup";
 
 // error holds an i18n key (TrackForm translates it) so the page stays
@@ -17,24 +18,25 @@ export async function trackOrderAction(
   const store = await getCurrentStore();
   if (!store) return { error: "track.errStore" };
 
-  const headerList = await headers();
-  const ip = (headerList.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
-  const limit = await checkRateLimit(`track:${store.id}:${ip}`, { limit: 12, windowSeconds: 300 });
-  if (!limit.ok) return { error: "track.errRateLimited" };
-
-  const orderNumberRaw = String(formData.get("orderNumber") ?? "")
-    .trim()
-    .replace(/^#/, "");
+  const rawCode = String(formData.get("orderNumber") ?? "");
   const phone = String(formData.get("phone") ?? "").trim();
 
-  const orderNumber = Number(orderNumberRaw);
-  if (!orderNumberRaw || !Number.isInteger(orderNumber) || orderNumber <= 0) {
-    return { error: "track.errOrderNumber" };
-  }
-  if (!BD_PHONE_PATTERN.test(phone)) {
-    return { error: "track.errPhone" };
-  }
+  // Two limits, because either one alone is bypassable: an attacker who
+  // knows a phone number rotates IPs, and one hammering a single IP would
+  // otherwise be free to vary the phone. Order codes are unguessable
+  // (src/lib/orders/number.ts) — this is defence in depth, not the gate.
+  const headerList = await headers();
+  const ip = (headerList.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const limits = await Promise.all([
+    checkRateLimit(`track:ip:${store.id}:${ip}`, { limit: 12, windowSeconds: 300 }),
+    checkRateLimit(`track:phone:${store.id}:${phone}`, { limit: 12, windowSeconds: 300 }),
+  ]);
+  if (limits.some((limit) => !limit.ok)) return { error: "track.errRateLimited" };
 
-  const order = await findTrackedOrder(store.id, { orderNumber, phone });
+  const orderCode = normalizeOrderCode(rawCode);
+  if (!orderCode) return { error: "track.errOrderNumber" };
+  if (!BD_PHONE_PATTERN.test(phone)) return { error: "track.errPhone" };
+
+  const order = await findTrackedOrder(store.id, { orderCode, phone });
   return order ? { order } : { error: "track.errNotFound" };
 }

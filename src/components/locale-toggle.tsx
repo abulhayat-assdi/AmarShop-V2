@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { LOCALES, type Locale } from "@/lib/i18n/config";
 import { setLocaleCookie } from "@/lib/i18n/client";
+import { useTranslator } from "@/components/i18n-provider";
 
 const NATIVE_LABEL: Record<Locale, string> = { bn: "বাংলা", en: "English" };
 
@@ -12,6 +13,7 @@ const NATIVE_LABEL: Record<Locale, string> = { bn: "বাংলা", en: "Engli
 // language. Persists across navigation via the cookie.
 export function LocaleToggle({ current }: { current: Locale }) {
   const router = useRouter();
+  const t = useTranslator();
   const [isPending, startTransition] = useTransition();
 
   function pick(locale: Locale) {
@@ -25,7 +27,7 @@ export function LocaleToggle({ current }: { current: Locale }) {
       className={`inline-flex items-center overflow-hidden rounded-full border text-xs ${
         isPending ? "opacity-50" : ""
       }`}
-      aria-label="Language"
+      aria-label={t("common.language")}
     >
       <span aria-hidden className="px-2">
         🌐

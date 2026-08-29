@@ -24,8 +24,10 @@ export function AddToCartForm({
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <input type="hidden" name="productVariantId" value={productVariantId} />
-      {state.error && <p className="text-sm text-red-700">{state.error}</p>}
-      {state.notice && <p className="text-sm text-amber-700">{state.notice}</p>}
+      {state.error && <p className="text-sm text-red-700">{t(state.error.key, state.error.vars)}</p>}
+      {state.notice && (
+        <p className="text-sm text-amber-700">{t(state.notice.key, state.notice.vars)}</p>
+      )}
       {state.ok && !state.notice && (
         <p className="text-sm text-green-700">{t("pdp.addedToCart")}</p>
       )}

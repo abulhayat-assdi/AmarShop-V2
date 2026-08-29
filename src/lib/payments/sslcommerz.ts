@@ -8,6 +8,9 @@ import type {
 const SANDBOX_URL = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php";
 const LIVE_URL = "https://securepay.sslcommerz.com/gwprocess/v4/api.php";
 
+const UNAVAILABLE_MESSAGE =
+  "Online payment is temporarily unavailable — please choose Cash on Delivery, or try again in a few minutes.";
+
 type SessionApiResponse = {
   status: string;
   GatewayPageURL?: string;
@@ -74,14 +77,21 @@ export class SslcommerzAdapter implements PaymentAdapter {
       body,
     });
 
+    // The gateway's own wording (HTTP status, failedreason) is for our
+    // logs, never for the shopper — it names a vendor and leaks internals.
+    // What they see is one actionable sentence with a working alternative.
     if (!response.ok) {
-      throw new Error(`SSLCommerz session request failed with status ${response.status}.`);
+      console.error(`[sslcommerz] session request failed with status ${response.status}`);
+      throw new Error(UNAVAILABLE_MESSAGE);
     }
 
     const data = (await response.json()) as SessionApiResponse;
 
     if (data.status !== "SUCCESS" || !data.GatewayPageURL) {
-      throw new Error(data.failedreason || "SSLCommerz did not return a payment session.");
+      console.error(
+        `[sslcommerz] no payment session: status=${data.status} reason=${data.failedreason ?? "-"}`
+      );
+      throw new Error(UNAVAILABLE_MESSAGE);
     }
 
     return { kind: "redirect", redirectUrl: data.GatewayPageURL };

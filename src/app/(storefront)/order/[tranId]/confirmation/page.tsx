@@ -5,7 +5,7 @@ import { getCurrentStore } from "@/lib/tenant/current";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
-import { formatOrderNumber } from "@/lib/orders/number";
+import { formatOrderCode } from "@/lib/orders/number";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
 
 // Reached from both COD's immediate redirect and SSLCommerz's success_url.
@@ -73,7 +73,7 @@ export default async function OrderConfirmationPage({
         {t("confirmation.placed")} {paymentLine}
       </p>
       <p className="text-sm">
-        {t("confirmation.orderNumber", { number: formatOrderNumber(order.orderNumber) })}
+        {t("confirmation.orderNumber", { number: formatOrderCode(order.orderCode) })}
       </p>
 
       <div className="rounded border p-4">

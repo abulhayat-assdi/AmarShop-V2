@@ -9,7 +9,7 @@ export type OrderStatus = Order["status"];
 export type TrackedOrderItem = { name: string; quantity: number; lineTotal: string };
 
 export type TrackedOrderView = {
-  orderNumber: number;
+  orderCode: string;
   status: OrderStatus;
   placedAt: string; // ISO
   items: TrackedOrderItem[];
@@ -29,13 +29,13 @@ export type TrackedOrderView = {
 // apart. RLS-scoped via withStoreContext.
 export async function findTrackedOrder(
   storeId: string,
-  input: { orderNumber: number; phone: string }
+  input: { orderCode: string; phone: string }
 ): Promise<TrackedOrderView | null> {
   const found = await withStoreContext(storeId, async (tx) => {
     const [order] = await tx
       .select()
       .from(orders)
-      .where(and(eq(orders.storeId, storeId), eq(orders.orderNumber, input.orderNumber)))
+      .where(and(eq(orders.storeId, storeId), eq(orders.orderCode, input.orderCode)))
       .limit(1);
     if (!order || order.customerPhone !== input.phone) return null;
 
@@ -62,7 +62,7 @@ export async function findTrackedOrder(
   const shipment = await getShipmentForOrder(storeId, found.order.id);
 
   return {
-    orderNumber: found.order.orderNumber,
+    orderCode: found.order.orderCode,
     status: found.order.status,
     placedAt: found.order.createdAt.toISOString(),
     items: found.items,

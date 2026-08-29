@@ -30,7 +30,7 @@ export function CheckoutForm({ subtotal, zones }: { subtotal: number; zones: Del
     <form action={formAction} className="flex flex-col gap-4">
       {state.error && (
         <p className="rounded border border-red-400 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.error}
+          {t(state.error.key, state.error.vars)}
         </p>
       )}
 
@@ -115,7 +115,7 @@ export function CheckoutForm({ subtotal, zones }: { subtotal: number; zones: Del
             checked={paymentMethod === "cod"}
             onChange={() => setPaymentMethod("cod")}
           />
-          {t("checkout.cod")}
+          {t("common.paymentCod")}
         </label>
         <label className="flex items-center gap-2 rounded border p-3">
           <input
