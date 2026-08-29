@@ -95,6 +95,7 @@ export const bn: Messages = {
       deliveryZones: "ডেলিভারি এলাকা",
       courierSettings: "কুরিয়ার সেটিংস",
       paymentSettings: "পেমেন্ট সেটিংস",
+      domainSettings: "কাস্টম ডোমেইন",
     },
     shell: {
       viewStore: "স্টোর দেখুন",
@@ -317,6 +318,38 @@ export const bn: Messages = {
       leaveBlank: "•••• সেভ করা — অপরিবর্তিত রাখতে ফাঁকা রাখুন",
       saveSettings: "সেটিংস সেভ করুন",
       settingsSaved: "পেমেন্ট সেটিংস সেভ হয়েছে।",
+    },
+    domain: {
+      title: "কাস্টম ডোমেইন",
+      intro:
+        "আপনার নিজের ডোমেইন স্টোরফ্রন্টের সাথে যুক্ত করুন। ফ্রি সাবডোমেইন সবসময় কাজ করে; কাস্টম ডোমেইন ঐচ্ছিক।",
+      freeSubdomain: "ফ্রি সাবডোমেইন (সবসময় লাইভ)",
+      customDomain: "কাস্টম ডোমেইন",
+      statusNone: "সেট করা নেই",
+      statusPending: "ভেরিফিকেশন বাকি",
+      statusLive: "লাইভ",
+      domainLabel: "আপনার ডোমেইন",
+      domainPlaceholder: "shop.example.com",
+      save: "ডোমেইন সেভ করুন",
+      verifyNow: "এখন ভেরিফাই করুন",
+      remove: "ডোমেইন সরান",
+      verified: "ডোমেইন ভেরিফাই হয়েছে — এই ডোমেইনে আপনার স্টোরফ্রন্ট লাইভ।",
+      verifyFailed: "ভেরিফাই করা যায়নি: {detail}",
+      saved: "ডোমেইন সেভ হয়েছে। নিচের DNS রেকর্ডগুলো যোগ করে ভেরিফাই করুন।",
+      dnsHeading: "আপনার ডোমেইন আমাদের দিকে পয়েন্ট করুন",
+      dnsRoot: "রুট ডোমেইন (example.com) — এই রেকর্ডগুলো যোগ করুন:",
+      dnsSub: "সাবডোমেইন (shop.example.com) — এই রেকর্ডটি যোগ করুন:",
+      dnsColType: "Type",
+      dnsColName: "Name",
+      dnsColValue: "Value",
+      dnsWwwNote:
+        "www রেকর্ডটিও যোগ করুন, যাতে আপনার ডোমেইন ও তার www সংস্করণ দুটোই স্টোরে পৌঁছায় (www আপনার সেভ করা সংস্করণে রিডাইরেক্ট হবে)।",
+      dnsCloudflare:
+        "Cloudflare ব্যবহার করছেন? এই রেকর্ডগুলো “DNS only” (ধূসর মেঘ) রাখুন, proxied নয়।",
+      dnsPropagation:
+        "DNS পরিবর্তন কার্যকর হতে এক ঘণ্টা পর্যন্ত লাগতে পারে। রেকর্ডগুলো যোগ করে পরে এসে “এখন ভেরিফাই করুন” চাপুন।",
+      ipPending:
+        "সার্ভার IP কনফিগার হলে রুট-ডোমেইন (A রেকর্ড) সেটআপ পাওয়া যাবে। আপাতত উপরের CNAME দিয়ে একটি সাবডোমেইন ব্যবহার করুন।",
     },
     login: {
       signIn: "সাইন ইন",

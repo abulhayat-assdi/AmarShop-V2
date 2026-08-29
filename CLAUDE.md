@@ -39,7 +39,7 @@ Don't add these back "for completeness" — if a later phase seems to need them,
 Track progress here — update this section as phases complete. Start here:
 
 - [x] **Phase 0 — Foundation (local dev complete):** Next.js 16 scaffold, Postgres \+ RLS (verified: `amarshop_app` role genuinely bound by RLS, migration role bypasses as expected), Redis, Docker Compose, staff auth with roles (Auth.js, owner/admin/staff \+ platform-admin flag), store creation flow, `proxy.ts` host-based tenant resolution — all built and tested against the local Docker stack.  
-  - [ ] **Deferred — needs a real VPS:** server hardening (UFW/fail2ban/unattended-upgrades) and the GitHub Actions CI/CD deploy pipeline. Come back to these the moment a VPS is provisioned, before real users touch it — don't let "we're on Phase 1 now" become a reason to skip them later.  
+  - [ ] **Deferred — needs a real VPS:** server hardening (UFW/fail2ban/unattended-upgrades); the GitHub Actions CI/CD deploy pipeline; and activating custom-domain TLS — point docker-compose's `caddy` service at `Caddyfile.production` (on-demand TLS + the `/api/internal/domain-check` ask endpoint), set `PLATFORM_PUBLIC_IP`, and for real `*.PLATFORM_ROOT_DOMAIN` wildcard TLS rebuild Caddy with a DNS-01 provider plugin via xcaddy. The custom-domain admin flow + DNS verification are already built and testable locally with `CUSTOM_DOMAIN_VERIFY_MODE=trust`. Come back to these the moment a VPS is provisioned, before real users touch it — don't let "we're on Phase 1 now" become a reason to skip them later.  
 - [ ] Phase 1 — Core commerce MVP (**current**)  
 - [ ] Phase 2 — Growth features  
 - [ ] Phase 3 — AI features  

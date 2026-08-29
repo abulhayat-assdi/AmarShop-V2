@@ -13,6 +13,10 @@ export const stores = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     customDomain: text("custom_domain"),
+    // NULL = no custom domain, or one claimed but not yet DNS-verified.
+    // Set = the CNAME/A check passed; only then does resolveStoreForHost()
+    // serve on this host and /api/internal/domain-check authorize a cert.
+    customDomainVerifiedAt: timestamp("custom_domain_verified_at", { withTimezone: true }),
     status: storeStatusEnum("status").notNull().default("pending"),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

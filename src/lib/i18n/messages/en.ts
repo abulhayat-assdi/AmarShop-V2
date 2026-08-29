@@ -94,6 +94,7 @@ export const en = {
       deliveryZones: "Delivery Zones",
       courierSettings: "Courier Settings",
       paymentSettings: "Payment Settings",
+      domainSettings: "Custom Domain",
     },
     shell: {
       viewStore: "View Store",
@@ -316,6 +317,38 @@ export const en = {
       leaveBlank: "•••• saved — leave blank to keep",
       saveSettings: "Save settings",
       settingsSaved: "Payment settings saved.",
+    },
+    domain: {
+      title: "Custom Domain",
+      intro:
+        "Connect your own domain to your storefront. Your free subdomain always works; a custom domain is optional.",
+      freeSubdomain: "Free subdomain (always live)",
+      customDomain: "Custom domain",
+      statusNone: "not set",
+      statusPending: "pending verification",
+      statusLive: "live",
+      domainLabel: "Your domain",
+      domainPlaceholder: "shop.example.com",
+      save: "Save domain",
+      verifyNow: "Verify now",
+      remove: "Remove domain",
+      verified: "Domain verified — your storefront is live on it.",
+      verifyFailed: "Couldn't verify: {detail}",
+      saved: "Domain saved. Add the DNS records below, then verify.",
+      dnsHeading: "Point your domain to us",
+      dnsRoot: "Root domain (example.com) — add these records:",
+      dnsSub: "Subdomain (shop.example.com) — add this record:",
+      dnsColType: "Type",
+      dnsColName: "Name",
+      dnsColValue: "Value",
+      dnsWwwNote:
+        "Add the www record too, so both your domain and its www version reach your store (www redirects to the version you saved).",
+      dnsCloudflare:
+        "Using Cloudflare? Set these records to “DNS only” (grey cloud), not proxied.",
+      dnsPropagation:
+        "DNS changes can take up to an hour to take effect. Add the records, then come back and click Verify now.",
+      ipPending:
+        "Root-domain (A record) setup will be available once the server IP is configured. For now, use a subdomain with the CNAME above.",
     },
     login: {
       signIn: "Sign in",
