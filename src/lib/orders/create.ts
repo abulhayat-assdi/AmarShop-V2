@@ -11,6 +11,7 @@ import {
   type Order,
 } from "@/db/schema";
 import { allocateInvoiceNumber } from "@/lib/invoices/number";
+import { allocateOrderNumber } from "@/lib/orders/number";
 
 export const BD_PHONE_PATTERN = /^01[3-9]\d{8}$/;
 
@@ -58,6 +59,7 @@ export async function createOrderRecords(
     .insert(orders)
     .values({
       storeId: params.storeId,
+      orderNumber: await allocateOrderNumber(tx, params.storeId),
       customerName: params.customerName,
       customerPhone: params.customerPhone,
       customerAddress: params.customerAddress,

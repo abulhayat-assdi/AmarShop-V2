@@ -35,6 +35,9 @@ export async function StorefrontHeader({
           <Link href="/search" className="hover:underline">
             {t("nav.search")}
           </Link>
+          <Link href="/track" className="hover:underline">
+            {t("nav.track")}
+          </Link>
           <Link href="/cart" className="hover:underline">
             {t("nav.cart", { count: cartItemCount })}
           </Link>

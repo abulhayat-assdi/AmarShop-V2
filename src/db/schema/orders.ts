@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, numeric, timestamp, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  integer,
+  numeric,
+  timestamp,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { stores } from "./stores";
 import { deliveryZones } from "./delivery-zones";
 import { orderStatusEnum, paymentMethodEnum } from "./enums";
@@ -19,6 +28,10 @@ export const orders = pgTable(
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id, { onDelete: "cascade" }),
+    // Per-store sequential, human-facing reference (#0042). Allocated in
+    // the order-creation transaction like the invoice number; the customer
+    // uses it + their phone on /track. Unique per store.
+    orderNumber: integer("order_number").notNull(),
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone").notNull(),
     customerAddress: text("customer_address").notNull(),
@@ -38,7 +51,10 @@ export const orders = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("orders_store_id_idx").on(table.storeId)]
+  (table) => [
+    index("orders_store_id_idx").on(table.storeId),
+    uniqueIndex("orders_store_id_order_number_idx").on(table.storeId, table.orderNumber),
+  ]
 );
 
 export type Order = typeof orders.$inferSelect;

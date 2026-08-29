@@ -1,0 +1,81 @@
+import { and, eq } from "drizzle-orm";
+import { withStoreContext } from "@/db/context";
+import { orders, orderItems, payments } from "@/db/schema";
+import type { Order, Payment } from "@/db/schema";
+import { getShipmentForOrder } from "@/lib/courier/shipments";
+
+export type OrderStatus = Order["status"];
+
+export type TrackedOrderItem = { name: string; quantity: number; lineTotal: string };
+
+export type TrackedOrderView = {
+  orderNumber: number;
+  status: OrderStatus;
+  placedAt: string; // ISO
+  items: TrackedOrderItem[];
+  subtotal: string;
+  deliveryCharge: string;
+  total: string;
+  paymentMethod: Order["paymentMethod"];
+  paymentStatus: Payment["status"];
+  customerName: string;
+  address: string;
+  shipment: { status: string; trackingUrl: string | null } | null;
+};
+
+// The public /track lookup: a store's order by its per-store number, gated
+// by a matching customer phone. Any mismatch (unknown number, wrong phone,
+// another store's order) returns null — the caller must not tell the two
+// apart. RLS-scoped via withStoreContext.
+export async function findTrackedOrder(
+  storeId: string,
+  input: { orderNumber: number; phone: string }
+): Promise<TrackedOrderView | null> {
+  const found = await withStoreContext(storeId, async (tx) => {
+    const [order] = await tx
+      .select()
+      .from(orders)
+      .where(and(eq(orders.storeId, storeId), eq(orders.orderNumber, input.orderNumber)))
+      .limit(1);
+    if (!order || order.customerPhone !== input.phone) return null;
+
+    const items = await tx
+      .select({
+        name: orderItems.productName,
+        quantity: orderItems.quantity,
+        lineTotal: orderItems.lineTotal,
+      })
+      .from(orderItems)
+      .where(and(eq(orderItems.storeId, storeId), eq(orderItems.orderId, order.id)));
+
+    const [payment] = await tx
+      .select({ status: payments.status })
+      .from(payments)
+      .where(and(eq(payments.storeId, storeId), eq(payments.orderId, order.id)))
+      .limit(1);
+
+    return { order, items, paymentStatus: payment?.status ?? "pending" };
+  });
+
+  if (!found) return null;
+
+  const shipment = await getShipmentForOrder(storeId, found.order.id);
+
+  return {
+    orderNumber: found.order.orderNumber,
+    status: found.order.status,
+    placedAt: found.order.createdAt.toISOString(),
+    items: found.items,
+    subtotal: found.order.subtotal,
+    deliveryCharge: found.order.deliveryCharge,
+    total: found.order.total,
+    paymentMethod: found.order.paymentMethod,
+    paymentStatus: found.paymentStatus,
+    customerName: found.order.customerName,
+    address: found.order.customerAddress,
+    shipment:
+      shipment && shipment.status !== "cancelled" && shipment.status !== "failed"
+        ? { status: shipment.status, trackingUrl: shipment.trackingUrl }
+        : null,
+  };
+}
