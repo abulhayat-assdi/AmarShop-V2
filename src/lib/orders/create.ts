@@ -15,7 +15,7 @@ import {
 import { allocateInvoiceNumber } from "@/lib/invoices/number";
 import { allocateOrderCode } from "@/lib/orders/number";
 
-export const BD_PHONE_PATTERN = /^01[3-9]\d{8}$/;
+export { BD_PHONE_PATTERN } from "@/lib/phone";
 
 // One line of an order — the caller resolves the price (discountedPrice ??
 // price) before handing it over. quantity is the number ordered.

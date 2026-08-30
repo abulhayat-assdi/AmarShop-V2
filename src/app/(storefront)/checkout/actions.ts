@@ -15,6 +15,7 @@ import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orde
 import { evaluateCoupon } from "@/lib/coupons/validate";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendOrderSms } from "@/lib/sms/notifications";
+import { markLeadConverted } from "@/lib/checkout-leads";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "couponCode";
@@ -297,6 +298,9 @@ export async function placeOrder(
     // Runs after the response is sent — a slow/failing gateway never adds
     // latency to checkout or blocks the order.
     after(() => sendOrderSms(store.id, order.id, "order_placed"));
+    // This checkout may have left an incomplete-checkout lead (the form
+    // captures name + phone as the customer types) — retire it.
+    after(() => markLeadConverted(store.id, cart.id));
 
     redirectTarget =
       initiation.kind === "redirect" ? initiation.redirectUrl : `/order/${tranId}/confirmation`;

@@ -20,6 +20,18 @@ export const cartStatusEnum = pgEnum("cart_status", [
   "abandoned",
 ]);
 
+// A checkout_leads row (see checkout-leads.ts): a customer who entered
+// their name + phone at checkout but hasn't completed the order. "pending"
+// = awaiting a follow-up call, "contacted" = the merchant has called,
+// "converted" = they later placed the order (row kept for analytics),
+// "dismissed" = the merchant judged it dead.
+export const checkoutLeadStatusEnum = pgEnum("checkout_lead_status", [
+  "pending",
+  "contacted",
+  "converted",
+  "dismissed",
+]);
+
 export const orderStatusEnum = pgEnum("order_status", [
   "placed",
   "confirmed",

@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useTranslator } from "@/components/i18n-provider";
+import { BD_PHONE_PATTERN } from "@/lib/phone";
 import {
   applyCouponAction,
   placeOrder,
@@ -9,6 +10,7 @@ import {
   type PlaceOrderField,
   type PlaceOrderState,
 } from "./actions";
+import { saveCheckoutLeadAction } from "./lead-actions";
 import { CouponField, type AppliedCoupon } from "./CouponField";
 import type { DeliveryZone } from "@/db/schema";
 
@@ -40,6 +42,27 @@ export function CheckoutForm({
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">(
     "cod",
   );
+
+  // Incomplete-checkout lead capture: once a name + a valid phone are
+  // entered, debounce-save the contact details so the merchant can call to
+  // confirm if the customer never finishes. Fire-and-forget; re-fires as
+  // fields change. placeOrder marks the lead "converted" on success.
+  const leadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!name.trim() || !BD_PHONE_PATTERN.test(phone)) return;
+    if (leadTimer.current) clearTimeout(leadTimer.current);
+    leadTimer.current = setTimeout(() => {
+      const fd = new FormData();
+      fd.set("name", name);
+      fd.set("phone", phone);
+      fd.set("address", address);
+      fd.set("deliveryZoneId", zoneId);
+      void saveCheckoutLeadAction(fd);
+    }, 1500);
+    return () => {
+      if (leadTimer.current) clearTimeout(leadTimer.current);
+    };
+  }, [name, phone, address, zoneId]);
 
   // Render-time reconcile (same pattern as DeliveryZoneForm): a fresh
   // couponState.applied clears any prior "removed" dismissal.

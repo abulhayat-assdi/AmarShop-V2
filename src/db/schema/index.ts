@@ -8,6 +8,7 @@ export * from "./product-variants";
 export * from "./product-media";
 export * from "./carts";
 export * from "./cart-items";
+export * from "./checkout-leads";
 export * from "./delivery-zones";
 export * from "./coupons";
 export * from "./orders";
