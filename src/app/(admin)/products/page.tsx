@@ -6,6 +6,7 @@ import { withStoreContext } from "@/db/context";
 import { products, productVariants, categories, stores } from "@/db/schema";
 import { getPrimaryImageUrls } from "@/lib/products/media";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
+import { getProductForecasts, forecastLevel } from "@/lib/products/forecast";
 import { ProductMedia } from "@/components/product-media";
 import { getTranslator } from "@/lib/i18n/server";
 import { PRODUCT_STATUS_KEYS } from "@/lib/enum-labels";
@@ -50,6 +51,14 @@ export default async function ProductsPage({
     session.user.storeId,
     rows.map((row) => row.id),
   );
+  const forecasts = await getProductForecasts(session.user.storeId);
+
+  const forecastClass: Record<string, string> = {
+    critical: "text-red-600",
+    low: "text-amber-600",
+    ok: "",
+    none: "text-gray-400",
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,6 +115,7 @@ export default async function ProductsPage({
             <th className="py-2">{t("admin.products.colCategory")}</th>
             <th className="py-2">{t("admin.products.colPrice")}</th>
             <th className="py-2">{t("admin.products.colStock")}</th>
+            <th className="py-2">{t("admin.products.colForecast")}</th>
             <th className="py-2">{t("admin.products.colStatus")}</th>
             <th className="py-2" />
           </tr>
@@ -113,13 +123,14 @@ export default async function ProductsPage({
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-4 text-gray-500">
+              <td colSpan={8} className="py-4 text-gray-500">
                 {t("admin.products.noProducts")}
               </td>
             </tr>
           ) : (
             rows.map((product) => {
               const qty = product.quantity ?? 0;
+              const forecast = forecasts.get(product.id);
               return (
                 <tr key={product.id} className="border-b">
                   <td className="py-2">
@@ -144,6 +155,15 @@ export default async function ProductsPage({
                     }`}
                   >
                     {product.quantity}
+                  </td>
+                  <td
+                    className={`py-2 ${
+                      forecastClass[forecastLevel(forecast?.daysLeft ?? null)]
+                    }`}
+                  >
+                    {forecast && forecast.daysLeft != null
+                      ? t("admin.products.daysLeft", { days: forecast.daysLeft })
+                      : "—"}
                   </td>
                   <td className="py-2 text-gray-500">
                     {t(PRODUCT_STATUS_KEYS[product.status])}
