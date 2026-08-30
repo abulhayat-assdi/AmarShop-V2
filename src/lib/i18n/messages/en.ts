@@ -190,6 +190,7 @@ export const en = {
       deliveryZones: "Delivery Zones",
       courierSettings: "Courier Settings",
       paymentSettings: "Payment Settings",
+      marketingSettings: "Marketing",
       domainSettings: "Custom Domain",
       coupons: "Coupons",
       staff: "Staff",
@@ -454,6 +455,19 @@ export const en = {
       leaveBlank: "•••• saved — leave blank to keep",
       saveSettings: "Save settings",
       settingsSaved: "Courier settings saved.",
+    },
+    marketing: {
+      title: "Marketing & Analytics",
+      intro:
+        "Add your ad-tracking IDs. They load on your storefront and report page views and orders back to your ad account. Leave a field blank to turn it off.",
+      pixelLabel: "Meta (Facebook) Pixel ID",
+      pixelHint: "Events Manager → Data Sources → your pixel. Digits only.",
+      ga4Label: "Google Analytics 4 Measurement ID",
+      ga4Hint: "GA4 → Admin → Data Streams → your web stream. Looks like G-XXXXXXXXXX.",
+      save: "Save",
+      saved: "Marketing settings saved.",
+      errPixel: "A Meta Pixel ID is all digits — check the value and try again.",
+      errGa4: "A GA4 Measurement ID looks like G-XXXXXXXXXX — check the value and try again.",
     },
     payment: {
       title: "Payment Settings",

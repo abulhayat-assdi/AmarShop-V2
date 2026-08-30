@@ -17,6 +17,7 @@ const NAV: AdminNavItem[] = [
   { href: "/delivery-zones", labelKey: "admin.nav.deliveryZones" },
   { href: "/courier-settings", labelKey: "admin.nav.courierSettings" },
   { href: "/payment-settings", labelKey: "admin.nav.paymentSettings" },
+  { href: "/marketing-settings", labelKey: "admin.nav.marketingSettings" },
   { href: "/domain-settings", labelKey: "admin.nav.domainSettings" },
 ];
 

@@ -191,6 +191,7 @@ export const bn: Messages = {
       deliveryZones: "ডেলিভারি এলাকা",
       courierSettings: "কুরিয়ার সেটিংস",
       paymentSettings: "পেমেন্ট সেটিংস",
+      marketingSettings: "মার্কেটিং",
       domainSettings: "কাস্টম ডোমেইন",
       coupons: "কুপন",
       staff: "স্টাফ",
@@ -455,6 +456,19 @@ export const bn: Messages = {
       leaveBlank: "•••• সেভ করা — অপরিবর্তিত রাখতে ফাঁকা রাখুন",
       saveSettings: "সেটিংস সেভ করুন",
       settingsSaved: "কুরিয়ার সেটিংস সেভ হয়েছে।",
+    },
+    marketing: {
+      title: "মার্কেটিং ও অ্যানালিটিক্স",
+      intro:
+        "আপনার অ্যাড-ট্র্যাকিং ID যোগ করুন। এগুলো আপনার স্টোরফ্রন্টে লোড হয়ে পেজ ভিউ ও অর্ডার আপনার অ্যাড অ্যাকাউন্টে রিপোর্ট করে। বন্ধ করতে চাইলে ফাঁকা রাখুন।",
+      pixelLabel: "Meta (Facebook) Pixel ID",
+      pixelHint: "Events Manager → Data Sources → আপনার পিক্সেল। শুধু সংখ্যা।",
+      ga4Label: "Google Analytics 4 Measurement ID",
+      ga4Hint: "GA4 → Admin → Data Streams → আপনার ওয়েব স্ট্রিম। দেখতে G-XXXXXXXXXX এর মতো।",
+      save: "সেভ করুন",
+      saved: "মার্কেটিং সেটিংস সেভ হয়েছে।",
+      errPixel: "Meta Pixel ID শুধু সংখ্যা — মানটি যাচাই করে আবার চেষ্টা করুন।",
+      errGa4: "GA4 Measurement ID দেখতে G-XXXXXXXXXX এর মতো — মানটি যাচাই করে আবার চেষ্টা করুন।",
     },
     payment: {
       title: "পেমেন্ট সেটিংস",

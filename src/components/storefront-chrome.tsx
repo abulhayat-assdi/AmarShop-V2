@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Store, Category } from "@/db/schema";
 import { ProductMedia } from "@/components/product-media";
 import { LocaleToggle } from "@/components/locale-toggle";
+import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { getTranslator } from "@/lib/i18n/server";
 
 // Shared by both src/app/(storefront)/layout.tsx and the storefront branch
@@ -21,6 +22,10 @@ export async function StorefrontHeader({
 }) {
   const { locale, t } = await getTranslator(store.locale);
   return (
+    <>
+      <StorefrontAnalytics
+        analytics={{ metaPixelId: store.metaPixelId, ga4MeasurementId: store.ga4MeasurementId }}
+      />
     <header className="border-b">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 p-4">
         <Link href="/" className="text-lg font-semibold">
@@ -45,6 +50,7 @@ export async function StorefrontHeader({
         </nav>
       </div>
     </header>
+    </>
   );
 }
 

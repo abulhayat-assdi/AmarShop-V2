@@ -7,6 +7,7 @@ import { orders, orderItems, payments } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
 import { formatOrderCode } from "@/lib/orders/number";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
+import { StorefrontConversion } from "@/components/storefront-conversion";
 
 // Reached from both COD's immediate redirect and SSLCommerz's success_url.
 // Looked up by tranId (payments.transactionId), generated before the order
@@ -66,6 +67,13 @@ export default async function OrderConfirmationPage({
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
+      {(store.metaPixelId || store.ga4MeasurementId) && (
+        <StorefrontConversion
+          analytics={{ metaPixelId: store.metaPixelId, ga4MeasurementId: store.ga4MeasurementId }}
+          value={Number(order.total)}
+          paid={payment.status === "paid"}
+        />
+      )}
       <h1 className="text-2xl font-semibold">
         {t("confirmation.thankYou", { name: order.customerName })}
       </h1>

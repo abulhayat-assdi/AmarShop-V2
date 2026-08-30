@@ -22,6 +22,12 @@ export const stores = pgTable(
     // of any surface a real customer or merchant can reach in production
     // (CLAUDE.md rule #9) — see resolveHost in src/lib/tenant/resolve.ts.
     isDemo: boolean("is_demo").notNull().default(false),
+    // Merchant's own ad-tracking ids, injected into their storefront's
+    // <head> (src/components/storefront-analytics.tsx). Public identifiers,
+    // not secrets — validated on save (src/lib/analytics/config.ts), so an
+    // unvalidated value never reaches a <script>.
+    metaPixelId: text("meta_pixel_id"),
+    ga4MeasurementId: text("ga4_measurement_id"),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
