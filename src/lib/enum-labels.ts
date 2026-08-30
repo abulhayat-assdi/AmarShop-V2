@@ -1,4 +1,4 @@
-import type { Order, Payment, Product, StaffMember } from "@/db/schema";
+import type { Coupon, Order, Payment, Product, StaffMember } from "@/db/schema";
 
 // The single place every user-facing enum value is mapped to a display
 // label (CLAUDE.md rules #4 and #7). Values map to i18n keys, not to
@@ -47,3 +47,11 @@ export const STAFF_ROLE_KEYS: Record<StaffMember["role"], string> = {
   admin: "admin.shell.roleAdmin",
   staff: "admin.shell.roleStaff",
 };
+
+export const DISCOUNT_TYPE_KEYS: Record<Coupon["type"], string> = {
+  percentage: "admin.coupons.typePercentage",
+  fixed: "admin.coupons.typeFixed",
+  free_delivery: "admin.coupons.typeFreeDelivery",
+};
+
+export const DISCOUNT_TYPES = Object.keys(DISCOUNT_TYPE_KEYS) as Coupon["type"][];

@@ -31,6 +31,8 @@ export type InvoicePdfData = {
     lineTotal: string;
   }[];
   subtotal: string;
+  discountAmount: string;
+  discountLabel: string | null; // "Discount (EID2026)" — null when none
   deliveryCharge: string;
   deliveryZoneName: string | null;
   total: string;
@@ -237,6 +239,9 @@ export async function renderInvoicePdf(data: InvoicePdfData): Promise<Buffer> {
     y -= 16;
   };
   totalRow("Subtotal", formatTaka(data.subtotal));
+  if (data.discountLabel && Number(data.discountAmount) > 0) {
+    totalRow(data.discountLabel, `−${formatTaka(data.discountAmount)}`);
+  }
   totalRow(
     data.deliveryZoneName ? `Delivery — ${data.deliveryZoneName}` : "Delivery",
     formatTaka(data.deliveryCharge)

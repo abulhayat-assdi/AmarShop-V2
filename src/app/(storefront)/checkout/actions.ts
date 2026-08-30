@@ -11,10 +11,94 @@ import { carts, cartItems, productVariants, products, deliveryZones } from "@/db
 import { getPaymentAdapter } from "@/lib/payments";
 import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
+import { evaluateCoupon } from "@/lib/coupons/validate";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
-export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId";
+export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "couponCode";
 export type PlaceOrderState = { error?: MessageRef; field?: PlaceOrderField };
+
+// Preview only — placeOrder re-evaluates authoritatively. This just lets
+// the customer see the discount before committing. Rate-limited because
+// guessing valid codes is a brute-force target (same treatment as /track).
+export type ApplyCouponState = {
+  error?: MessageRef;
+  applied?: { code: string; discountAmount: number; freeDelivery: boolean };
+};
+
+export async function applyCouponAction(
+  _prev: ApplyCouponState,
+  formData: FormData
+): Promise<ApplyCouponState> {
+  const store = await getCurrentStore();
+  if (!store) return { error: msg("checkout.errStore") };
+
+  const headerList = await headers();
+  const ip = (headerList.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const limit = await checkRateLimit(`coupon:ip:${store.id}:${ip}`, { limit: 12, windowSeconds: 300 });
+  if (!limit.ok) return { error: msg("coupon.errRateLimited") };
+
+  const code = String(formData.get("code") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+
+  const token = await getCartToken();
+  if (!token) return { error: msg("checkout.errEmptyCart") };
+
+  const zoneId = String(formData.get("deliveryZoneId") ?? "").trim();
+
+  const result = await withStoreContext(store.id, async (tx) => {
+    const [cart] = await tx
+      .select({ id: carts.id })
+      .from(carts)
+      .where(and(eq(carts.storeId, store.id), eq(carts.cartToken, token)))
+      .limit(1);
+    if (!cart) return { error: msg("checkout.errEmptyCart") } as ApplyCouponState;
+
+    const rows = await tx
+      .select({
+        price: productVariants.price,
+        discountedPrice: productVariants.discountedPrice,
+        quantity: cartItems.quantity,
+      })
+      .from(cartItems)
+      .innerJoin(productVariants, eq(productVariants.id, cartItems.productVariantId))
+      .where(and(eq(cartItems.storeId, store.id), eq(cartItems.cartId, cart.id)));
+    if (rows.length === 0) return { error: msg("checkout.errEmptyCart") } as ApplyCouponState;
+
+    const subtotal = rows.reduce(
+      (sum, r) => sum + Number(r.discountedPrice ?? r.price) * r.quantity,
+      0
+    );
+
+    const [zone] = zoneId
+      ? await tx
+          .select({ charge: deliveryZones.charge })
+          .from(deliveryZones)
+          .where(and(eq(deliveryZones.storeId, store.id), eq(deliveryZones.id, zoneId)))
+          .limit(1)
+      : [];
+    const deliveryCharge = zone ? Number(zone.charge) : 0;
+
+    const evaluation = await evaluateCoupon(tx, {
+      storeId: store.id,
+      code,
+      subtotal,
+      deliveryCharge,
+      phone: BD_PHONE_PATTERN.test(phone) ? phone : null,
+    });
+    if (!evaluation.ok) return { error: evaluation.reason } as ApplyCouponState;
+
+    return {
+      applied: {
+        code: evaluation.coupon.code,
+        discountAmount: evaluation.discountAmount,
+        freeDelivery: evaluation.freeDelivery,
+      },
+    } as ApplyCouponState;
+  });
+
+  return result;
+}
 
 type CartLine = {
   variantId: string;
@@ -41,6 +125,7 @@ export async function placeOrder(
   const customerEmail = String(formData.get("email") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const deliveryZoneId = String(formData.get("deliveryZoneId") ?? "").trim();
+  const couponCode = String(formData.get("couponCode") ?? "").trim();
   const paymentMethod: "cod" | "sslcommerz" =
     String(formData.get("paymentMethod") ?? "cod") === "sslcommerz" ? "sslcommerz" : "cod";
 
@@ -65,7 +150,7 @@ export async function placeOrder(
   let redirectTarget: string;
 
   try {
-    const { cart, items, zone } = await withStoreContext(store.id, async (tx) => {
+    const { cart, items, zone, coupon } = await withStoreContext(store.id, async (tx) => {
       const [cart] = await tx
         .select()
         .from(carts)
@@ -111,7 +196,37 @@ export async function placeOrder(
         throw Object.assign(new Error("Invalid delivery zone"), { isInvalidZone: true });
       }
 
-      return { cart, items, zone };
+      // Coupon judged here, in the read tx, so its discount is baked into
+      // `total` before adapter.initiate() sees the amount — the IPN later
+      // checks that amount against payments.amount. The used_count guard
+      // itself runs in the write tx (createOrderRecords).
+      let coupon: { code: string; id: string; discountAmount: number } | null = null;
+      if (couponCode) {
+        const subtotal = items.reduce(
+          (sum, item) => sum + Number(item.discountedPrice ?? item.price) * item.quantity,
+          0
+        );
+        const evaluation = await evaluateCoupon(tx, {
+          storeId: store.id,
+          code: couponCode,
+          subtotal,
+          deliveryCharge: Number(zone.charge),
+          phone: customerPhone,
+        });
+        if (!evaluation.ok) {
+          throw Object.assign(new Error("Coupon rejected"), {
+            isCouponInvalid: true,
+            reason: evaluation.reason,
+          });
+        }
+        coupon = {
+          code: evaluation.coupon.code,
+          id: evaluation.coupon.id,
+          discountAmount: evaluation.discountAmount,
+        };
+      }
+
+      return { cart, items, zone, coupon };
     });
 
     const lines: OrderLine[] = items.map((item) => ({
@@ -127,7 +242,10 @@ export async function placeOrder(
       0
     );
     const deliveryCharge = Number(zone.charge);
-    const total = subtotal + deliveryCharge;
+    const discountAmount = coupon?.discountAmount ?? 0;
+    // discountAmount already folds in a free-delivery waiver, so this
+    // identity holds for every coupon type.
+    const total = Math.round((subtotal - discountAmount + deliveryCharge) * 100) / 100;
 
     // External call BEFORE the order is written — see the plan's atomicity
     // note. tranId is generated up front so every callback URL (and the
@@ -161,7 +279,9 @@ export async function placeOrder(
         deliveryZoneId: zone.id,
         deliveryCharge,
         subtotal,
+        discountAmount,
         total,
+        coupon: coupon ? { id: coupon.id, code: coupon.code } : null,
         customerName,
         customerPhone,
         customerAddress,
@@ -189,6 +309,12 @@ export async function placeOrder(
     }
     if ((err as { isInvalidZone?: boolean } | null)?.isInvalidZone) {
       return { error: msg("checkout.errZoneInvalid"), field: "deliveryZoneId" };
+    }
+    if ((err as { isCouponInvalid?: boolean } | null)?.isCouponInvalid) {
+      return { error: (err as { reason: MessageRef }).reason, field: "couponCode" };
+    }
+    if ((err as { isCouponExhausted?: boolean } | null)?.isCouponExhausted) {
+      return { error: msg("coupon.errExhausted"), field: "couponCode" };
     }
     if (err instanceof Error) {
       // Covers adapter.initiate() failures — e.g. the gateway being down or

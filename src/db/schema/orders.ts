@@ -44,6 +44,12 @@ export const orders = pgTable(
     }),
     deliveryCharge: numeric("delivery_charge", { precision: 10, scale: 2 }).notNull(),
     subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
+    // Coupon SNAPSHOT — like deliveryCharge, frozen at order time. A later
+    // edit to the coupon must never change what a past order shows.
+    // discountAmount already has delivery-charge waivers folded in, so
+    // total = subtotal - discountAmount + deliveryCharge always holds.
+    couponCode: text("coupon_code"),
+    discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).notNull().default("0"),
     total: numeric("total", { precision: 12, scale: 2 }).notNull(),
     paymentMethod: paymentMethodEnum("payment_method").notNull(),
     status: orderStatusEnum("status").notNull().default("placed"),

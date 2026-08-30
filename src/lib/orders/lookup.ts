@@ -14,6 +14,8 @@ export type TrackedOrderView = {
   placedAt: string; // ISO
   items: TrackedOrderItem[];
   subtotal: string;
+  couponCode: string | null;
+  discountAmount: string;
   deliveryCharge: string;
   total: string;
   paymentMethod: Order["paymentMethod"];
@@ -67,6 +69,8 @@ export async function findTrackedOrder(
     placedAt: found.order.createdAt.toISOString(),
     items: found.items,
     subtotal: found.order.subtotal,
+    couponCode: found.order.couponCode,
+    discountAmount: found.order.discountAmount,
     deliveryCharge: found.order.deliveryCharge,
     total: found.order.total,
     paymentMethod: found.order.paymentMethod,

@@ -47,6 +47,15 @@ function OrderResult({ order }: { order: TrackedOrderView }) {
           <span>{t("common.subtotal")}</span>
           <span>৳{order.subtotal}</span>
         </div>
+        {Number(order.discountAmount) > 0 && (
+          <div className="flex justify-between text-green-700">
+            <span>
+              {t("checkout.discount")}
+              {order.couponCode ? ` (${order.couponCode})` : ""}
+            </span>
+            <span>−৳{order.discountAmount}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span>{t("common.delivery")}</span>
           <span>৳{order.deliveryCharge}</span>

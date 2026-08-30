@@ -128,6 +128,13 @@ export async function getInvoicePdf(
         lineTotal: it.lineTotal,
       })),
       subtotal: order.subtotal,
+      discountAmount: order.discountAmount,
+      discountLabel:
+        Number(order.discountAmount) > 0
+          ? order.couponCode
+            ? `${t("checkout.discount")} (${order.couponCode})`
+            : t("checkout.discount")
+          : null,
       deliveryCharge: order.deliveryCharge,
       deliveryZoneName: zone?.name ?? null,
       total: order.total,

@@ -104,6 +104,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <span>{t("admin.orders.subtotal")}</span>
             <span>৳{order.subtotal}</span>
           </div>
+          {Number(order.discountAmount) > 0 && (
+            <div className="flex justify-between text-green-700">
+              <span>
+                {t("checkout.discount")}
+                {order.couponCode ? ` (${order.couponCode})` : ""}
+              </span>
+              <span>−৳{order.discountAmount}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span>{t("admin.orders.deliveryCharge")}</span>
             <span>৳{order.deliveryCharge}</span>

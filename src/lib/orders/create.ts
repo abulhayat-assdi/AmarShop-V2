@@ -2,6 +2,8 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import type { TenantTx } from "@/db/context";
 import {
   carts,
+  coupons,
+  couponRedemptions,
   orders,
   orderItems,
   orderStatusEvents,
@@ -34,6 +36,11 @@ export type CreateOrderParams = {
   deliveryZoneId: string;
   deliveryCharge: number;
   subtotal: number;
+  // Already validated by the caller (evaluateCoupon). null = no coupon.
+  // discountAmount folds in any free-delivery waiver, so
+  // total === subtotal - discountAmount + deliveryCharge.
+  discountAmount?: number;
+  coupon?: { id: string; code: string } | null;
   total: number;
   customerName: string;
   customerPhone: string;
@@ -67,6 +74,8 @@ export async function createOrderRecords(
       deliveryZoneId: params.deliveryZoneId,
       deliveryCharge: params.deliveryCharge.toFixed(2),
       subtotal: params.subtotal.toFixed(2),
+      couponCode: params.coupon?.code ?? null,
+      discountAmount: (params.discountAmount ?? 0).toFixed(2),
       total: params.total.toFixed(2),
       paymentMethod: params.paymentMethod,
       notes: params.notes,
@@ -106,6 +115,38 @@ export async function createOrderRecords(
         productName: line.productName,
       });
     }
+  }
+
+  // Coupon redemption — the same guarded-UPDATE trick as the stock
+  // decrement above. Two concurrent orders racing the last use: only one
+  // UPDATE matches `used_count < max_uses`, the other gets no row and
+  // throws, rolling this whole transaction back. max_uses NULL = unlimited.
+  if (params.coupon) {
+    const [claimed] = await tx
+      .update(coupons)
+      .set({ usedCount: sql`${coupons.usedCount} + 1`, updatedAt: new Date() })
+      .where(
+        and(
+          eq(coupons.id, params.coupon.id),
+          eq(coupons.storeId, params.storeId),
+          sql`(${coupons.maxUses} IS NULL OR ${coupons.usedCount} < ${coupons.maxUses})`
+        )
+      )
+      .returning({ id: coupons.id });
+
+    if (!claimed) {
+      throw Object.assign(new Error(`Coupon "${params.coupon.code}" is fully used`), {
+        isCouponExhausted: true,
+      });
+    }
+
+    await tx.insert(couponRedemptions).values({
+      storeId: params.storeId,
+      couponId: params.coupon.id,
+      orderId: order.id,
+      customerPhone: params.customerPhone,
+      discountAmount: (params.discountAmount ?? 0).toFixed(2),
+    });
   }
 
   await tx.insert(orderStatusEvents).values({

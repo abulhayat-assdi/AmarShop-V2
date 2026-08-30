@@ -51,6 +51,10 @@ export const mediaKindEnum = pgEnum("media_kind", ["image", "video"]);
 // adding a value here + its adapter file.
 export const courierProviderEnum = pgEnum("courier_provider", ["steadfast", "pathao", "redx"]);
 
+// Order-level coupon discount. "free_delivery" ignores coupons.value and
+// zeroes the delivery charge instead. See src/lib/coupons/validate.ts.
+export const discountTypeEnum = pgEnum("discount_type", ["percentage", "fixed", "free_delivery"]);
+
 // Internal, normalised shipment state — each courier adapter maps its own
 // provider vocabulary onto this (see src/lib/courier/*).
 export const shipmentStatusEnum = pgEnum("shipment_status", [
