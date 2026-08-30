@@ -1,8 +1,16 @@
 import { auth } from "./config";
 
-type StaffRole = "owner" | "admin" | "staff";
+export type StaffRole = "owner" | "admin" | "staff";
 
 const ROLE_RANK: Record<StaffRole, number> = { staff: 0, admin: 1, owner: 2 };
+
+// Who may add/edit/remove a given staff row. owner+admin both reach the
+// staff-management screen (requireRole("admin")), but an admin must not be
+// able to touch an owner — only another owner can. Also used by the page
+// to hide the controls it wouldn't accept.
+export function canManageStaffRow(actorRole: StaffRole, targetRole: StaffRole): boolean {
+  return actorRole === "owner" || targetRole !== "owner";
+}
 
 // The admin dashboard's "current store" — the logged-in staff member's own
 // store (session.user.storeId), NOT src/lib/tenant/current.ts's

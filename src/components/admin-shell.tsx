@@ -154,6 +154,9 @@ export function AdminShell({
                 {t(STAFF_ROLE_KEYS[user.role])}
                 {user.isPlatformAdmin && ` · ${t("admin.shell.platformAdmin")}`}
               </p>
+              <Link href="/account" className="mt-2 block underline">
+                {t("admin.shell.account")}
+              </Link>
               <form action={signOutAction} className="mt-2">
                 <button type="submit" className="underline">
                   {t("admin.shell.signOut")}
