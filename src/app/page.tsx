@@ -7,6 +7,7 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "@/lib/products/media";
+import { getStorefrontChrome } from "@/lib/cms/queries";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
 import { signOutAction } from "./actions";
@@ -39,11 +40,17 @@ export default async function Home() {
       productRows.map((product) => product.id)
     );
     const cartItemCount = await getCartItemCount(store.id);
+    const { hasPosts, footerPages } = await getStorefrontChrome(store.id);
     const { locale, messages, t } = await getTranslator(store.locale);
 
     return (
       <I18nProvider locale={locale} messages={messages}>
-        <StorefrontHeader store={store} categories={categoryRows} cartItemCount={cartItemCount} />
+        <StorefrontHeader
+          store={store}
+          categories={categoryRows}
+          cartItemCount={cartItemCount}
+          hasBlog={hasPosts}
+        />
         <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4">
           {categoryRows.length > 0 && (
             <section className="flex flex-col gap-4">
@@ -77,7 +84,7 @@ export default async function Home() {
             )}
           </section>
         </main>
-        <StorefrontFooter store={store} />
+        <StorefrontFooter store={store} footerPages={footerPages} />
       </I18nProvider>
     );
   }

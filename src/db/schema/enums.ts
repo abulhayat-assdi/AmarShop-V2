@@ -20,6 +20,13 @@ export const cartStatusEnum = pgEnum("cart_status", [
   "abandoned",
 ]);
 
+// A content_entries row (see content-entries.ts) is either a blog post or
+// a static storefront page — same shape (a slug'd markdown document with a
+// publish state), told apart by `kind`.
+export const contentKindEnum = pgEnum("content_kind", ["post", "page"]);
+
+export const contentStatusEnum = pgEnum("content_status", ["draft", "published"]);
+
 // A checkout_leads row (see checkout-leads.ts): a customer who entered
 // their name + phone at checkout but hasn't completed the order. "pending"
 // = awaiting a follow-up call, "contacted" = the merchant has called,

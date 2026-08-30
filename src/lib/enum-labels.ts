@@ -1,4 +1,4 @@
-import type { Coupon, Order, Payment, Product, StaffMember } from "@/db/schema";
+import type { ContentEntry, Coupon, Order, Payment, Product, StaffMember } from "@/db/schema";
 
 // The single place every user-facing enum value is mapped to a display
 // label (CLAUDE.md rules #4 and #7). Values map to i18n keys, not to
@@ -55,3 +55,10 @@ export const DISCOUNT_TYPE_KEYS: Record<Coupon["type"], string> = {
 };
 
 export const DISCOUNT_TYPES = Object.keys(DISCOUNT_TYPE_KEYS) as Coupon["type"][];
+
+export const CONTENT_STATUS_KEYS: Record<ContentEntry["status"], string> = {
+  draft: "admin.content.statusDraft",
+  published: "admin.content.statusPublished",
+};
+
+export const CONTENT_STATUSES = Object.keys(CONTENT_STATUS_KEYS) as ContentEntry["status"][];

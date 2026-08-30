@@ -15,10 +15,12 @@ export async function StorefrontHeader({
   store,
   categories,
   cartItemCount,
+  hasBlog,
 }: {
   store: Store;
   categories: Category[];
   cartItemCount: number;
+  hasBlog: boolean;
 }) {
   const { locale, t } = await getTranslator(store.locale);
   return (
@@ -37,6 +39,11 @@ export async function StorefrontHeader({
               {category.name}
             </Link>
           ))}
+          {hasBlog && (
+            <Link href="/blog" className="hover:underline">
+              {t("nav.blog")}
+            </Link>
+          )}
           <Link href="/search" className="hover:underline">
             {t("nav.search")}
           </Link>
@@ -54,11 +61,28 @@ export async function StorefrontHeader({
   );
 }
 
-export function StorefrontFooter({ store }: { store: Store }) {
+export function StorefrontFooter({
+  store,
+  footerPages,
+}: {
+  store: Store;
+  footerPages: { slug: string; title: string }[];
+}) {
   return (
     <footer className="mt-12 border-t">
-      <div className="mx-auto max-w-5xl p-4 text-sm text-gray-500">
-        © {new Date().getFullYear()} {store.name}
+      <div className="mx-auto flex max-w-5xl flex-col gap-2 p-4 text-sm text-gray-500">
+        {footerPages.length > 0 && (
+          <nav className="flex flex-wrap gap-4">
+            {footerPages.map((page) => (
+              <Link key={page.slug} href={`/pages/${page.slug}`} className="hover:underline">
+                {page.title}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <span>
+          © {new Date().getFullYear()} {store.name}
+        </span>
       </div>
     </footer>
   );
