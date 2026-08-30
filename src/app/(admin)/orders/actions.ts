@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import { and, eq, inArray } from "drizzle-orm";
@@ -20,6 +21,7 @@ import {
   cancelShipment,
   refreshShipmentStatus,
 } from "@/lib/courier/shipments";
+import { sendOrderSms } from "@/lib/sms/notifications";
 import { nextStatus } from "./status-pipeline";
 
 // Bound with (orderId) from the detail page's buttons — see
@@ -28,16 +30,16 @@ import { nextStatus } from "./status-pipeline";
 export async function advanceOrderStatus(orderId: string) {
   const session = await requireStaffSession();
 
-  await withStoreContext(session.user.storeId, async (tx) => {
+  const advancedTo = await withStoreContext(session.user.storeId, async (tx) => {
     const [order] = await tx
       .select({ id: orders.id, status: orders.status })
       .from(orders)
       .where(and(eq(orders.storeId, session.user.storeId), eq(orders.id, orderId)))
       .limit(1);
-    if (!order) return;
+    if (!order) return null;
 
     const next = nextStatus(order.status);
-    if (!next) return;
+    if (!next) return null;
 
     await tx
       .update(orders)
@@ -48,7 +50,12 @@ export async function advanceOrderStatus(orderId: string) {
       orderId: order.id,
       status: next,
     });
+    return next;
   });
+
+  if (advancedTo === "shipped") {
+    after(() => sendOrderSms(session.user.storeId, orderId, "order_shipped"));
+  }
 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
@@ -225,6 +232,7 @@ export async function createManualOrder(
       });
       return order.id;
     });
+    after(() => sendOrderSms(storeId, orderId, "order_placed"));
   } catch (err) {
     if ((err as { isBadLine?: boolean } | null)?.isBadLine) {
       return { error: (err as Error).message, field: "lines" };

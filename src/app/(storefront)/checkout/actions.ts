@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { and, eq } from "drizzle-orm";
@@ -13,6 +14,7 @@ import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
 import { evaluateCoupon } from "@/lib/coupons/validate";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendOrderSms } from "@/lib/sms/notifications";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "couponCode";
@@ -271,7 +273,7 @@ export async function placeOrder(
       cancelUrl: `${baseUrl}/checkout?error=payment_canceled`,
     });
 
-    await withStoreContext(store.id, (tx) =>
+    const order = await withStoreContext(store.id, (tx) =>
       createOrderRecords(tx, {
         storeId: store.id,
         cartId: cart.id,
@@ -291,6 +293,10 @@ export async function placeOrder(
         tranId,
       })
     );
+
+    // Runs after the response is sent — a slow/failing gateway never adds
+    // latency to checkout or blocks the order.
+    after(() => sendOrderSms(store.id, order.id, "order_placed"));
 
     redirectTarget =
       initiation.kind === "redirect" ? initiation.redirectUrl : `/order/${tranId}/confirmation`;

@@ -55,6 +55,12 @@ export const courierProviderEnum = pgEnum("courier_provider", ["steadfast", "pat
 // zeroes the delivery charge instead. See src/lib/coupons/validate.ts.
 export const discountTypeEnum = pgEnum("discount_type", ["percentage", "fixed", "free_delivery"]);
 
+// One SMS adapter per value (src/lib/sms). "log" writes to the console +
+// the outbox and never calls out — for local dev / no-gateway stores.
+export const smsProviderEnum = pgEnum("sms_provider", ["bulksmsbd", "log"]);
+
+export const smsMessageStatusEnum = pgEnum("sms_message_status", ["pending", "sent", "failed"]);
+
 // Internal, normalised shipment state — each courier adapter maps its own
 // provider vocabulary onto this (see src/lib/courier/*).
 export const shipmentStatusEnum = pgEnum("shipment_status", [
