@@ -10,6 +10,7 @@ import {
 import { useTranslator } from "@/components/i18n-provider";
 import { deleteProductMedia } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
+import { generateDescriptionAction, type AiDescState } from "./ai-actions";
 
 type CategoryOption = { id: string; name: string };
 
@@ -40,6 +41,7 @@ const emptyValues: ProductFormValues = {
 };
 
 const initialState: ProductFormState = {};
+const initialAiState: AiDescState = {};
 
 type ProductFormProps = {
   action: (prevState: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -64,6 +66,10 @@ export function ProductForm({
   existingMedia,
 }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
+  const [aiState, aiAction, aiPending] = useActionState(
+    generateDescriptionAction,
+    initialAiState,
+  );
   const t = useTranslator();
   const values = initialValues ?? emptyValues;
 
@@ -76,6 +82,15 @@ export function ProductForm({
   const [price, setPrice] = useState(values.price);
   const [discountedPrice, setDiscountedPrice] = useState(values.discountedPrice);
   const [quantity, setQuantity] = useState(values.quantity);
+
+  // Render-time reconcile (same no-effect pattern as CheckoutForm's coupon
+  // block): when the AI action returns fresh text, drop it into the
+  // description field.
+  const [handledAi, setHandledAi] = useState(aiState);
+  if (aiState !== handledAi) {
+    setHandledAi(aiState);
+    if (aiState.text) setDescription(aiState.text);
+  }
 
   function errorBorder(field: ProductField) {
     return state.field === field ? "border-red-500 focus:border-red-500" : "border-gray-300";
@@ -153,16 +168,30 @@ export function ProductForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
-        <label className="flex flex-col gap-1">
-          {t("admin.products.descriptionOptional")}
-          <textarea
-            name="description"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2"
-          />
-        </label>
+        <div className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1">
+            {t("admin.products.descriptionOptional")}
+            <textarea
+              name="description"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="rounded border border-gray-300 px-3 py-2"
+            />
+          </label>
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              formAction={aiAction}
+              formNoValidate
+              disabled={aiPending}
+              className="self-start rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+            >
+              {aiPending ? t("admin.products.aiGenerating") : t("admin.products.aiGenerate")}
+            </button>
+            {aiState.error && <span className="text-sm text-red-700">{t(aiState.error)}</span>}
+          </div>
+        </div>
         <label className="flex flex-col gap-1">
           {t("admin.products.vat")}
           <input
