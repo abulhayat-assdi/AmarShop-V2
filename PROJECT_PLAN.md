@@ -7,7 +7,7 @@
 - **Stack:** Next.js full-stack.  
 - **Hosting:** Hostinger VPS, KVM 2 plan — 2 vCPU, 8 GB RAM, 100 GB disk, 8 TB bandwidth, Ubuntu 24.04 LTS, Kuala Lumpur (Malaysia) datacenter, weekly snapshots (3 kept).  
 - **Market:** Bangladesh, same as the audited product — Bengali \+ English UI, bKash/Nagad/Rocket payments, REDX/Pathao/Steadfast couriers.  
-- **Scope exclusion:** POS (point-of-sale) and physical-store/shop-location management are explicitly **out of scope** — the audited product has both, this build won't. Multi-warehouse stock for *online* fulfillment stays in scope; it's a different concern (see Section 4 and Section 8, Phase 4).
+- **Scope exclusion:** POS (point-of-sale) and physical-store/shop-location management are explicitly **out of scope** — the audited product has both, this build won't. **Multi-warehouse stock was also cut on 2026-08-31** by the user's decision (it was in scope until then); inventory is a single per-variant scalar, one implicit location. Sections 4 and 8 below still describe the original multi-warehouse plan for historical context — it is not being built.
 
 This document is the "report." A companion file, `CLAUDE.md`, is the "instructions" — drop it in the root of your new repository and Claude Code will read it automatically at the start of every session. This document is the reference `CLAUDE.md` points back to.
 
@@ -68,7 +68,7 @@ The value of the audits isn't "here's a feature list to copy" — it's a working
 | `PlatformUser` / `StaffMember` | Staff logins for a store, with roles (owner/admin/staff) and granular permissions | Belongs to a `Store`; many-to-many via role |
 | `Customer` | A shopper on a specific storefront (not a platform user) | Belongs to a `Store`; has `Order`s, `Cart`s |
 | `Product`, `ProductVariant`, `Category` | Catalog | Belongs to a `Store`; variants have their own stock/price |
-| `Warehouse`, `InventoryLevel` | Multi-warehouse stock (internal fulfillment locations only — no public-facing shop/store-locator fields) | `InventoryLevel` links `ProductVariant` × `Warehouse` |
+| ~~`Warehouse`, `InventoryLevel`~~ | Multi-warehouse stock — **cut 2026-08-31 (user decision), not built.** Stock is a single `product_variants.quantity` scalar. | — |
 | `Order`, `OrderItem`, `OrderStatusEvent` | Sales \+ fulfillment pipeline | Belongs to a `Store` and `Customer` |
 | `Payment`, `Invoice` | Money in, and the PDF generated per order | Belongs to an `Order` |
 | `Cart`, `AbandonedCartEvent` | Live and abandoned carts, for recovery SMS/automation | Belongs to a `Store` and `Customer` |
@@ -160,7 +160,7 @@ Architect for the full data model now (Section 4); ship in this order so there's
 | **1 — Core commerce MVP** | A merchant can actually sell something | Storefront theme rendering (start with one clean template, not fifty); product/category/inventory (single warehouse to start); cart & checkout with **one** payment aggregator; manual order management; **one** courier integration; auto-generated invoices; custom-domain support (Caddy on-demand TLS); basic admin dashboard |
 | **2 — Growth features** | Reduce merchant friction, build trust | Second and third payment/courier options; discounts & abandoned-cart recovery; blog/CMS; merchant-facing GTM/GA4/Meta Pixel toggle; staff roles/permissions UI; low-stock alerts; bulk CSV import |
 | **3 — AI features** | The headline differentiator | AI product-description/SEO writer (LLM API); rules-based fraud/risk scoring v1 (Section 5); abandoned-cart SMS automation; demand-forecasting v1 as a simple sales-velocity heuristic, upgraded to real ML once you have order-volume data |
-| **4 — Multi-warehouse expansion** | Scale fulfillment for growing merchants | Multi-warehouse stock allocation across fulfillment locations; digital product delivery. (POS and physical-store/shop-location management are explicitly out of scope — see Section 1.) |
+| **4 — Digital products** | Sell non-physical goods | Digital product delivery (file / link / key, no shipping). ~~Multi-warehouse stock allocation~~ — cut 2026-08-31 (user decision); inventory stays a single per-variant scalar. (POS and physical-store/shop-location management remain out of scope — see Section 1.) |
 | **5 — Platform business layer** | Monetize the platform itself | Merchant subscription billing (SME/Startup/Business/Enterprise, monthly/yearly, 7-day trial) via ShurjoPay or your chosen aggregator's recurring support; Enterprise sales-lead funnel; your own internal admin analytics across all tenants |
 | **6 — Ecosystem (lowest priority)** | Third-party extensibility | Public API, webhooks, developer OAuth app-install flow, revenue-shared app marketplace — deliberately last, since it only matters once you have a real merchant base for developers to build for |
 

@@ -32,7 +32,9 @@ Explicitly excluded by the user, even though the audited competitor has them:
 - **POS (point-of-sale) system.** No in-person register/checkout mode, no card-reader/hardware integration, no "sell in-store" flow of any kind.  
 - **Physical store / shop-location management.** No store-locator, no walk-in shop address/hours/map/360°-tour fields, no public-facing "visit us" features.
 
-Don't add these back "for completeness" — if a later phase seems to need them, ask first. Note this is distinct from **multi-warehouse stock**, which stays in scope: a merchant can still hold inventory across multiple *fulfillment* warehouses for online orders — that's a backend stock-allocation concern, not a physical retail feature.
+Don't add these back "for completeness" — if a later phase seems to need them, ask first.
+
+- **Multi-warehouse stock.** Also cut, by the user's decision on 2026-08-31 (it was in scope until then — `PROJECT_PLAN.md` §8's original Phase 4). Inventory is a single scalar `product_variants.quantity` per variant, one implicit location. No `warehouses` / `warehouse_stock` tables, no per-location stock, no allocation logic, no Warehouses admin page. Don't reintroduce it without asking.
 
 ## Current phase
 
@@ -47,7 +49,7 @@ Track progress here — update this section as phases complete. Start here:
 - [x] **Phase 3 — AI features (local dev complete):** AI product-description writer and AI SEO writer (title + meta), both behind one provider-agnostic `CopywriterAdapter` (`src/lib/ai`) — OpenAI-compatible / Anthropic / an offline stub that is the default with no key; `products.seoTitle`/`seoDescription` + the storefront PDP's first `generateMetadata`. COD fraud check via the BDCourier API (`src/lib/fraud`, one platform token, offline stub default) — auto on every COD order via `after()`, advisory badge on the order list + a panel with a re-check button on the detail. Demand-forecast v1 — a 30-day sales-velocity heuristic (`src/lib/products/forecast.ts`) projecting days-of-stock-left, shown as a products-list column and a dashboard "Restock Soon" panel. Closed out with a QA pass against `PROJECT_PLAN.md` Section 2's bug list — see the "Phase 3 closeout" commit.  
   - [ ] **Deliberately not built:** abandoned-cart SMS automation from `PROJECT_PLAN.md` §8 — the user reshaped abandoned-cart into manual phone follow-up (see the incomplete-checkout-leads slice, Phase 2), so there is no automated customer SMS. Don't add it back without asking.  
   - [ ] **Not yet exercised against real providers:** the AI writer (no `AI_API_KEY` set — runs on the stub) and BDCourier (`BDCOURIER_API_KEY` unset — stub). Run one real call against each before relying on the output.  
-- [ ] Phase 4 — Multi-warehouse expansion (**current**) (no POS — see "Out of scope" above)  
+- [ ] Phase 4 — Digital products (**current**) — digital product delivery (file / link / key, no shipping). Multi-warehouse stock, the original other half of this phase, was cut on 2026-08-31 — see "Out of scope" above.  
 - [ ] Phase 5 — Platform billing/business layer  
 - [ ] Phase 6 — Ecosystem (apps/developer platform)
 
