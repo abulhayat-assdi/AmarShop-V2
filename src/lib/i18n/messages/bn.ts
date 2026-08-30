@@ -579,6 +579,8 @@ export const bn: Messages = {
       statusPending: "পেন্ডিং",
       statusSent: "পাঠানো হয়েছে",
       statusFailed: "ব্যর্থ",
+      eventOrderPlaced: "অর্ডার হয়েছে",
+      eventOrderShipped: "অর্ডার শিপ হয়েছে",
     },
     marketing: {
       title: "মার্কেটিং ও অ্যানালিটিক্স",

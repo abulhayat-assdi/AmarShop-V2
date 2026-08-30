@@ -578,6 +578,8 @@ export const en = {
       statusPending: "pending",
       statusSent: "sent",
       statusFailed: "failed",
+      eventOrderPlaced: "Order placed",
+      eventOrderShipped: "Order shipped",
     },
     marketing: {
       title: "Marketing & Analytics",

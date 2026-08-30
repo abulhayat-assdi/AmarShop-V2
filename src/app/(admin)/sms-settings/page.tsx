@@ -12,6 +12,11 @@ const STATUS_KEYS: Record<string, string> = {
   failed: "admin.sms.statusFailed",
 };
 
+const EVENT_KEYS: Record<string, string> = {
+  order_placed: "admin.sms.eventOrderPlaced",
+  order_shipped: "admin.sms.eventOrderShipped",
+};
+
 export default async function SmsSettingsPage() {
   const session = await requireRole("admin");
   const view = await getSmsSettingsView(session.user.storeId);
@@ -63,7 +68,7 @@ export default async function SmsSettingsPage() {
               {recent.map((m) => (
                 <tr key={m.id} className="border-b last:border-0">
                   <td className="py-1">{new Date(m.createdAt).toLocaleString()}</td>
-                  <td className="py-1">{m.event}</td>
+                  <td className="py-1">{EVENT_KEYS[m.event] ? t(EVENT_KEYS[m.event]) : m.event}</td>
                   <td className="py-1 font-mono">{m.toPhone}</td>
                   <td
                     className={`py-1 ${m.status === "failed" ? "text-red-600" : m.status === "sent" ? "text-green-700" : "text-gray-500"}`}
