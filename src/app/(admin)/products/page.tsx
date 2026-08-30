@@ -37,12 +37,17 @@ export default async function ProductsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{t("admin.products.title")}</h1>
-        <Link
-          href="/products/create"
-          className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-        >
-          {t("admin.products.addProduct")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/products/import" className="text-sm underline">
+            {t("admin.products.importCsv")}
+          </Link>
+          <Link
+            href="/products/create"
+            className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
+          >
+            {t("admin.products.addProduct")}
+          </Link>
+        </div>
       </div>
       <table className="w-full text-left text-sm">
         <thead>

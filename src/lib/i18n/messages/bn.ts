@@ -163,6 +163,25 @@ export const bn: Messages = {
     errRateLimited: "অনেকবার চেষ্টা হয়েছে। কয়েক মিনিট পর আবার চেষ্টা করুন।",
   },
 
+  import: {
+    errHeader: "CSV-তে আবশ্যক কলাম নেই: {missing}।",
+    errEmpty: "CSV-তে কোনো ডেটা রো নেই।",
+    errFile: "একটি .csv ফাইল বাছুন।",
+    errFileTooLarge: "ফাইলটি অনেক বড়।",
+    errTooManyRows: "অনেক রো — একবারে সর্বোচ্চ {max}টি ইমপোর্ট করুন।",
+    errName: "নাম আবশ্যক।",
+    errSku: "SKU আবশ্যক।",
+    errPrice: "দাম ০ বা তার বেশি সংখ্যা হতে হবে।",
+    errQuantity: "পরিমাণ ০ বা তার বেশি পূর্ণসংখ্যা হতে হবে।",
+    errDiscountedPrice: "ছাড়ের দাম ০ বা তার বেশি সংখ্যা হতে হবে।",
+    errVat: "ভ্যাট % ০ থেকে ১০০-এর মধ্যে হতে হবে।",
+    errStatus: "স্ট্যাটাস draft, active, বা archived হতে হবে।",
+    errDuplicateInFile: "এই SKU ফাইলে আগেও আছে।",
+    errSkuExists: "এই SKU-র একটি পণ্য আগে থেকেই আছে।",
+    errRowConflict: "লাইন {line} বিদ্যমান পণ্যের সাথে সংঘর্ষ করেছে — কিছুই ইমপোর্ট হয়নি।",
+    errNothingToImport: "ইমপোর্ট করার মতো কোনো বৈধ রো নেই।",
+  },
+
   admin: {
     nav: {
       dashboard: "ড্যাশবোর্ড",
@@ -320,6 +339,7 @@ export const bn: Messages = {
     products: {
       title: "পণ্য",
       addProduct: "পণ্য যোগ করুন",
+      importCsv: "CSV ইমপোর্ট",
       colName: "নাম",
       colCategory: "ক্যাটাগরি",
       colPrice: "দাম",
@@ -516,6 +536,28 @@ export const bn: Messages = {
       errCurrentPassword: "বর্তমান পাসওয়ার্ড সঠিক নয়।",
       errPassword: "নতুন পাসওয়ার্ড অন্তত ৮ অক্ষরের হতে হবে।",
       errPasswordMatch: "নতুন পাসওয়ার্ড দুটি মিলছে না।",
+    },
+    import: {
+      title: "CSV থেকে পণ্য ইমপোর্ট",
+      intro:
+        "একসাথে অনেক পণ্য যোগ করতে একটি CSV আপলোড করুন। সেভ করার আগে কী কী ইমপোর্ট হবে তার প্রিভিউ দেখতে পাবেন।",
+      templateLink: "CSV টেমপ্লেট ডাউনলোড করুন",
+      fileLabel: "CSV ফাইল",
+      preview: "প্রিভিউ",
+      previewing: "পড়া হচ্ছে…",
+      summary: "{willImport}টি ইমপোর্ট হবে, {skipped}টি বাদ।",
+      summaryNewCategories: "নতুন ক্যাটাগরি: {list}।",
+      colLine: "লাইন",
+      colName: "নাম",
+      colSku: "SKU",
+      colPrice: "দাম",
+      colCategory: "ক্যাটাগরি",
+      colStatus: "স্ট্যাটাস",
+      newCategoryTag: "(নতুন)",
+      willImportTag: "ইমপোর্ট হবে",
+      skippedTag: "বাদ",
+      importN: "{count}টি পণ্য ইমপোর্ট করুন",
+      importing: "ইমপোর্ট হচ্ছে…",
     },
     login: {
       signIn: "সাইন ইন",

@@ -162,6 +162,25 @@ export const en = {
     errRateLimited: "Too many attempts. Please wait a few minutes and try again.",
   },
 
+  import: {
+    errHeader: "The CSV is missing required column(s): {missing}.",
+    errEmpty: "The CSV has no data rows.",
+    errFile: "Choose a .csv file.",
+    errFileTooLarge: "That file is too large.",
+    errTooManyRows: "Too many rows — import at most {max} at a time.",
+    errName: "Name is required.",
+    errSku: "SKU is required.",
+    errPrice: "Price must be a number of 0 or more.",
+    errQuantity: "Quantity must be a whole number of 0 or more.",
+    errDiscountedPrice: "Discounted price must be a number of 0 or more.",
+    errVat: "VAT % must be between 0 and 100.",
+    errStatus: "Status must be draft, active, or archived.",
+    errDuplicateInFile: "This SKU appears earlier in the file.",
+    errSkuExists: "A product with this SKU already exists.",
+    errRowConflict: "Row {line} clashed with an existing product — nothing was imported.",
+    errNothingToImport: "No valid rows to import.",
+  },
+
   admin: {
     nav: {
       dashboard: "Dashboard",
@@ -319,6 +338,7 @@ export const en = {
     products: {
       title: "Products",
       addProduct: "Add product",
+      importCsv: "Import CSV",
       colName: "Name",
       colCategory: "Category",
       colPrice: "Price",
@@ -515,6 +535,28 @@ export const en = {
       errCurrentPassword: "Current password is incorrect.",
       errPassword: "New password must be at least 8 characters.",
       errPasswordMatch: "The new passwords don't match.",
+    },
+    import: {
+      title: "Import products from CSV",
+      intro:
+        "Upload a CSV to add many products at once. You'll see a preview of what will import before anything is saved.",
+      templateLink: "Download the CSV template",
+      fileLabel: "CSV file",
+      preview: "Preview",
+      previewing: "Reading…",
+      summary: "{willImport} will import, {skipped} skipped.",
+      summaryNewCategories: "New categories: {list}.",
+      colLine: "Line",
+      colName: "Name",
+      colSku: "SKU",
+      colPrice: "Price",
+      colCategory: "Category",
+      colStatus: "Status",
+      newCategoryTag: "(new)",
+      willImportTag: "will import",
+      skippedTag: "skipped",
+      importN: "Import {count} products",
+      importing: "Importing…",
     },
     login: {
       signIn: "Sign in",
