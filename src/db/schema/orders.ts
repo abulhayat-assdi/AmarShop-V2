@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { stores } from "./stores";
 import { deliveryZones } from "./delivery-zones";
-import { orderStatusEnum, paymentMethodEnum } from "./enums";
+import { orderStatusEnum, paymentMethodEnum, fraudRiskLevelEnum } from "./enums";
 
 // Tenant-scoped: every row belongs to exactly one store. RLS policy for
 // this table is defined in its migration file — see src/db/migrations.
@@ -54,6 +54,14 @@ export const orders = pgTable(
     paymentMethod: paymentMethodEnum("payment_method").notNull(),
     status: orderStatusEnum("status").notNull().default("placed"),
     notes: text("notes"),
+    // COD fraud check from BDCourier (src/lib/fraud). Populated after the
+    // order is written, for COD orders only. fraudCheckedAt null = never
+    // ran; fraudRaw holds the provider's courier-wise data + verdict for
+    // the admin panel. Advisory — nothing here blocks an order.
+    fraudRiskLevel: fraudRiskLevelEnum("fraud_risk_level"),
+    fraudSuccessRatio: numeric("fraud_success_ratio", { precision: 5, scale: 2 }),
+    fraudCheckedAt: timestamp("fraud_checked_at", { withTimezone: true }),
+    fraudRaw: text("fraud_raw"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

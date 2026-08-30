@@ -6,7 +6,7 @@ import { orders, orderItems, orderStatusEvents, payments, deliveryZones } from "
 import { getShipmentForOrder } from "@/lib/courier/shipments";
 import { getCourierSettingsView } from "@/lib/courier/settings";
 import { getTranslator } from "@/lib/i18n/server";
-import { advanceOrderStatus, cancelOrder, markPaymentReceived } from "../actions";
+import { advanceOrderStatus, cancelOrder, markPaymentReceived, recheckFraud } from "../actions";
 import { nextStatus } from "../status-pipeline";
 import { formatOrderCode } from "@/lib/orders/number";
 import {
@@ -15,7 +15,24 @@ import {
   PAYMENT_STATUS_KEYS,
   WALLET_PROVIDER_KEYS,
 } from "@/lib/enum-labels";
+import { RiskBadge } from "@/components/risk-badge";
 import { ShipmentPanel } from "./ShipmentPanel";
+
+// Pull the short verdict line out of the stored fraud-check blob
+// (orders.fraudRaw = { provider, verdict, response }). Defensive — may be
+// the stub or, on a provider failure, { error: "unavailable" }.
+function fraudVerdict(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw) as { verdict?: unknown; error?: unknown };
+    if (obj.error) return null;
+    return typeof obj.verdict === "string" && obj.verdict.trim()
+      ? obj.verdict.trim().slice(0, 300)
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -89,6 +106,44 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <p className="mt-2 text-gray-600">{t("admin.orders.note", { note: order.notes })}</p>
           )}
         </div>
+      </div>
+
+      <div className="rounded border p-4">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="font-semibold">{t("admin.orders.fraudTitle")}</h2>
+          <form action={recheckFraud.bind(null, order.id)}>
+            <button type="submit" className="rounded border px-3 py-1 text-xs hover:bg-gray-50">
+              {t("admin.orders.fraudRecheck")}
+            </button>
+          </form>
+        </div>
+        {order.fraudCheckedAt ? (
+          <div className="flex flex-col gap-1 text-sm">
+            <div className="flex items-center gap-2">
+              <RiskBadge level={order.fraudRiskLevel} />
+              {order.fraudSuccessRatio != null && (
+                <span className="text-gray-600">
+                  {t("admin.orders.fraudSuccessRatio", { ratio: order.fraudSuccessRatio })}
+                </span>
+              )}
+            </div>
+            {order.fraudRiskLevel && (
+              <p className="text-gray-600">
+                {t(`admin.orders.fraudAdvice.${order.fraudRiskLevel}`)}
+              </p>
+            )}
+            {fraudVerdict(order.fraudRaw) && (
+              <p className="text-gray-500">{fraudVerdict(order.fraudRaw)}</p>
+            )}
+            <p className="text-xs text-gray-400">
+              {t("admin.orders.fraudCheckedAt", {
+                date: new Date(order.fraudCheckedAt).toLocaleString(),
+              })}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">{t("admin.orders.fraudPending")}</p>
+        )}
       </div>
 
       <div className="rounded border p-4">

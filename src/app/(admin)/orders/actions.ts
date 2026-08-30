@@ -22,6 +22,7 @@ import {
   refreshShipmentStatus,
 } from "@/lib/courier/shipments";
 import { sendOrderSms } from "@/lib/sms/notifications";
+import { runFraudCheck } from "@/lib/fraud/check";
 import { nextStatus } from "./status-pipeline";
 
 // Bound with (orderId) from the detail page's buttons — see
@@ -100,6 +101,14 @@ export async function markPaymentReceived(orderId: string) {
       .where(and(eq(payments.storeId, session.user.storeId), eq(payments.orderId, orderId)))
   );
 
+  revalidatePath(`/orders/${orderId}`);
+}
+
+// Re-run the BDCourier fraud check for an order on demand (the "Re-check"
+// button on the order detail). runFraudCheck never throws.
+export async function recheckFraud(orderId: string) {
+  const session = await requireStaffSession();
+  await runFraudCheck(session.user.storeId, orderId);
   revalidatePath(`/orders/${orderId}`);
 }
 
@@ -233,6 +242,8 @@ export async function createManualOrder(
       return order.id;
     });
     after(() => sendOrderSms(storeId, orderId, "order_placed"));
+    // Manual orders are always COD — run a BDCourier fraud check.
+    after(() => runFraudCheck(storeId, orderId));
   } catch (err) {
     if ((err as { isBadLine?: boolean } | null)?.isBadLine) {
       return { error: (err as Error).message, field: "lines" };

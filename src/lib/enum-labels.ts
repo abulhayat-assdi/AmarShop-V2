@@ -1,4 +1,11 @@
-import type { ContentEntry, Coupon, Order, Payment, Product, StaffMember } from "@/db/schema";
+import type {
+  ContentEntry,
+  Coupon,
+  Order,
+  Payment,
+  Product,
+  StaffMember,
+} from "@/db/schema";
 
 // The single place every user-facing enum value is mapped to a display
 // label (CLAUDE.md rules #4 and #7). Values map to i18n keys, not to
@@ -68,3 +75,12 @@ export const CONTENT_STATUS_KEYS: Record<ContentEntry["status"], string> = {
 };
 
 export const CONTENT_STATUSES = Object.keys(CONTENT_STATUS_KEYS) as ContentEntry["status"][];
+
+export const FRAUD_RISK_LEVEL_KEYS: Record<NonNullable<Order["fraudRiskLevel"]>, string> = {
+  safe: "admin.orders.fraudLevel.safe",
+  low: "admin.orders.fraudLevel.low",
+  medium: "admin.orders.fraudLevel.medium",
+  high: "admin.orders.fraudLevel.high",
+  danger: "admin.orders.fraudLevel.danger",
+  unknown: "admin.orders.fraudLevel.unknown",
+};

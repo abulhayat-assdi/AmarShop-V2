@@ -162,6 +162,13 @@
       "when": 1788106925363,
       "tag": "0022_add_product_seo",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788109013435,
+      "tag": "0023_add_order_fraud_check",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,7 @@ import {
   PAYMENT_METHOD_KEYS,
   PAYMENT_STATUS_KEYS,
 } from "@/lib/enum-labels";
+import { RiskBadge } from "@/components/risk-badge";
 
 type OrderStatusValue = (typeof ORDER_STATUSES)[number];
 const STATUS_TABS = ["all", ...ORDER_STATUSES] as const;
@@ -46,6 +47,7 @@ export default async function OrdersPage({
         paymentMethod: orders.paymentMethod,
         createdAt: orders.createdAt,
         paymentStatus: payments.status,
+        fraudRiskLevel: orders.fraudRiskLevel,
         itemCount: sql<number>`count(${orderItems.id})`,
       })
       .from(orders)
@@ -89,13 +91,14 @@ export default async function OrdersPage({
             <th className="py-2">{t("admin.orders.colItems")}</th>
             <th className="py-2">{t("admin.orders.colTotal")}</th>
             <th className="py-2">{t("admin.orders.colPayment")}</th>
+            <th className="py-2">{t("admin.orders.colRisk")}</th>
             <th className="py-2">{t("admin.orders.colStatus")}</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-4 text-gray-500">
+              <td colSpan={8} className="py-4 text-gray-500">
                 {activeStatus === "all"
                   ? t("admin.orders.noOrders")
                   : t("admin.orders.noOrdersInStatus", { status: t(ORDER_STATUS_KEYS[activeStatus]) })}
@@ -118,6 +121,9 @@ export default async function OrdersPage({
                   <span className="ml-1 text-xs text-gray-500">
                     ({order.paymentStatus ? t(PAYMENT_STATUS_KEYS[order.paymentStatus]) : "—"})
                   </span>
+                </td>
+                <td className="py-2">
+                  <RiskBadge level={order.fraudRiskLevel} />
                 </td>
                 <td className="py-2">{t(ORDER_STATUS_KEYS[order.status])}</td>
               </tr>

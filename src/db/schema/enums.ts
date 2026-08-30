@@ -56,6 +56,18 @@ export const paymentMethodEnum = pgEnum("payment_method", ["cod", "sslcommerz", 
 // merchant verifies it. See src/lib/payments/manual-wallet.ts.
 export const walletProviderEnum = pgEnum("wallet_provider", ["bkash", "nagad"]);
 
+// COD fraud risk for an order, from the BDCourier customer-check API
+// (src/lib/fraud). "unknown" = the check ran but couldn't classify, or
+// the provider was unavailable.
+export const fraudRiskLevelEnum = pgEnum("fraud_risk_level", [
+  "safe",
+  "low",
+  "medium",
+  "high",
+  "danger",
+  "unknown",
+]);
+
 export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",
   "paid",

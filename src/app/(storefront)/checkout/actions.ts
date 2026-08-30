@@ -16,6 +16,7 @@ import { evaluateCoupon } from "@/lib/coupons/validate";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendOrderSms } from "@/lib/sms/notifications";
 import { markLeadConverted } from "@/lib/checkout-leads";
+import { runFraudCheck } from "@/lib/fraud/check";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "couponCode";
@@ -340,6 +341,10 @@ export async function placeOrder(
     // This checkout may have left an incomplete-checkout lead (the form
     // captures name + phone as the customer types) — retire it.
     after(() => markLeadConverted(store.id, cart.id));
+    // COD carries the refuse-on-delivery risk — run a BDCourier check.
+    if (paymentMethod === "cod") {
+      after(() => runFraudCheck(store.id, order.id));
+    }
 
     redirectTarget =
       initiation.kind === "redirect" ? initiation.redirectUrl : `/order/${tranId}/confirmation`;
