@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
@@ -7,6 +8,37 @@ import { getProductMedia } from "@/lib/products/media";
 import { ProductMedia } from "@/components/product-media";
 import { getTranslator } from "@/lib/i18n/server";
 import { AddToCartForm } from "./AddToCartForm";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const store = await getCurrentStore();
+  if (!store) return {};
+
+  const [row] = await withStoreContext(store.id, (tx) =>
+    tx
+      .select({
+        name: products.name,
+        description: products.description,
+        seoTitle: products.seoTitle,
+        seoDescription: products.seoDescription,
+      })
+      .from(products)
+      .where(
+        and(eq(products.storeId, store.id), eq(products.slug, slug), eq(products.status, "active"))
+      )
+      .limit(1)
+  );
+  if (!row) return {};
+
+  return {
+    title: `${row.seoTitle ?? row.name} — ${store.name}`,
+    description: row.seoDescription ?? row.description ?? undefined,
+  };
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

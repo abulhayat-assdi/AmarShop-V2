@@ -23,6 +23,12 @@ export const products = pgTable(
     slug: text("slug").notNull(),
     brand: text("brand"),
     description: text("description"),
+    // Optional SEO overrides for the storefront PDP's <title> / meta
+    // description (src/app/(storefront)/product/[slug]/page.tsx). Can be
+    // written by the AI SEO writer (src/lib/ai) or by hand. Fall back to
+    // name / description when null.
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
     vatPercent: numeric("vat_percent", { precision: 5, scale: 2 }).notNull().default("0"),
     status: productStatusEnum("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

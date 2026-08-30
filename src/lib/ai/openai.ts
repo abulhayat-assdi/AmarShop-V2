@@ -1,7 +1,7 @@
 import type { CopywriterAdapter } from "./adapter";
 import { AiApiError } from "./adapter";
-import type { DescribeProductInput } from "./types";
-import { buildDescribePrompt } from "./prompt";
+import type { DescribeProductInput, SeoResult } from "./types";
+import { buildDescribePrompt, buildSeoPrompt, parseSeoOutput } from "./prompt";
 
 // Built against the OpenAI Chat Completions contract
 // (POST {base}/chat/completions) — which OpenAI, OpenRouter, Groq,
@@ -20,8 +20,7 @@ export class OpenAiCompatibleAdapter implements CopywriterAdapter {
     private readonly config: { apiKey: string; baseUrl: string; model: string }
   ) {}
 
-  async describeProduct(input: DescribeProductInput): Promise<string> {
-    const { system, user } = buildDescribePrompt(input);
+  private async chat(system: string, user: string): Promise<string> {
     const url = `${this.config.baseUrl.replace(/\/$/, "")}/chat/completions`;
 
     let res: Response;
@@ -58,5 +57,15 @@ export class OpenAiCompatibleAdapter implements CopywriterAdapter {
       throw new AiApiError("openai", "empty response");
     }
     return text;
+  }
+
+  async describeProduct(input: DescribeProductInput): Promise<string> {
+    const { system, user } = buildDescribePrompt(input);
+    return this.chat(system, user);
+  }
+
+  async generateSeo(input: DescribeProductInput): Promise<SeoResult> {
+    const { system, user } = buildSeoPrompt(input);
+    return parseSeoOutput(await this.chat(system, user), input.name);
   }
 }

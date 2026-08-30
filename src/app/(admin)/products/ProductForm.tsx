@@ -10,7 +10,12 @@ import {
 import { useTranslator } from "@/components/i18n-provider";
 import { deleteProductMedia } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
-import { generateDescriptionAction, type AiDescState } from "./ai-actions";
+import {
+  generateDescriptionAction,
+  generateSeoAction,
+  type AiDescState,
+  type AiSeoState,
+} from "./ai-actions";
 
 type CategoryOption = { id: string; name: string };
 
@@ -21,6 +26,8 @@ type ProductFormValues = {
   categoryId: string;
   brand: string;
   description: string;
+  seoTitle: string;
+  seoDescription: string;
   vatPercent: string;
   sku: string;
   price: string;
@@ -33,6 +40,8 @@ const emptyValues: ProductFormValues = {
   categoryId: "",
   brand: "",
   description: "",
+  seoTitle: "",
+  seoDescription: "",
   vatPercent: "0",
   sku: "",
   price: "",
@@ -42,6 +51,7 @@ const emptyValues: ProductFormValues = {
 
 const initialState: ProductFormState = {};
 const initialAiState: AiDescState = {};
+const initialSeoState: AiSeoState = {};
 
 type ProductFormProps = {
   action: (prevState: ProductFormState, formData: FormData) => Promise<ProductFormState>;
@@ -70,6 +80,10 @@ export function ProductForm({
     generateDescriptionAction,
     initialAiState,
   );
+  const [seoState, seoAction, seoPending] = useActionState(
+    generateSeoAction,
+    initialSeoState,
+  );
   const t = useTranslator();
   const values = initialValues ?? emptyValues;
 
@@ -77,6 +91,8 @@ export function ProductForm({
   const [categoryId, setCategoryId] = useState(values.categoryId);
   const [brand, setBrand] = useState(values.brand);
   const [description, setDescription] = useState(values.description);
+  const [seoTitle, setSeoTitle] = useState(values.seoTitle);
+  const [seoDescription, setSeoDescription] = useState(values.seoDescription);
   const [vatPercent, setVatPercent] = useState(values.vatPercent);
   const [sku, setSku] = useState(values.sku);
   const [price, setPrice] = useState(values.price);
@@ -90,6 +106,12 @@ export function ProductForm({
   if (aiState !== handledAi) {
     setHandledAi(aiState);
     if (aiState.text) setDescription(aiState.text);
+  }
+  const [handledSeo, setHandledSeo] = useState(seoState);
+  if (seoState !== handledSeo) {
+    setHandledSeo(seoState);
+    if (seoState.title !== undefined) setSeoTitle(seoState.title);
+    if (seoState.metaDescription !== undefined) setSeoDescription(seoState.metaDescription);
   }
 
   function errorBorder(field: ProductField) {
@@ -190,6 +212,39 @@ export function ProductForm({
               {aiPending ? t("admin.products.aiGenerating") : t("admin.products.aiGenerate")}
             </button>
             {aiState.error && <span className="text-sm text-red-700">{t(aiState.error)}</span>}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 rounded border p-3">
+          <label className="flex flex-col gap-1">
+            {t("admin.products.seoTitleOptional")}
+            <input
+              name="seoTitle"
+              value={seoTitle}
+              onChange={(e) => setSeoTitle(e.target.value)}
+              className="rounded border border-gray-300 px-3 py-2"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            {t("admin.products.seoDescriptionOptional")}
+            <textarea
+              name="seoDescription"
+              rows={2}
+              value={seoDescription}
+              onChange={(e) => setSeoDescription(e.target.value)}
+              className="rounded border border-gray-300 px-3 py-2"
+            />
+          </label>
+          <div className="flex items-center gap-3">
+            <button
+              type="submit"
+              formAction={seoAction}
+              formNoValidate
+              disabled={seoPending}
+              className="self-start rounded border px-3 py-1.5 text-sm hover:bg-gray-50 disabled:opacity-50"
+            >
+              {seoPending ? t("admin.products.aiSeoGenerating") : t("admin.products.aiSeoGenerate")}
+            </button>
+            {seoState.error && <span className="text-sm text-red-700">{t(seoState.error)}</span>}
           </div>
         </div>
         <label className="flex flex-col gap-1">

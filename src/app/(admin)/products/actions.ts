@@ -29,6 +29,8 @@ type ParsedProduct = {
   categoryId: string | null;
   brand: string | null;
   description: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
   vatPercent: string;
   sku: string;
   price: string;
@@ -41,6 +43,8 @@ function parseProductForm(formData: FormData): { error: ProductFormState } | { d
   const categoryId = String(formData.get("categoryId") ?? "").trim() || null;
   const brand = String(formData.get("brand") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
+  const seoTitle = String(formData.get("seoTitle") ?? "").trim() || null;
+  const seoDescription = String(formData.get("seoDescription") ?? "").trim() || null;
   const vatPercent = String(formData.get("vatPercent") ?? "").trim() || "0";
   const sku = String(formData.get("sku") ?? "").trim();
   const price = String(formData.get("price") ?? "").trim();
@@ -66,6 +70,8 @@ function parseProductForm(formData: FormData): { error: ProductFormState } | { d
       categoryId,
       brand,
       description,
+      seoTitle,
+      seoDescription,
       vatPercent,
       sku,
       price,
@@ -92,8 +98,19 @@ export async function createProduct(
   const session = await requireStaffSession();
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed.error;
-  const { name, categoryId, brand, description, vatPercent, sku, price, discountedPrice, quantity } =
-    parsed.data;
+  const {
+    name,
+    categoryId,
+    brand,
+    description,
+    seoTitle,
+    seoDescription,
+    vatPercent,
+    sku,
+    price,
+    discountedPrice,
+    quantity,
+  } = parsed.data;
 
   // Validate media before creating anything — pure type/size/count checks,
   // so a bad file never leaves a half-made product behind.
@@ -138,6 +155,8 @@ export async function createProduct(
           slug,
           brand,
           description,
+          seoTitle,
+          seoDescription,
           vatPercent,
         })
         .returning();
@@ -178,8 +197,19 @@ export async function updateProduct(
   const session = await requireStaffSession();
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed.error;
-  const { name, categoryId, brand, description, vatPercent, sku, price, discountedPrice, quantity } =
-    parsed.data;
+  const {
+    name,
+    categoryId,
+    brand,
+    description,
+    seoTitle,
+    seoDescription,
+    vatPercent,
+    sku,
+    price,
+    discountedPrice,
+    quantity,
+  } = parsed.data;
 
   const newMedia = formMediaFiles(formData);
   let mediaToStore: { images: File[]; videos: File[] } = { images: [], videos: [] };
@@ -205,7 +235,16 @@ export async function updateProduct(
 
       const [product] = await tx
         .update(products)
-        .set({ categoryId, name, brand, description, vatPercent, updatedAt: new Date() })
+        .set({
+          categoryId,
+          name,
+          brand,
+          description,
+          seoTitle,
+          seoDescription,
+          vatPercent,
+          updatedAt: new Date(),
+        })
         .where(and(eq(products.storeId, session.user.storeId), eq(products.id, productId)))
         .returning();
 

@@ -1,7 +1,7 @@
 import type { CopywriterAdapter } from "./adapter";
 import { AiApiError } from "./adapter";
-import type { DescribeProductInput } from "./types";
-import { buildDescribePrompt } from "./prompt";
+import type { DescribeProductInput, SeoResult } from "./types";
+import { buildDescribePrompt, buildSeoPrompt, parseSeoOutput } from "./prompt";
 
 // Built against Anthropic's Messages API contract
 // (POST https://api.anthropic.com/v1/messages) — NOT yet exercised
@@ -18,9 +18,7 @@ export class AnthropicAdapter implements CopywriterAdapter {
 
   constructor(private readonly config: { apiKey: string; model: string }) {}
 
-  async describeProduct(input: DescribeProductInput): Promise<string> {
-    const { system, user } = buildDescribePrompt(input);
-
+  private async message(system: string, user: string): Promise<string> {
     let res: Response;
     try {
       res = await fetch(ENDPOINT, {
@@ -57,5 +55,15 @@ export class AnthropicAdapter implements CopywriterAdapter {
       throw new AiApiError("anthropic", "empty response");
     }
     return text;
+  }
+
+  async describeProduct(input: DescribeProductInput): Promise<string> {
+    const { system, user } = buildDescribePrompt(input);
+    return this.message(system, user);
+  }
+
+  async generateSeo(input: DescribeProductInput): Promise<SeoResult> {
+    const { system, user } = buildSeoPrompt(input);
+    return parseSeoOutput(await this.message(system, user), input.name);
   }
 }

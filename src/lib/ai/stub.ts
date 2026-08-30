@@ -1,5 +1,5 @@
 import type { CopywriterAdapter } from "./adapter";
-import type { DescribeProductInput } from "./types";
+import type { DescribeProductInput, SeoResult } from "./types";
 
 // No network. Assembles a short, honest paragraph from the given facts so
 // the whole feature builds, tests, and demos with no API key — the same
@@ -27,5 +27,24 @@ export class StubAdapter implements CopywriterAdapter {
       `Chosen for quality and comfort, it fits right into the ${cat.toLowerCase()} you reach for often.${price} ` +
       `Edit this text to match your own voice before publishing.`
     );
+  }
+
+  async generateSeo(input: DescribeProductInput): Promise<SeoResult> {
+    const cat = input.category ?? (input.locale === "bn" ? "পণ্য" : "product");
+    if (input.locale === "bn") {
+      return {
+        title: `${input.name} · ${cat}`.slice(0, 60),
+        metaDescription:
+          `${input.name} — ${cat} ক্যাটাগরির পণ্য। অনলাইনে অর্ডার করুন, ঘরে বসে পান।`.slice(0, 155),
+      };
+    }
+    return {
+      title: `${input.name} · ${cat}`.slice(0, 60),
+      metaDescription:
+        `Buy ${input.name}, a ${cat.toLowerCase()} for everyday use. Order online for home delivery.`.slice(
+          0,
+          155,
+        ),
+    };
   }
 }

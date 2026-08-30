@@ -1,4 +1,4 @@
-import type { CopywriterProvider, DescribeProductInput } from "./types";
+import type { CopywriterProvider, DescribeProductInput, SeoResult } from "./types";
 
 // One implementation per LLM provider (CLAUDE.md rule #5). The app only
 // ever talks to this interface — never a provider's HTTP API directly,
@@ -7,6 +7,7 @@ import type { CopywriterProvider, DescribeProductInput } from "./types";
 export interface CopywriterAdapter {
   readonly provider: CopywriterProvider;
   describeProduct(input: DescribeProductInput): Promise<string>;
+  generateSeo(input: DescribeProductInput): Promise<SeoResult>;
 }
 
 // No provider / API key configured — the feature is off for this deploy.

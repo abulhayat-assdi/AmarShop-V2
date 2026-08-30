@@ -10,3 +10,5 @@ export type DescribeProductInput = {
   priceBdt: number | null;
   locale: "bn" | "en";
 };
+
+export type SeoResult = { title: string; metaDescription: string };
