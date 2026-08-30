@@ -5,7 +5,7 @@ import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, productVariants, products, categories, stores } from "@/db/schema";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
-import { getRestockSoon } from "@/lib/products/forecast";
+import { getRestockSoon, forecastLevel } from "@/lib/products/forecast";
 import { WeeklySalesChart } from "./WeeklySalesChart";
 import { PERIODS, PERIOD_LABEL_KEYS, parsePeriod, getDateRange, type Period } from "./period";
 import { ORDER_STATUS_KEYS } from "@/lib/enum-labels";
@@ -320,7 +320,13 @@ export default async function DashboardPage({
                   <Link href={`/products/${item.productId}/edit`} className="hover:underline">
                     {item.name}
                   </Link>
-                  <span className={item.daysLeft < 7 ? "text-red-600" : "text-amber-600"}>
+                  <span
+                    className={
+                      forecastLevel(item.daysLeft) === "critical"
+                        ? "text-red-600"
+                        : "text-amber-600"
+                    }
+                  >
                     {t("admin.dashboard.daysLeftShort", { days: item.daysLeft })} ·{" "}
                     {t("admin.dashboard.inStockShort", { count: item.quantity })}
                   </span>

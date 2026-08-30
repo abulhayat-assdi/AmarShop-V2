@@ -3,6 +3,10 @@ import { withStoreContext } from "@/db/context";
 import { orders, orderItems, productVariants, products } from "@/db/schema";
 
 export const FORECAST_WINDOW_DAYS = 30;
+// Days-of-stock-left thresholds — the single source for both the badge
+// colour (forecastLevel) and the dashboard "Restock soon" cutoff.
+export const FORECAST_CRITICAL_DAYS = 7;
+export const FORECAST_LOW_DAYS = 14;
 
 export type ProductForecast = {
   productId: string;
@@ -17,8 +21,8 @@ export type ForecastLevel = "critical" | "low" | "ok" | "none";
 
 export function forecastLevel(daysLeft: number | null): ForecastLevel {
   if (daysLeft == null) return "none";
-  if (daysLeft < 7) return "critical";
-  if (daysLeft < 14) return "low";
+  if (daysLeft < FORECAST_CRITICAL_DAYS) return "critical";
+  if (daysLeft < FORECAST_LOW_DAYS) return "low";
   return "ok";
 }
 
@@ -110,7 +114,7 @@ export async function getRestockSoon(storeId: string, limit = 5): Promise<Restoc
         daysLeft: perDay > 0 ? Math.floor(r.quantity / perDay) : Infinity,
       };
     })
-    .filter((r) => r.daysLeft < 14)
+    .filter((r) => r.daysLeft < FORECAST_LOW_DAYS)
     .sort((a, b) => a.daysLeft - b.daysLeft)
     .slice(0, limit);
 }
