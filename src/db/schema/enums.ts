@@ -49,7 +49,12 @@ export const orderStatusEnum = pgEnum("order_status", [
   "canceled",
 ]);
 
-export const paymentMethodEnum = pgEnum("payment_method", ["cod", "sslcommerz"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["cod", "sslcommerz", "manual_wallet"]);
+
+// Which mobile wallet a "manual_wallet" payment was sent through — the
+// customer sends money by hand and enters the TrxID at checkout, the
+// merchant verifies it. See src/lib/payments/manual-wallet.ts.
+export const walletProviderEnum = pgEnum("wallet_provider", ["bkash", "nagad"]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",

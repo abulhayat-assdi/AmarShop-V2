@@ -9,7 +9,12 @@ import { getTranslator } from "@/lib/i18n/server";
 import { advanceOrderStatus, cancelOrder, markPaymentReceived } from "../actions";
 import { nextStatus } from "../status-pipeline";
 import { formatOrderCode } from "@/lib/orders/number";
-import { ORDER_STATUS_KEYS, PAYMENT_METHOD_KEYS, PAYMENT_STATUS_KEYS } from "@/lib/enum-labels";
+import {
+  ORDER_STATUS_KEYS,
+  PAYMENT_METHOD_KEYS,
+  PAYMENT_STATUS_KEYS,
+  WALLET_PROVIDER_KEYS,
+} from "@/lib/enum-labels";
 import { ShipmentPanel } from "./ShipmentPanel";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -136,6 +141,27 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               status: payment?.status ? t(PAYMENT_STATUS_KEYS[payment.status]) : "—",
             })}
           </p>
+          {payment?.method === "manual_wallet" && (
+            <div className="mt-1 text-sm text-gray-600">
+              {payment.walletProvider && (
+                <p>
+                  {t("admin.orders.walletProvider")}: {t(WALLET_PROVIDER_KEYS[payment.walletProvider])}
+                </p>
+              )}
+              {payment.senderMsisdn && (
+                <p>
+                  {t("admin.orders.walletSender")}:{" "}
+                  <span className="font-mono">{payment.senderMsisdn}</span>
+                </p>
+              )}
+              {payment.customerReference && (
+                <p>
+                  {t("admin.orders.walletRef")}:{" "}
+                  <span className="font-mono">{payment.customerReference}</span>
+                </p>
+              )}
+            </div>
+          )}
           <a
             href={`/orders/${order.id}/invoice`}
             target="_blank"

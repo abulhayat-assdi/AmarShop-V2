@@ -15,6 +15,10 @@ export default async function PaymentSettingsPage() {
       <PaymentSettingsForm
         sandbox={view.sandbox}
         configuredGateways={view.configuredGateways}
+        manualWalletEnabled={view.manualWalletEnabled}
+        bkashNumber={view.bkashNumber}
+        nagadNumber={view.nagadNumber}
+        manualInstructions={view.manualInstructions}
       />
     </div>
   );

@@ -12,17 +12,22 @@ import {
 } from "./actions";
 import { saveCheckoutLeadAction } from "./lead-actions";
 import { CouponField, type AppliedCoupon } from "./CouponField";
+import type { ManualWalletConfig } from "@/lib/payments/settings";
 import type { DeliveryZone } from "@/db/schema";
 
 const initialState: PlaceOrderState = {};
 const initialCouponState: ApplyCouponState = {};
 
+type PaymentChoice = "cod" | "sslcommerz" | "manual_wallet";
+
 export function CheckoutForm({
   subtotal,
   zones,
+  manualWallet,
 }: {
   subtotal: number;
   zones: DeliveryZone[];
+  manualWallet: ManualWalletConfig | null;
 }) {
   const [state, formAction, isPending] = useActionState(
     placeOrder,
@@ -39,9 +44,16 @@ export function CheckoutForm({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [zoneId, setZoneId] = useState(zones[0]?.id ?? "");
-  const [paymentMethod, setPaymentMethod] = useState<"cod" | "sslcommerz">(
-    "cod",
+  const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>("cod");
+  const walletChoices: ("bkash" | "nagad")[] = [
+    ...(manualWallet?.bkashNumber ? (["bkash"] as const) : []),
+    ...(manualWallet?.nagadNumber ? (["nagad"] as const) : []),
+  ];
+  const [walletProvider, setWalletProvider] = useState<"bkash" | "nagad">(
+    walletChoices[0] ?? "bkash",
   );
+  const [senderMsisdn, setSenderMsisdn] = useState("");
+  const [customerReference, setCustomerReference] = useState("");
 
   // Incomplete-checkout lead capture: once a name + a valid phone are
   // entered, debounce-save the contact details so the merchant can call to
@@ -204,6 +216,78 @@ export function CheckoutForm({
           </label>
           {paymentMethod === "sslcommerz" && (
             <p className="text-xs text-gray-500">{t("checkout.onlineHint")}</p>
+          )}
+
+          {manualWallet && (
+            <label className="flex items-center gap-2 rounded border p-3">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="manual_wallet"
+                checked={paymentMethod === "manual_wallet"}
+                onChange={() => setPaymentMethod("manual_wallet")}
+              />
+              {t("checkout.walletOption")}
+            </label>
+          )}
+          {manualWallet && paymentMethod === "manual_wallet" && (
+            <div className="flex flex-col gap-3 rounded border bg-gray-50 p-3 text-sm">
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">{t("checkout.walletSendTo")}</span>
+                {manualWallet.bkashNumber && (
+                  <span>
+                    {t("common.walletBkash")}: <span className="font-mono">{manualWallet.bkashNumber}</span>
+                  </span>
+                )}
+                {manualWallet.nagadNumber && (
+                  <span>
+                    {t("common.walletNagad")}: <span className="font-mono">{manualWallet.nagadNumber}</span>
+                  </span>
+                )}
+              </div>
+              {manualWallet.instructions && (
+                <p className="whitespace-pre-wrap text-gray-600">{manualWallet.instructions}</p>
+              )}
+              <label className="flex flex-col gap-1">
+                {t("checkout.walletProviderLabel")}
+                <select
+                  name="walletProvider"
+                  required
+                  value={walletProvider}
+                  onChange={(e) => setWalletProvider(e.target.value as "bkash" | "nagad")}
+                  className="rounded border border-gray-300 px-3 py-2"
+                >
+                  {walletChoices.map((w) => (
+                    <option key={w} value={w}>
+                      {w === "bkash" ? t("common.walletBkash") : t("common.walletNagad")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                {t("checkout.walletSender")}
+                <input
+                  name="senderMsisdn"
+                  required
+                  inputMode="numeric"
+                  placeholder={t("checkout.phonePlaceholder")}
+                  value={senderMsisdn}
+                  onChange={(e) => setSenderMsisdn(e.target.value)}
+                  className="rounded border border-gray-300 px-3 py-2"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                {t("checkout.walletRef")}
+                <input
+                  name="customerReference"
+                  required
+                  value={customerReference}
+                  onChange={(e) => setCustomerReference(e.target.value)}
+                  className="rounded border border-gray-300 px-3 py-2 font-mono"
+                />
+              </label>
+              <p className="text-xs text-gray-500">{t("checkout.walletHint")}</p>
+            </div>
           )}
         </fieldset>
 

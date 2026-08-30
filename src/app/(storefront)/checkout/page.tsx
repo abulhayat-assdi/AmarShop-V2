@@ -5,6 +5,7 @@ import { getCart } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { cartItems, productVariants, products, deliveryZones } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
+import { getManualWalletConfig } from "@/lib/payments/settings";
 import { CheckoutForm } from "./CheckoutForm";
 
 export default async function CheckoutPage() {
@@ -42,6 +43,7 @@ export default async function CheckoutPage() {
     (sum, item) => sum + Number(item.discountedPrice ?? item.price) * item.quantity,
     0
   );
+  const manualWallet = await getManualWalletConfig(store.id);
   const { t } = await getTranslator(store.locale);
 
   return (
@@ -60,7 +62,7 @@ export default async function CheckoutPage() {
           ))}
         </ul>
       </div>
-      <CheckoutForm subtotal={subtotal} zones={zones} />
+      <CheckoutForm subtotal={subtotal} zones={zones} manualWallet={manualWallet} />
     </div>
   );
 }

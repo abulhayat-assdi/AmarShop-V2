@@ -18,6 +18,13 @@ export const storePaymentSettings = pgTable(
       .references(() => stores.id, { onDelete: "cascade" }),
     sandbox: boolean("sandbox").notNull().default(true),
     secrets: text("secrets"),
+    // Manual bKash / Nagad "Send Money" payment (src/lib/payments/manual-wallet.ts).
+    // These numbers are shown to customers at checkout, so they're plain
+    // columns, not part of the encrypted `secrets` blob.
+    manualWalletEnabled: boolean("manual_wallet_enabled").notNull().default(false),
+    bkashNumber: text("bkash_number"),
+    nagadNumber: text("nagad_number"),
+    manualInstructions: text("manual_instructions"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

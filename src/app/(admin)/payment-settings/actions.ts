@@ -29,8 +29,20 @@ export async function savePaymentSettingsAction(
     if (Object.keys(updates).length > 0) credentialUpdates[gateway] = updates;
   }
 
+  const manualWalletEnabled = formData.get("manualWalletEnabled") === "on";
+  const bkashNumber = String(formData.get("bkashNumber") ?? "").trim() || null;
+  const nagadNumber = String(formData.get("nagadNumber") ?? "").trim() || null;
+  const manualInstructions = String(formData.get("manualInstructions") ?? "").trim() || null;
+
   try {
-    await savePaymentSettings(session.user.storeId, { sandbox, credentialUpdates });
+    await savePaymentSettings(session.user.storeId, {
+      sandbox,
+      credentialUpdates,
+      manualWalletEnabled,
+      bkashNumber,
+      nagadNumber,
+      manualInstructions,
+    });
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not save payment settings." };
   }

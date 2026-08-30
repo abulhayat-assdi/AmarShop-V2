@@ -47,9 +47,14 @@ export type CreateOrderParams = {
   customerAddress: string;
   customerEmail: string | null;
   notes: string | null;
-  paymentMethod: "cod" | "sslcommerz";
+  paymentMethod: "cod" | "sslcommerz" | "manual_wallet";
   // Manual orders may be recorded as already paid (cash / bKash in person).
   paymentStatus?: "pending" | "paid";
+  // Only for paymentMethod === "manual_wallet" — the customer sends money by
+  // hand and reports these; the merchant verifies them.
+  walletProvider?: "bkash" | "nagad" | null;
+  senderMsisdn?: string | null;
+  customerReference?: string | null;
   tranId: string;
 };
 
@@ -162,6 +167,9 @@ export async function createOrderRecords(
     status: params.paymentStatus ?? "pending",
     amount: params.total.toFixed(2),
     transactionId: params.tranId,
+    walletProvider: params.walletProvider ?? null,
+    senderMsisdn: params.senderMsisdn ?? null,
+    customerReference: params.customerReference ?? null,
   });
 
   // Cheap "pending" row only — the PDF is rendered lazily on first download

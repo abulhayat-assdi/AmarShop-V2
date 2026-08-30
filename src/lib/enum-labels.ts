@@ -34,6 +34,12 @@ export const PAYMENT_STATUS_KEYS: Record<Payment["status"], string> = {
 export const PAYMENT_METHOD_KEYS: Record<Payment["method"], string> = {
   cod: "common.paymentCod",
   sslcommerz: "common.paymentSslcommerz",
+  manual_wallet: "common.paymentManualWallet",
+};
+
+export const WALLET_PROVIDER_KEYS: Record<NonNullable<Payment["walletProvider"]>, string> = {
+  bkash: "common.walletBkash",
+  nagad: "common.walletNagad",
 };
 
 export const PRODUCT_STATUS_KEYS: Record<Product["status"], string> = {

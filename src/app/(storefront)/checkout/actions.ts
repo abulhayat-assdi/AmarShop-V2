@@ -10,7 +10,7 @@ import { getCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { carts, cartItems, productVariants, products, deliveryZones } from "@/db/schema";
 import { getPaymentAdapter } from "@/lib/payments";
-import { getSslcommerzConfig } from "@/lib/payments/settings";
+import { getSslcommerzConfig, getManualWalletConfig } from "@/lib/payments/settings";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
 import { evaluateCoupon } from "@/lib/coupons/validate";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -129,8 +129,13 @@ export async function placeOrder(
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const deliveryZoneId = String(formData.get("deliveryZoneId") ?? "").trim();
   const couponCode = String(formData.get("couponCode") ?? "").trim();
-  const paymentMethod: "cod" | "sslcommerz" =
-    String(formData.get("paymentMethod") ?? "cod") === "sslcommerz" ? "sslcommerz" : "cod";
+  const rawPaymentMethod = String(formData.get("paymentMethod") ?? "cod");
+  const paymentMethod: "cod" | "sslcommerz" | "manual_wallet" =
+    rawPaymentMethod === "sslcommerz"
+      ? "sslcommerz"
+      : rawPaymentMethod === "manual_wallet"
+        ? "manual_wallet"
+        : "cod";
 
   if (!customerName) return { error: msg("checkout.errName"), field: "name" };
   if (!BD_PHONE_PATTERN.test(customerPhone)) {
@@ -138,6 +143,37 @@ export async function placeOrder(
   }
   if (!customerAddress) return { error: msg("checkout.errAddress"), field: "address" };
   if (!deliveryZoneId) return { error: msg("checkout.errZone"), field: "deliveryZoneId" };
+
+  // Manual bKash / Nagad: validate the customer-reported details before the
+  // order is written. getManualWalletConfig is re-checked here — the form
+  // claiming this method is available doesn't make it so.
+  let walletProvider: "bkash" | "nagad" | null = null;
+  let senderMsisdn: string | null = null;
+  let customerReference: string | null = null;
+  if (paymentMethod === "manual_wallet") {
+    const walletCfg = await getManualWalletConfig(store.id);
+    if (!walletCfg) return { error: msg("checkout.errWalletDisabled") };
+
+    const rawWallet = String(formData.get("walletProvider") ?? "");
+    if (
+      (rawWallet === "bkash" && walletCfg.bkashNumber) ||
+      (rawWallet === "nagad" && walletCfg.nagadNumber)
+    ) {
+      walletProvider = rawWallet;
+    } else {
+      return { error: msg("checkout.errWalletProvider") };
+    }
+
+    senderMsisdn = String(formData.get("senderMsisdn") ?? "").trim();
+    if (!BD_PHONE_PATTERN.test(senderMsisdn)) {
+      return { error: msg("checkout.errWalletSender") };
+    }
+
+    customerReference = String(formData.get("customerReference") ?? "").trim();
+    if (customerReference.length < 4) {
+      return { error: msg("checkout.errWalletRef") };
+    }
+  }
 
   const token = await getCartToken();
   if (!token) {
@@ -291,6 +327,9 @@ export async function placeOrder(
         customerEmail,
         notes,
         paymentMethod,
+        walletProvider,
+        senderMsisdn,
+        customerReference,
         tranId,
       })
     );

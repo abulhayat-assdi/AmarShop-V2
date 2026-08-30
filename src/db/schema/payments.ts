@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, numeric, timestamp, index } from "drizzle-orm/pg-core";
 import { stores } from "./stores";
 import { orders } from "./orders";
-import { paymentMethodEnum, paymentStatusEnum } from "./enums";
+import { paymentMethodEnum, paymentStatusEnum, walletProviderEnum } from "./enums";
 
 // Tenant-scoped: every row belongs to exactly one store. RLS policy for
 // this table is defined in its migration file — see src/db/migrations.
@@ -33,6 +33,12 @@ export const payments = pgTable(
     // The gateway's own reference (SSLCommerz bank_tran_id), captured on
     // confirmation for reconciliation / refunds.
     gatewayReference: text("gateway_reference"),
+    // Set only for method = "manual_wallet": which wallet the customer sent
+    // from, the number they sent from, and the transaction id they typed in
+    // at checkout — all merchant-verified by hand (no API).
+    walletProvider: walletProviderEnum("wallet_provider"),
+    senderMsisdn: text("sender_msisdn"),
+    customerReference: text("customer_reference"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

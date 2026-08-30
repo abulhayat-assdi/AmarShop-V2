@@ -27,7 +27,12 @@ export default async function OrderConfirmationPage({
 
   const result = await withStoreContext(store.id, async (tx) => {
     const [payment] = await tx
-      .select({ orderId: payments.orderId, status: payments.status, method: payments.method })
+      .select({
+        orderId: payments.orderId,
+        status: payments.status,
+        method: payments.method,
+        customerReference: payments.customerReference,
+      })
       .from(payments)
       .where(and(eq(payments.storeId, store.id), eq(payments.transactionId, tranId)))
       .limit(1);
@@ -63,7 +68,9 @@ export default async function OrderConfirmationPage({
       ? t("confirmation.payOnDelivery")
       : payment.status === "paid"
         ? t("confirmation.paymentConfirmed")
-        : t("confirmation.paymentPending");
+        : payment.method === "manual_wallet"
+          ? t("confirmation.payWalletPending")
+          : t("confirmation.paymentPending");
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
@@ -80,6 +87,11 @@ export default async function OrderConfirmationPage({
       <p className="text-gray-600">
         {t("confirmation.placed")} {paymentLine}
       </p>
+      {payment.method === "manual_wallet" && payment.customerReference && (
+        <p className="text-sm text-gray-600">
+          {t("confirmation.walletRef", { ref: payment.customerReference })}
+        </p>
+      )}
       <p className="text-sm">
         {t("confirmation.orderNumber", { number: formatOrderCode(order.orderCode) })}
       </p>

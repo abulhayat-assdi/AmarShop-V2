@@ -15,13 +15,27 @@ const initialState: PaymentSettingsState = {};
 export function PaymentSettingsForm({
   sandbox,
   configuredGateways,
+  manualWalletEnabled,
+  bkashNumber,
+  nagadNumber,
+  manualInstructions,
 }: {
   sandbox: boolean;
   configuredGateways: PaymentGateway[];
+  manualWalletEnabled: boolean;
+  bkashNumber: string | null;
+  nagadNumber: string | null;
+  manualInstructions: string | null;
 }) {
   const [state, formAction, isPending] = useActionState(savePaymentSettingsAction, initialState);
   const t = useTranslator();
   const [isSandbox, setIsSandbox] = useState(sandbox);
+  const [manualOn, setManualOn] = useState(manualWalletEnabled);
+  const [bkash, setBkash] = useState(bkashNumber ?? "");
+  const [nagad, setNagad] = useState(nagadNumber ?? "");
+  const [instructions, setInstructions] = useState(manualInstructions ?? "");
+
+  const inputCls = "rounded border border-gray-300 px-3 py-2";
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -71,6 +85,56 @@ export function PaymentSettingsForm({
           </fieldset>
         );
       })}
+
+      <fieldset className="flex flex-col gap-3 rounded border p-4">
+        <legend className="px-1 text-sm font-semibold">{t("admin.payment.manualTitle")}</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="manualWalletEnabled"
+            checked={manualOn}
+            onChange={(e) => setManualOn(e.target.checked)}
+          />
+          {t("admin.payment.manualEnable")}
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          {t("admin.payment.manualBkashNumber")}
+          <input
+            type="text"
+            name="bkashNumber"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="01XXXXXXXXX"
+            value={bkash}
+            onChange={(e) => setBkash(e.target.value)}
+            className={inputCls}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          {t("admin.payment.manualNagadNumber")}
+          <input
+            type="text"
+            name="nagadNumber"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="01XXXXXXXXX"
+            value={nagad}
+            onChange={(e) => setNagad(e.target.value)}
+            className={inputCls}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
+          {t("admin.payment.manualInstructions")}
+          <textarea
+            name="manualInstructions"
+            rows={3}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            className={inputCls}
+          />
+          <span className="text-xs text-gray-500">{t("admin.payment.manualInstructionsHint")}</span>
+        </label>
+      </fieldset>
 
       <button
         type="submit"
