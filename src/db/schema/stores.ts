@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { storeStatusEnum } from "./enums";
 
 // The tenant table itself — never store_id-scoped or RLS-restricted by
@@ -28,6 +28,10 @@ export const stores = pgTable(
     // unvalidated value never reaches a <script>.
     metaPixelId: text("meta_pixel_id"),
     ga4MeasurementId: text("ga4_measurement_id"),
+    // A variant with stock in (0, this] shows as a low-stock alert; 0 is
+    // an out-of-stock alert. Read by the dashboard card and the admin
+    // bell (src/lib/products/stock.ts) — one value, not a hardcoded const.
+    lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

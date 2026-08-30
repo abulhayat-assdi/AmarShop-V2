@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { resolveLocale } from "@/lib/i18n/server";
 import { storefrontUrlFor } from "@/lib/tenant/resolve";
+import { getStockAlerts, DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
 import { AdminShell, type AdminNavItem } from "@/components/admin-shell";
 
 const NAV: AdminNavItem[] = [
@@ -36,6 +37,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .limit(1);
 
   const locale = await resolveLocale();
+  const { alerts, total } = await getStockAlerts(
+    session.user.storeId,
+    store?.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD
+  );
 
   return (
     <AdminShell
@@ -48,6 +53,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       }}
       nav={NAV}
       locale={locale}
+      stockAlerts={alerts}
+      stockAlertTotal={total}
     >
       {children}
     </AdminShell>

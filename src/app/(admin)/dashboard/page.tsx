@@ -1,18 +1,15 @@
 import Link from "next/link";
 import { and, eq, ne, gt, lte, lt, gte, desc, sql, type SQL } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
+import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
-import { orders, orderItems, productVariants, products, categories } from "@/db/schema";
+import { orders, orderItems, productVariants, products, categories, stores } from "@/db/schema";
+import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
 import { WeeklySalesChart } from "./WeeklySalesChart";
 import { PERIODS, PERIOD_LABEL_KEYS, parsePeriod, getDateRange, type Period } from "./period";
 import { ORDER_STATUS_KEYS } from "@/lib/enum-labels";
 import { DateInput } from "@/components/date-input";
 import { getTranslator } from "@/lib/i18n/server";
-
-// Hardcoded for now (no per-store setting for this yet) — a variant with
-// stock in (0, LOW_STOCK_THRESHOLD] counts as "low," 0 counts as out of
-// stock and isn't included here (that's products.tsx's own concern).
-const LOW_STOCK_THRESHOLD = 5;
 
 // SITE_STRUCTURE.md's Dashboard route is "/", but that path is already the
 // storefront homepage (or the platform landing page) depending on host —
@@ -34,6 +31,16 @@ export default async function DashboardPage({
   const session = await requireStaffSession();
   const { t, locale } = await getTranslator();
   const weekdayLocale = locale === "bn" ? "bn-BD" : "en-US";
+
+  // A variant with stock in (0, threshold] is "low", 0 is out of stock
+  // (out-of-stock is the products page / bell's concern). One value,
+  // stores.low_stock_threshold, shared with src/lib/products/stock.ts.
+  const [storeRow] = await db
+    .select({ lowStockThreshold: stores.lowStockThreshold })
+    .from(stores)
+    .where(eq(stores.id, session.user.storeId))
+    .limit(1);
+  const lowStockThreshold = storeRow?.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD;
 
   const stats = await withStoreContext(session.user.storeId, async (tx) => {
     const storeId = session.user.storeId;
@@ -58,7 +65,7 @@ export default async function DashboardPage({
         and(
           eq(productVariants.storeId, storeId),
           gt(productVariants.quantity, 0),
-          lte(productVariants.quantity, LOW_STOCK_THRESHOLD)
+          lte(productVariants.quantity, lowStockThreshold)
         )
       );
 

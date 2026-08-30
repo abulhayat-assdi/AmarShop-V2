@@ -120,6 +120,13 @@
       "when": 1788084399910,
       "tag": "0016_add_store_analytics",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788086281488,
+      "tag": "0017_add_low_stock_threshold",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ import { useTranslator } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/i18n/config";
 import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
 import type { StaffMember } from "@/db/schema";
+import type { StockAlert } from "@/lib/products/stock";
 
 export type AdminNavItem = { href: string; labelKey: string };
 
@@ -50,6 +51,8 @@ export function AdminShell({
   user,
   nav,
   locale,
+  stockAlerts,
+  stockAlertTotal,
   children,
 }: {
   storeName: string;
@@ -57,6 +60,8 @@ export function AdminShell({
   user: { name: string; role: StaffMember["role"]; isPlatformAdmin: boolean };
   nav: AdminNavItem[];
   locale: Locale;
+  stockAlerts: StockAlert[];
+  stockAlertTotal: number;
   children: React.ReactNode;
 }) {
   const t = useTranslator();
@@ -138,11 +143,48 @@ export function AdminShell({
           )}
 
           <details className="relative">
-            <summary className="cursor-pointer list-none" title={t("admin.shell.notifications")}>
+            <summary
+              className="relative cursor-pointer list-none"
+              title={t("admin.shell.stockAlerts")}
+            >
               🔔
+              {stockAlertTotal > 0 && (
+                <span className="absolute -right-2 -top-1 rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-tight text-white">
+                  {stockAlertTotal}
+                </span>
+              )}
             </summary>
-            <div className="absolute right-0 z-10 mt-2 w-64 rounded border bg-white p-3 text-xs text-gray-500 shadow">
-              {t("admin.shell.noNotifications")}
+            <div className="absolute right-0 z-10 mt-2 w-72 rounded border bg-white p-3 text-xs shadow">
+              {stockAlertTotal === 0 ? (
+                <p className="text-gray-500">{t("admin.shell.noAlerts")}</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {stockAlerts.map((a) => (
+                    <Link
+                      key={`${a.productId}-${a.sku}`}
+                      href={`/products/${a.productId}/edit`}
+                      className="block hover:underline"
+                    >
+                      <span className="font-medium">{a.productName}</span>
+                      <span
+                        className={`block ${a.kind === "out" ? "text-red-600" : "text-amber-600"}`}
+                      >
+                        {a.sku} ·{" "}
+                        {a.kind === "out"
+                          ? t("admin.shell.alertOutOfStock")
+                          : t("admin.shell.alertLowStock", { count: a.quantity })}
+                      </span>
+                    </Link>
+                  ))}
+                  {stockAlertTotal > stockAlerts.length && (
+                    <Link href="/products?stock=low" className="mt-1 block underline">
+                      {t("admin.shell.alertsMore", {
+                        count: stockAlertTotal - stockAlerts.length,
+                      })}
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </details>
 

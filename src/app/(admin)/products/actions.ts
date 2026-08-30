@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
+import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
-import { categories, products, productVariants } from "@/db/schema";
+import { categories, products, productVariants, stores } from "@/db/schema";
 import { uniqueSlug } from "@/lib/slugify";
 import {
   countProductMedia,
@@ -242,6 +243,24 @@ export async function updateProduct(
   revalidatePath(`/products/${productId}/edit`);
   revalidatePath("/products");
   redirect("/products");
+}
+
+// The per-store low-stock threshold, set from the Products page. Plain
+// form action, no state — an out-of-range value is clamped, not rejected.
+// stores is outside RLS, so write via `db` scoped by the session's storeId
+// (the domain-settings pattern).
+export async function setLowStockThreshold(formData: FormData) {
+  const session = await requireStaffSession();
+  const raw = Number(String(formData.get("threshold") ?? "").trim());
+  const value = Number.isFinite(raw) ? Math.min(100000, Math.max(0, Math.trunc(raw))) : 5;
+
+  await db
+    .update(stores)
+    .set({ lowStockThreshold: value, updatedAt: new Date() })
+    .where(eq(stores.id, session.user.storeId));
+
+  revalidatePath("/products");
+  revalidatePath("/dashboard");
 }
 
 // Bound with (productId, mediaId) from the edit form's per-item "Remove"
