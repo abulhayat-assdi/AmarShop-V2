@@ -233,6 +233,8 @@ export const en = {
       viewStore: "View Store",
       suspendedNotice:
         "Your store is suspended and its storefront is offline. Settle your subscription to reactivate it —",
+      pastDueNotice:
+        "Your subscription payment is overdue. Pay now to avoid your store being suspended —",
       stockAlerts: "Stock alerts",
       noAlerts: "No stock alerts.",
       alertOutOfStock: "out of stock",
@@ -846,6 +848,23 @@ export const en = {
     colCycle: "Cycle",
     colAmount: "Amount",
     colStatus: "Status",
+    downloadReceipt: "Receipt",
+    renewalSoon: "Your plan renews on {date}. Pick it again and pay to keep it active.",
+    pastDueBanner:
+      "Payment overdue since {date}. Pay now — your storefront is suspended a few days after the due date.",
+    receipt: {
+      title: "Subscription Receipt",
+      store: "Store",
+      invoiceId: "Invoice ID",
+      plan: "Plan",
+      cycle: "Billing cycle",
+      period: "Period",
+      amount: "Amount",
+      status: "Status",
+      paidOn: "Paid on",
+      txn: "Transaction ID",
+      thanks: "Thank you for subscribing to AmarShop.",
+    },
     planSelected: "Plan selected — complete the payment below.",
     paymentSubmitted: "Payment details submitted.",
     errPlan: "Pick a valid plan.",

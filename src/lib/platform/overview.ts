@@ -6,13 +6,20 @@ import { isValidPlanId, planPrice } from "@/lib/billing/plans";
 import { getStoreStats } from "./stats";
 
 // Monthly recurring revenue contribution of one store: only a paid,
-// `active` subscription counts; a yearly sub is amortised to /12.
-export function mrrForStore(row: {
-  subscriptionPlan: string;
-  subscriptionStatus: Store["subscriptionStatus"];
-  subscriptionCycle: Store["subscriptionCycle"];
-}): number {
+// `active`, in-period subscription counts; a yearly sub is amortised to
+// /12. The in-period guard keeps MRR accurate even if the lifecycle cron
+// hasn't yet flipped a lapsed sub to past_due.
+export function mrrForStore(
+  row: {
+    subscriptionPlan: string;
+    subscriptionStatus: Store["subscriptionStatus"];
+    subscriptionCycle: Store["subscriptionCycle"];
+    currentPeriodEndsAt: Date | null;
+  },
+  now: Date = new Date()
+): number {
   if (row.subscriptionStatus !== "active" || !isValidPlanId(row.subscriptionPlan)) return 0;
+  if (row.currentPeriodEndsAt && row.currentPeriodEndsAt <= now) return 0;
   return row.subscriptionCycle === "yearly"
     ? planPrice(row.subscriptionPlan, "yearly") / 12
     : planPrice(row.subscriptionPlan, "monthly");
@@ -36,6 +43,7 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
       subscriptionPlan: stores.subscriptionPlan,
       subscriptionStatus: stores.subscriptionStatus,
       subscriptionCycle: stores.subscriptionCycle,
+      currentPeriodEndsAt: stores.currentPeriodEndsAt,
     })
     .from(stores);
 

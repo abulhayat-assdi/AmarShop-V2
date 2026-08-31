@@ -75,6 +75,15 @@ export const TRIAL_DAYS = 7;
 // ends with no payment it falls back to "free".
 export const TRIAL_PLAN: PlanId = "business";
 
+// After a paid period lapses the store goes `past_due` immediately; it is
+// auto-suspended only if still unpaid this many days later (billing v2
+// lifecycle — src/lib/billing/lifecycle.ts).
+export const PAST_DUE_GRACE_DAYS = 3;
+
+// The /billing page nudges the merchant when the current period ends
+// within this many days.
+export const RENEWAL_REMINDER_DAYS = 7;
+
 export function isValidPlanId(value: string): value is PlanId {
   return value in PLANS;
 }

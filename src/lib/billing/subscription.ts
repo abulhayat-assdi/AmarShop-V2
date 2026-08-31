@@ -71,6 +71,28 @@ export async function getSubscription(storeId: string): Promise<SubscriptionView
   if (!row) throw new Error(`store ${storeId} not found`);
 
   const now = new Date();
+
+  // Read-time safety net: if the lifecycle cron (src/lib/billing/lifecycle.ts)
+  // hasn't run yet, self-heal this one store's stale status so the merchant's
+  // own /billing page is right. A single UPDATE, only when actually stale.
+  let status = row.subscriptionStatus;
+  if (status === "trialing" && row.trialEndsAt && row.trialEndsAt <= now) {
+    status = "canceled";
+  } else if (
+    status === "active" &&
+    row.currentPeriodEndsAt &&
+    row.currentPeriodEndsAt <= now
+  ) {
+    status = "past_due";
+  }
+  if (status !== row.subscriptionStatus) {
+    await db
+      .update(stores)
+      .set({ subscriptionStatus: status, updatedAt: now })
+      .where(eq(stores.id, storeId));
+    row.subscriptionStatus = status;
+  }
+
   const inTrial =
     row.subscriptionStatus === "trialing" && !!row.trialEndsAt && row.trialEndsAt > now;
   const trialDaysLeft = inTrial
@@ -215,6 +237,17 @@ export async function applyPaidPlan(
   opts: { plan: string; cycle: BillingCycle; periodEnd: Date }
 ): Promise<void> {
   const now = new Date();
+
+  // If the store was suspended for non-payment (subscription past_due),
+  // paying reactivates the storefront too. A store a platform admin
+  // suspended manually (subscription not past_due) is left suspended.
+  const [current] = await tx
+    .select({ subscriptionStatus: stores.subscriptionStatus, status: stores.status })
+    .from(stores)
+    .where(eq(stores.id, storeId))
+    .limit(1);
+  const reactivate = current?.subscriptionStatus === "past_due" && current.status === "suspended";
+
   await tx
     .update(stores)
     .set({
@@ -222,6 +255,7 @@ export async function applyPaidPlan(
       subscriptionStatus: "active",
       subscriptionCycle: opts.cycle,
       currentPeriodEndsAt: opts.periodEnd,
+      ...(reactivate ? { status: "active" as const } : {}),
       updatedAt: now,
     })
     .where(eq(stores.id, storeId));

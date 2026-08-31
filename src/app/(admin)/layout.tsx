@@ -70,6 +70,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
         </div>
       )}
+      {store && store.status === "active" && store.subscriptionStatus === "past_due" && (
+        <div className="mb-4 rounded border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          {t("admin.shell.pastDueNotice")}{" "}
+          <Link href="/billing" className="font-semibold underline">
+            {t("admin.nav.billing")}
+          </Link>
+        </div>
+      )}
       {children}
     </AdminShell>
   );

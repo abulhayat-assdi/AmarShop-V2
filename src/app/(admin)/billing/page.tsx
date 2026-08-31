@@ -7,8 +7,9 @@ import {
   listPlatformInvoices,
 } from "@/lib/billing/subscription";
 import { getOrderQuota } from "@/lib/billing/order-quota";
+import { renewalState } from "@/lib/billing/lifecycle";
 import { getPlatformBillingConfig } from "@/lib/billing/platform-config";
-import { PLANS, isValidPlanId, planLimit } from "@/lib/billing/plans";
+import { PLANS, RENEWAL_REMINDER_DAYS, isValidPlanId, planLimit } from "@/lib/billing/plans";
 import {
   BILLING_CYCLE_KEYS,
   PLATFORM_INVOICE_STATUS_KEYS,
@@ -39,12 +40,30 @@ export default async function BillingPage() {
   const overClass = (used: number, limit: number | null) =>
     limit !== null && used >= limit ? "text-red-700" : undefined;
 
+  const renewal = renewalState({
+    status: sub.status,
+    currentPeriodEndsAt: sub.currentPeriodEndsAt,
+  });
+
   return (
     <div className="flex max-w-3xl flex-col gap-8">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{t("billing.title")}</h1>
         <p className="text-sm text-gray-600">{t("billing.intro")}</p>
       </div>
+
+      {renewal.isPastDue && (
+        <p className="rounded border border-amber-400 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+          {t("billing.pastDueBanner", { date: fmtDate(sub.currentPeriodEndsAt) })}
+        </p>
+      )}
+      {!renewal.isPastDue &&
+        renewal.renewsInDays !== null &&
+        renewal.renewsInDays <= RENEWAL_REMINDER_DAYS && (
+          <p className="rounded border border-blue-300 bg-blue-50 px-4 py-2 text-sm text-blue-900">
+            {t("billing.renewalSoon", { date: fmtDate(sub.currentPeriodEndsAt) })}
+          </p>
+        )}
 
       <section className="flex flex-col gap-2 rounded border p-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -113,12 +132,13 @@ export default async function BillingPage() {
               <th className="py-2">{t("billing.colCycle")}</th>
               <th className="py-2">{t("billing.colAmount")}</th>
               <th className="py-2">{t("billing.colStatus")}</th>
+              <th className="py-2" />
             </tr>
           </thead>
           <tbody>
             {invoices.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-4 text-gray-500">
+                <td colSpan={6} className="py-4 text-gray-500">
                   {t("billing.noInvoices")}
                 </td>
               </tr>
@@ -130,6 +150,16 @@ export default async function BillingPage() {
                   <td className="py-2">{t(BILLING_CYCLE_KEYS[inv.cycle])}</td>
                   <td className="py-2">৳{inv.amount}</td>
                   <td className="py-2">{t(PLATFORM_INVOICE_STATUS_KEYS[inv.status])}</td>
+                  <td className="py-2">
+                    {inv.status === "paid" && (
+                      <a
+                        href={`/billing/invoices/${inv.id}/receipt`}
+                        className="text-xs underline"
+                      >
+                        {t("billing.downloadReceipt")}
+                      </a>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
