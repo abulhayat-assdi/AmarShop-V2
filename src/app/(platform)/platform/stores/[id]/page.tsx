@@ -43,7 +43,11 @@ export default async function PlatformStoreDetailPage({
 
   const stat: [string, string | number][] = [
     [t("platform.detail.products"), products.total],
-    [t("platform.detail.productsBreakdown"), `${products.active} / ${products.draft} / ${products.archived}${products.digital ? ` · ${products.digital} digital` : ""}`],
+    [
+      t("platform.detail.productsBreakdown"),
+      `${products.active} / ${products.draft} / ${products.archived}` +
+        (products.digital ? ` · ${t("platform.detail.digitalSuffix", { n: products.digital })}` : ""),
+    ],
     [t("platform.detail.categories"), categories],
     [t("platform.detail.coupons"), activeCoupons],
     [t("platform.detail.lowStock"), lowStockCount],
@@ -53,7 +57,8 @@ export default async function PlatformStoreDetailPage({
     [t("platform.detail.lastOrder"), fmtDate(orders.lastOrderAt)],
     [
       t("platform.detail.quota"),
-      `${quota.usedThisMonth} / ${quota.limit ?? t("billing.unlimited")}${quota.lockedTotal ? ` · ${quota.lockedTotal} locked` : ""}`,
+      `${quota.usedThisMonth} / ${quota.limit ?? t("billing.unlimited")}` +
+        (quota.lockedTotal ? ` · ${t("platform.detail.lockedSuffix", { n: quota.lockedTotal })}` : ""),
     ],
   ];
 
@@ -117,7 +122,11 @@ export default async function PlatformStoreDetailPage({
                 <tr key={m.id} className="border-b">
                   <td className="py-1">
                     {m.name}
-                    {m.isPlatformAdmin ? " ·★" : ""}
+                    {m.isPlatformAdmin && (
+                      <span className="ml-1 rounded bg-gray-100 px-1 text-[10px] text-gray-600">
+                        {t("platform.detail.platformAdminTag")}
+                      </span>
+                    )}
                   </td>
                   <td className="py-1">{m.email}</td>
                   <td className="py-1">{m.phone ?? "—"}</td>

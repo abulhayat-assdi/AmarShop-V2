@@ -44,8 +44,19 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
       subscriptionStatus: stores.subscriptionStatus,
       subscriptionCycle: stores.subscriptionCycle,
       currentPeriodEndsAt: stores.currentPeriodEndsAt,
+      trialEndsAt: stores.trialEndsAt,
     })
     .from(stores);
+
+  // Count against the EFFECTIVE state, not the stored column — so the
+  // figures are right even in the window before the lifecycle cron flips a
+  // lapsed sub to past_due / a lapsed trial to canceled (matches mrrForStore).
+  const now = new Date();
+  const stillPaid = (r: (typeof rows)[number]) =>
+    r.subscriptionStatus === "active" &&
+    (!r.currentPeriodEndsAt || r.currentPeriodEndsAt > now);
+  const stillTrialing = (r: (typeof rows)[number]) =>
+    r.subscriptionStatus === "trialing" && (!r.trialEndsAt || r.trialEndsAt > now);
 
   let liveStores = 0;
   let suspendedStores = 0;
@@ -55,9 +66,9 @@ export async function getPlatformOverview(): Promise<PlatformOverview> {
   for (const r of rows) {
     if (r.status === "active") liveStores += 1;
     if (r.status === "suspended") suspendedStores += 1;
-    if (r.subscriptionStatus === "active") paidSubscriptions += 1;
-    if (r.subscriptionStatus === "trialing") trialing += 1;
-    mrr += mrrForStore(r);
+    if (stillPaid(r)) paidSubscriptions += 1;
+    if (stillTrialing(r)) trialing += 1;
+    mrr += mrrForStore(r, now);
   }
 
   let totalGmv = 0;

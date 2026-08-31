@@ -94,7 +94,8 @@ export async function renderPlatformReceiptPdf(data: PlatformReceiptData): Promi
   const planName = isValidPlanId(invoice.plan) ? t(PLANS[invoice.plan].nameKey) : invoice.plan;
   const rows: [string, string][] = [
     [t("billing.receipt.store"), `${store.name} (${store.slug})`],
-    [t("billing.receipt.invoiceId"), invoice.id],
+    // A short, human reference — not the raw UUID (matches the filename).
+    [t("billing.receipt.invoiceId"), invoice.id.slice(0, 8).toUpperCase()],
     [t("billing.receipt.plan"), planName],
     [t("billing.receipt.cycle"), t(BILLING_CYCLE_KEYS[invoice.cycle])],
     [
