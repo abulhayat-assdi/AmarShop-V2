@@ -4,7 +4,11 @@
 // order lifecycle only; `order.paid` and the write-side events land with
 // later Phase 6 slices.
 
-export const WEBHOOK_EVENTS = ["order.created", "order.status_changed"] as const;
+export const WEBHOOK_EVENTS = [
+  "order.created",
+  "order.status_changed",
+  "order.paid",
+] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
@@ -14,6 +18,7 @@ export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 export const WEBHOOK_EVENT_LABEL_KEYS: Record<WebhookEvent, string> = {
   "order.created": "admin.webhooks.eventOrderCreated",
   "order.status_changed": "admin.webhooks.eventOrderStatusChanged",
+  "order.paid": "admin.webhooks.eventOrderPaid",
 };
 
 export function isValidEvent(value: string): value is WebhookEvent {

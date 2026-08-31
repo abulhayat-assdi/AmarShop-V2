@@ -91,13 +91,15 @@ async function callValidator(
   return (await res.json()) as ValidationResponse;
 }
 
+// Returns whether THIS call flipped the row (a concurrent IPN + return
+// race means only one of them actually does the pending -> paid write).
 async function setStatus(
   storeId: string,
   paymentId: string,
   status: "paid" | "failed",
   gatewayReference?: string | null
-): Promise<void> {
-  await withStoreContext(storeId, (tx) =>
+): Promise<boolean> {
+  const changed = await withStoreContext(storeId, (tx) =>
     tx
       .update(payments)
       .set({ status, gatewayReference: gatewayReference ?? null, updatedAt: new Date() })
@@ -108,10 +110,17 @@ async function setStatus(
           eq(payments.status, "pending")
         )
       )
+      .returning({ id: payments.id })
   );
+  return changed.length > 0;
 }
 
 export type ConfirmResult = "paid" | "failed" | "ignored";
+
+// `firstPaid` is true only when this exact call transitioned the payment
+// to paid — the caller uses it to fire the order.paid webhook exactly
+// once. `orderId` is carried out so the route can emit without re-querying.
+export type ConfirmOutcome = { result: ConfirmResult; orderId: string | null; firstPaid: boolean };
 
 // Throws only on a transient validation-API failure (so the IPN retries).
 // Every other outcome is a definitive "paid" / "failed" / "ignored".
@@ -119,18 +128,23 @@ export async function confirmSslcommerzPayment(input: {
   storeId: string;
   tranId: string;
   valId: string | null;
-}): Promise<ConfirmResult> {
+}): Promise<ConfirmOutcome> {
   const cfg = await getSslcommerzConfig(input.storeId);
   if (!cfg) {
     console.warn(
       `[sslcommerz] confirmation skipped for store ${input.storeId} — no payment settings`
     );
-    return "ignored";
+    return { result: "ignored", orderId: null, firstPaid: false };
   }
 
   const payment = await withStoreContext(input.storeId, async (tx) => {
     const [row] = await tx
-      .select({ id: payments.id, status: payments.status, amount: payments.amount })
+      .select({
+        id: payments.id,
+        status: payments.status,
+        amount: payments.amount,
+        orderId: payments.orderId,
+      })
       .from(payments)
       .where(
         and(
@@ -143,13 +157,15 @@ export async function confirmSslcommerzPayment(input: {
     return row ?? null;
   });
 
-  if (!payment) return "ignored";
-  if (payment.status === "paid" || payment.status === "failed") return "ignored";
+  if (!payment) return { result: "ignored", orderId: null, firstPaid: false };
+  if (payment.status === "paid" || payment.status === "failed") {
+    return { result: "ignored", orderId: payment.orderId, firstPaid: false };
+  }
 
   if (!input.valId) {
     // A fail / cancel notification carries no val_id — nothing to validate.
     await setStatus(input.storeId, payment.id, "failed");
-    return "failed";
+    return { result: "failed", orderId: payment.orderId, firstPaid: false };
   }
 
   const data = await callValidator(input.valId, cfg);
@@ -161,13 +177,13 @@ export async function confirmSslcommerzPayment(input: {
     Math.abs(Number(data.amount) - Number(payment.amount)) < 0.01;
 
   if (accepted) {
-    await setStatus(input.storeId, payment.id, "paid", data.bank_tran_id ?? null);
-    return "paid";
+    const firstPaid = await setStatus(input.storeId, payment.id, "paid", data.bank_tran_id ?? null);
+    return { result: "paid", orderId: payment.orderId, firstPaid };
   }
 
   console.warn(
     `[sslcommerz] validation rejected for tran ${input.tranId}: status=${data.status} amount=${data.amount} tran_id=${data.tran_id} currency=${data.currency}`
   );
   await setStatus(input.storeId, payment.id, "failed");
-  return "failed";
+  return { result: "failed", orderId: payment.orderId, firstPaid: false };
 }

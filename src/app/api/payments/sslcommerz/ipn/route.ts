@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getSslcommerzConfig } from "@/lib/payments/settings";
 import { confirmSslcommerzPayment, verifyIpnSignature } from "@/lib/payments/sslcommerz-confirm";
+import { emitWebhook } from "@/lib/webhooks/dispatch";
 
 // SSLCommerz's server-to-server notification. Configured as ipn_url on the
 // session (src/lib/payments/sslcommerz.ts) — arrives on the store's own
@@ -46,12 +47,16 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await confirmSslcommerzPayment({
+    const outcome = await confirmSslcommerzPayment({
       storeId,
       tranId,
       valId: fields.val_id || null,
     });
-    return new NextResponse(`OK ${result}`, { status: 200 });
+    if (outcome.result === "paid" && outcome.firstPaid && outcome.orderId) {
+      const orderId = outcome.orderId;
+      after(() => emitWebhook(storeId, "order.paid", { orderId }));
+    }
+    return new NextResponse(`OK ${outcome.result}`, { status: 200 });
   } catch (err) {
     console.error(`[sslcommerz ipn] confirmation failed for tran ${tranId}`, err);
     return new NextResponse("retry", { status: 503 });

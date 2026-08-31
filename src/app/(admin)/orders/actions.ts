@@ -4,18 +4,12 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
-import {
-  orders,
-  orderStatusEvents,
-  payments,
-  products,
-  productVariants,
-  deliveryZones,
-} from "@/db/schema";
+import { products, productVariants, deliveryZones } from "@/db/schema";
 import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orders/create";
+import { advanceOrderStatusTx, cancelOrderTx, markOrderPaidTx } from "@/lib/orders/mutate";
 import {
   bookShipment,
   cancelShipment,
@@ -26,48 +20,22 @@ import type { CourierProvider } from "@/lib/courier/types";
 import { sendOrderSms } from "@/lib/sms/notifications";
 import { emitWebhook } from "@/lib/webhooks/dispatch";
 import { runFraudCheck } from "@/lib/fraud/check";
-import { nextStatus } from "./status-pipeline";
 
 // Bound with (orderId) from the detail page's buttons — see
 // src/app/(admin)/orders/[id]/page.tsx. Guided one-step-at-a-time advance,
-// not a free-form status dropdown (see the plan's design note).
+// not a free-form status dropdown (see the plan's design note). Shares
+// advanceOrderStatusTx with the /api/v1 PATCH /orders route.
 export async function advanceOrderStatus(orderId: string) {
   const session = await requireStaffSession();
+  const { storeId } = session.user;
 
-  const advancedTo = await withStoreContext(session.user.storeId, async (tx) => {
-    const [order] = await tx
-      .select({ id: orders.id, status: orders.status })
-      .from(orders)
-      .where(
-        and(
-          eq(orders.storeId, session.user.storeId),
-          eq(orders.id, orderId),
-          isNull(orders.quotaLockedAt)
-        )
-      )
-      .limit(1);
-    if (!order) return null;
+  const step = await withStoreContext(storeId, (tx) => advanceOrderStatusTx(tx, storeId, orderId));
 
-    const next = nextStatus(order.status);
-    if (!next) return null;
-
-    await tx
-      .update(orders)
-      .set({ status: next, updatedAt: new Date() })
-      .where(eq(orders.id, order.id));
-    await tx.insert(orderStatusEvents).values({
-      storeId: session.user.storeId,
-      orderId: order.id,
-      status: next,
-    });
-    return next;
-  });
-
-  if (advancedTo === "shipped") {
-    after(() => sendOrderSms(session.user.storeId, orderId, "order_shipped"));
+  if (step?.to === "shipped") {
+    after(() => sendOrderSms(storeId, orderId, "order_shipped"));
   }
-  if (advancedTo) {
-    after(() => emitWebhook(session.user.storeId, "order.status_changed", { orderId }));
+  if (step) {
+    after(() => emitWebhook(storeId, "order.status_changed", { orderId }));
   }
 
   revalidatePath(`/orders/${orderId}`);
@@ -76,35 +44,12 @@ export async function advanceOrderStatus(orderId: string) {
 
 export async function cancelOrder(orderId: string) {
   const session = await requireStaffSession();
+  const { storeId } = session.user;
 
-  const canceled = await withStoreContext(session.user.storeId, async (tx) => {
-    const [order] = await tx
-      .select({ id: orders.id, status: orders.status })
-      .from(orders)
-      .where(
-        and(
-          eq(orders.storeId, session.user.storeId),
-          eq(orders.id, orderId),
-          isNull(orders.quotaLockedAt)
-        )
-      )
-      .limit(1);
-    if (!order || order.status === "completed" || order.status === "canceled") return false;
-
-    await tx
-      .update(orders)
-      .set({ status: "canceled", updatedAt: new Date() })
-      .where(eq(orders.id, order.id));
-    await tx.insert(orderStatusEvents).values({
-      storeId: session.user.storeId,
-      orderId: order.id,
-      status: "canceled",
-    });
-    return true;
-  });
+  const canceled = await withStoreContext(storeId, (tx) => cancelOrderTx(tx, storeId, orderId));
 
   if (canceled) {
-    after(() => emitWebhook(session.user.storeId, "order.status_changed", { orderId }));
+    after(() => emitWebhook(storeId, "order.status_changed", { orderId }));
   }
 
   revalidatePath(`/orders/${orderId}`);
@@ -113,16 +58,16 @@ export async function cancelOrder(orderId: string) {
 
 // A COD order's payment being collected doesn't always line up with any
 // one status transition, so this is deliberately its own action — see the
-// plan's design note.
+// plan's design note. Shares markOrderPaidTx with PATCH /orders.
 export async function markPaymentReceived(orderId: string) {
   const session = await requireStaffSession();
+  const { storeId } = session.user;
 
-  await withStoreContext(session.user.storeId, (tx) =>
-    tx
-      .update(payments)
-      .set({ status: "paid", updatedAt: new Date() })
-      .where(and(eq(payments.storeId, session.user.storeId), eq(payments.orderId, orderId)))
-  );
+  const result = await withStoreContext(storeId, (tx) => markOrderPaidTx(tx, storeId, orderId));
+
+  if (result === "paid") {
+    after(() => emitWebhook(storeId, "order.paid", { orderId }));
+  }
 
   revalidatePath(`/orders/${orderId}`);
 }
@@ -267,6 +212,9 @@ export async function createManualOrder(
     });
     after(() => sendOrderSms(storeId, orderId, "order_placed"));
     after(() => emitWebhook(storeId, "order.created", { orderId }));
+    if (alreadyPaid) {
+      after(() => emitWebhook(storeId, "order.paid", { orderId }));
+    }
     // Manual orders are always COD — run a BDCourier fraud check.
     after(() => runFraudCheck(storeId, orderId));
   } catch (err) {

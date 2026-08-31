@@ -22,8 +22,26 @@ export function jsonOk(data: unknown, extra?: Record<string, unknown>): NextResp
   return NextResponse.json({ data, ...extra });
 }
 
+export function jsonCreated(data: unknown): NextResponse {
+  return NextResponse.json({ data }, { status: 201 });
+}
+
 export function jsonError(status: number, code: string, message: string): NextResponse {
   return NextResponse.json({ error: { code, message } }, { status });
+}
+
+// Parse a JSON request body into a plain object, or null if the body isn't
+// a JSON object (wrong / missing content-type, malformed, an array, a
+// scalar). Write routes treat null as `400 bad_request`.
+export async function readJson(req: Request): Promise<Record<string, unknown> | null> {
+  if (!/\bapplication\/json\b/i.test(req.headers.get("content-type") ?? "")) return null;
+  try {
+    const body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+    return body as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 const RATE_LIMIT = { limit: 120, windowSeconds: 60 };

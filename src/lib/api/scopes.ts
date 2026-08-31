@@ -1,9 +1,14 @@
 // The public API's permission scopes — the single source of truth for what
 // a key may do (referenced by the key-mint UI, the DB write validation,
-// and every /api/v1 route's guard). Slice 1 is read-only; write scopes
-// (write:orders, …) land with the write endpoints.
+// and every /api/v1 route's guard). Read scopes gate GET; write scopes
+// gate POST/PATCH on the same resource.
 
-export const API_SCOPES = ["read:products", "read:orders"] as const;
+export const API_SCOPES = [
+  "read:products",
+  "read:orders",
+  "write:products",
+  "write:orders",
+] as const;
 
 export type ApiScope = (typeof API_SCOPES)[number];
 
@@ -13,6 +18,8 @@ export type ApiScope = (typeof API_SCOPES)[number];
 export const SCOPE_LABEL_KEYS: Record<ApiScope, string> = {
   "read:products": "admin.apiKeys.scopeReadProducts",
   "read:orders": "admin.apiKeys.scopeReadOrders",
+  "write:products": "admin.apiKeys.scopeWriteProducts",
+  "write:orders": "admin.apiKeys.scopeWriteOrders",
 };
 
 export function isValidScope(value: string): value is ApiScope {

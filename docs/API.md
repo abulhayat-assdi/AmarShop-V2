@@ -1,10 +1,10 @@
 # AmarShop Public API (v1)
 
-Read-only REST access to a single store's data. A caller authenticates
-with **either** a merchant-minted API key (below) **or** an OAuth
-app-installation token (see [OAuth](#oauth-app-install)). For push
-notifications instead of polling, see [Webhooks](#webhooks) at the end.
-The full write surface comes in a later Phase 6 slice.
+REST access to a single store's data — reads, plus a scoped write surface
+for orders and products. A caller authenticates with **either** a
+merchant-minted API key (below) **or** an OAuth app-installation token
+(see [OAuth](#oauth-app-install)). For push notifications instead of
+polling, see [Webhooks](#webhooks) at the end.
 
 ## Base URL
 
@@ -38,6 +38,8 @@ insufficient_scope` if the key lacks the scope it needs.
 | --- | --- |
 | `read:products` | `GET /products`, `GET /products/{id}` |
 | `read:orders` | `GET /orders`, `GET /orders/{id}` (incl. customer name / phone / address) |
+| `write:products` | `POST /products`, `PATCH /products/{id}`, `PATCH /variants/{id}` |
+| `write:orders` | `POST /orders`, `PATCH /orders/{id}` |
 
 ## Conventions
 
@@ -57,11 +59,17 @@ insufficient_scope` if the key lacks the scope it needs.
 
 | Status | `code` | When |
 | --- | --- | --- |
-| 400 | `bad_request` | e.g. an unknown `?status=` value |
+| 400 | `bad_request` | an unknown enum value, a malformed body, a failed field validation |
 | 401 | `unauthorized` | no / malformed `Authorization` header |
 | 401 | `invalid_key` | unknown or revoked key |
 | 403 | `insufficient_scope` | key lacks the required scope |
-| 404 | `not_found` | no such product / order in this store |
+| 403 | `plan_limit` | `POST /products` would exceed the store's plan product cap |
+| 404 | `not_found` | no such product / order / variant in this store |
+| 409 | `invalid_transition` | `PATCH /orders` `status` isn't the allowed next step or `canceled` |
+| 409 | `payment_gateway_managed` | `PATCH /orders` `payment` on an SSLCommerz order |
+| 409 | `sku_taken` | `POST /products` variant SKU already exists in this store |
+| 409 | `not_applicable` | `PATCH /variants` `quantity` on a digital product |
+| 409 | `out_of_stock` | `POST /orders` — a line's variant ran out |
 | 429 | `rate_limited` | over 120 req/min |
 
 ## Endpoints
@@ -132,6 +140,89 @@ release them).
 
 Scope: `read:orders`. Returns one `OrderDto` or `404 not_found` (a
 quota-locked order also returns `404`).
+
+## Writing
+
+All write bodies are JSON (`Content-Type: application/json`). Money fields
+are strings or numbers with at most 2 decimals; timestamps are ISO 8601.
+A quota-locked order is invisible here too — writes to it return `404`.
+
+### `PATCH /orders/{id}`
+
+Scope: `write:orders`. Body — at least one of:
+
+| Field | Value | Effect |
+| --- | --- | --- |
+| `status` | the **next** pipeline status, or `"canceled"` | advances one step / cancels; anything else → `409 invalid_transition` (the message names the allowed value) |
+| `payment` | `"paid"` | marks a **non-gateway** (COD / bKash-Nagad) order paid; on an SSLCommerz order → `409 payment_gateway_managed`; already-paid is a no-op, still `200` |
+
+Both may be sent together — every change is validated before any is
+applied. Returns the updated `OrderDto`. Advancing to `shipped` also sends
+the customer the order-shipped SMS, same as the admin. Fires the
+`order.status_changed` / `order.paid` webhooks.
+
+```
+curl -X PATCH https://demo.example.com/api/v1/orders/<id> \
+  -H "Authorization: Bearer ak_..." -H "Content-Type: application/json" \
+  -d '{"status":"confirmed"}'
+```
+
+### `POST /orders`
+
+Scope: `write:orders`. Records an order the way staff manual entry does —
+**cash on delivery only** for now. Counts against the plan's monthly order
+quota (an over-quota order is still created but won't appear in `GET
+/orders` until the merchant upgrades).
+
+```json
+{
+  "customer": { "name": "…", "phone": "017XXXXXXXX", "address": "…", "email": null },
+  "lines": [ { "variantId": "…", "quantity": 2 } ],
+  "deliveryZoneId": "…",
+  "notes": null
+}
+```
+
+`201` → the new `OrderDto`. `400 bad_request` (`invalid_line` /
+`invalid_zone` in the message) for an unknown variant/zone; `409
+out_of_stock` if a line can't be fulfilled. Fires `order.created`.
+
+### `PATCH /products/{id}`
+
+Scope: `write:products`. Body — any of `status`
+(`draft|active|archived`), `name`, `brand`, `description` (`brand` /
+`description` accept `null` to clear). The slug never changes on rename.
+Returns the `ProductDto`. Stock and price are on the variant ↓.
+
+### `PATCH /variants/{id}`
+
+Scope: `write:products`. Body — any of `quantity` (integer ≥ 0),
+`price`, `discountedPrice` (`null` clears it; otherwise must be `<
+price`). `quantity` on a digital product's variant → `409
+not_applicable`. Returns the parent `ProductDto` (all variants).
+
+```
+curl -X PATCH https://demo.example.com/api/v1/variants/<id> \
+  -H "Authorization: Bearer ak_..." -H "Content-Type: application/json" \
+  -d '{"quantity":40}'
+```
+
+### `POST /products`
+
+Scope: `write:products`. Creates a **physical** product (digital products
+are admin-only). Blocked by `403 plan_limit` at the plan's product cap.
+
+```json
+{
+  "name": "…", "categoryId": null, "brand": null, "description": null,
+  "status": "draft", "vatPercent": "0",
+  "variants": [ { "sku": "SKU-1", "price": "1200", "quantity": 25,
+                  "discountedPrice": null, "optionsLabel": null } ]
+}
+```
+
+`201` → the new `ProductDto`. `409 sku_taken` if a variant SKU already
+exists in the store; `400 bad_request` for an unknown `categoryId`.
 
 ---
 
@@ -229,12 +320,13 @@ events and gets its own signing secret.
 
 | Event | Fires when |
 | --- | --- |
-| `order.created` | a customer completes checkout, or the merchant enters a manual order |
-| `order.status_changed` | an order moves to the next status, or is canceled |
+| `order.created` | a customer completes checkout, the merchant enters a manual order, or `POST /orders` |
+| `order.status_changed` | an order moves to the next status, or is canceled (admin or `PATCH /orders`) |
+| `order.paid` | a payment first settles — SSLCommerz confirmation, an admin "mark paid", a born-paid manual order, or `PATCH /orders` `{"payment":"paid"}` |
 
-`order.created` for a paid gateway order fires at order creation, not at
-payment — a subsequent `order.status_changed` reflects fulfilment
-progress. (Payment events land in a later slice.)
+`order.created` for a gateway order fires at order creation, not at
+payment; the later `order.paid` marks the settlement. `order.paid` fires
+**once** per order (a re-confirming IPN + return won't double it).
 
 ### Request
 

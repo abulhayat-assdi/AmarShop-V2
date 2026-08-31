@@ -1,5 +1,7 @@
+import { after } from "next/server";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { confirmSslcommerzPayment } from "@/lib/payments/sslcommerz-confirm";
+import { emitWebhook } from "@/lib/webhooks/dispatch";
 
 // SSLCommerz's success_url — the customer is redirected here (a form POST)
 // after paying. We run the same confirmation so the confirmation page
@@ -37,7 +39,16 @@ async function handle(req: Request): Promise<Response> {
     resolvedStore?.id ?? (UUID_RE.test(fields.value_a ?? "") ? fields.value_a : null);
   if (storeId) {
     try {
-      await confirmSslcommerzPayment({ storeId, tranId, valId: fields.val_id || null });
+      const outcome = await confirmSslcommerzPayment({
+        storeId,
+        tranId,
+        valId: fields.val_id || null,
+      });
+      if (outcome.result === "paid" && outcome.firstPaid && outcome.orderId) {
+        const paidStoreId = storeId;
+        const orderId = outcome.orderId;
+        after(() => emitWebhook(paidStoreId, "order.paid", { orderId }));
+      }
     } catch (err) {
       // The IPN will confirm it — don't block the customer's redirect.
       console.error(`[sslcommerz return] confirmation failed for tran ${tranId}`, err);
