@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import {
@@ -35,7 +35,13 @@ export async function advanceOrderStatus(orderId: string) {
     const [order] = await tx
       .select({ id: orders.id, status: orders.status })
       .from(orders)
-      .where(and(eq(orders.storeId, session.user.storeId), eq(orders.id, orderId)))
+      .where(
+        and(
+          eq(orders.storeId, session.user.storeId),
+          eq(orders.id, orderId),
+          isNull(orders.quotaLockedAt)
+        )
+      )
       .limit(1);
     if (!order) return null;
 
@@ -69,7 +75,13 @@ export async function cancelOrder(orderId: string) {
     const [order] = await tx
       .select({ id: orders.id, status: orders.status })
       .from(orders)
-      .where(and(eq(orders.storeId, session.user.storeId), eq(orders.id, orderId)))
+      .where(
+        and(
+          eq(orders.storeId, session.user.storeId),
+          eq(orders.id, orderId),
+          isNull(orders.quotaLockedAt)
+        )
+      )
       .limit(1);
     if (!order || order.status === "completed" || order.status === "canceled") return;
 

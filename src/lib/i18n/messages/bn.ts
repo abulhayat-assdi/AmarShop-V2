@@ -208,6 +208,8 @@ export const bn: Messages = {
     errSkuExists: "এই SKU-র একটি পণ্য আগে থেকেই আছে।",
     errRowConflict: "লাইন {line} বিদ্যমান পণ্যের সাথে সংঘর্ষ করেছে — কিছুই ইমপোর্ট হয়নি।",
     errNothingToImport: "ইমপোর্ট করার মতো কোনো বৈধ রো নেই।",
+    errPlanLimit:
+      "এই ইমপোর্টে {willImport}টি পণ্য, কিন্তু আপনার প্ল্যানে আর মাত্র {remaining}টির জায়গা আছে। প্ল্যান আপগ্রেড করুন বা কম পণ্য ইমপোর্ট করুন।",
   },
 
   admin: {
@@ -321,6 +323,7 @@ export const bn: Messages = {
       colStatus: "স্ট্যাটাস",
       noOrders: "এখনো কোনো অর্ডার নেই।",
       noOrdersInStatus: "“{status}” স্ট্যাটাসে কোনো অর্ডার নেই।",
+      lockedBanner: "{count}টি অর্ডার আপনার প্ল্যানের কারণে লক করা আছে।",
       fraudTitle: "ফ্রড চেক",
       fraudPending: "এখনো চেক করা হয়নি।",
       fraudRecheck: "আবার চেক",
@@ -398,6 +401,18 @@ export const bn: Messages = {
       createOrder: "অর্ডার তৈরি করুন",
       creatingOrder: "অর্ডার তৈরি হচ্ছে…",
     },
+    ordersLocked: {
+      title: "লক করা অর্ডার",
+      intro:
+        "আপনার প্ল্যানের মাসিক সীমার বেশি আসা অর্ডার। আপগ্রেড না করা পর্যন্ত এগুলোর বিস্তারিত লুকানো থাকে।",
+      count: "প্ল্যান সীমার বেশি আসা {count}টি অর্ডার",
+      whyLocked:
+        "কতটি অর্ডার এসেছে তা দেখতে পারবেন, কিন্তু কাস্টমার, পণ্য, ঠিকানা বা টাকার পরিমাণ নয়। আপগ্রেড করলে সবগুলো একসাথে খুলে যাবে।",
+      upgradeCta: "আনলক করতে আপগ্রেড করুন",
+      colCode: "অর্ডার",
+      colDate: "এসেছে",
+      empty: "কোনো লক করা অর্ডার নেই।",
+    },
     shipment: {
       title: "শিপমেন্ট",
       bookCourier: "কুরিয়ার বুক করুন",
@@ -425,6 +440,8 @@ export const bn: Messages = {
       title: "পণ্য",
       addProduct: "পণ্য যোগ করুন",
       importCsv: "CSV ইমপোর্ট",
+      errPlanLimit:
+        "আপনি আপনার প্ল্যানের পণ্য সীমায় পৌঁছেছেন। একটি পণ্য মুছুন অথবা বিলিং ও প্ল্যান পেজে প্ল্যান আপগ্রেড করুন।",
       colName: "নাম",
       colCategory: "ক্যাটাগরি",
       colPrice: "দাম",
@@ -718,6 +735,7 @@ export const bn: Messages = {
       errLastOwner: "একটি দোকানে অন্তত একজন মালিক থাকতেই হবে।",
       errSelf: "নিজের রোল এখানে বদলানো যাবে না — অ্যাকাউন্ট পেজ ব্যবহার করুন।",
       errForbidden: "ওই ব্যক্তিকে পরিবর্তন করার অনুমতি আপনার নেই।",
+      errPlanLimit: "আপনি আপনার প্ল্যানের স্টাফ সীমায় পৌঁছেছেন। আরও যোগ করতে প্ল্যান আপগ্রেড করুন।",
     },
     account: {
       title: "অ্যাকাউন্ট",
@@ -753,6 +771,8 @@ export const bn: Messages = {
       skippedTag: "বাদ",
       importN: "{count}টি পণ্য ইমপোর্ট করুন",
       importing: "ইমপোর্ট হচ্ছে…",
+      planLimitNotice:
+        "এই ইমপোর্টে {willImport}টি পণ্য, কিন্তু আপনার প্ল্যানে আর মাত্র {remaining}টির জায়গা আছে। প্ল্যান আপগ্রেড করুন বা কম পণ্য ইমপোর্ট করুন।",
     },
     login: {
       signIn: "সাইন ইন",
@@ -768,7 +788,6 @@ export const bn: Messages = {
       free: "ফ্রি",
       starter: "স্টার্টার",
       business: "বিজনেস",
-      enterprise: "এন্টারপ্রাইজ",
     },
     status: {
       trialing: "ট্রায়াল",
@@ -794,6 +813,10 @@ export const bn: Messages = {
     usageTitle: "ব্যবহার",
     productsMeter: "পণ্য: {used} / {limit}",
     staffMeter: "স্টাফ: {used} / {limit}",
+    ordersMeter: "এই মাসের অর্ডার: {used} / {limit}",
+    ordersLocked: "{count}টি অর্ডার লক করা — আনলক করতে আপগ্রেড করুন",
+    productsLimitReached: "আপনি আপনার প্ল্যানের পণ্য সীমায় ({used} / {limit}) —",
+    staffLimitReached: "আপনি আপনার প্ল্যানের স্টাফ সীমায় ({used} / {limit}) —",
     unlimited: "আনলিমিটেড",
     choosePlanTitle: "প্ল্যান বেছে নিন",
     perMonth: "৳{amount} / মাস",
@@ -804,7 +827,6 @@ export const bn: Messages = {
     yearlyNote: "২ মাস ফ্রি",
     currentBadge: "বর্তমান",
     choose: "{plan} নিন",
-    enterpriseContact: "এন্টারপ্রাইজ মূল্যের জন্য যোগাযোগ করুন।",
     pendingTitle: "পেমেন্ট বাকি",
     amountDue: "প্রদেয় পরিমাণ: ৳{amount}",
     periodLabel: "{start} – {end} সময়ের জন্য",

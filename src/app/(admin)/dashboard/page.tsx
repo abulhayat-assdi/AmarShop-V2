@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, eq, ne, gt, lte, lt, gte, desc, sql, type SQL } from "drizzle-orm";
+import { and, eq, ne, gt, lte, lt, gte, desc, isNull, sql, type SQL } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
@@ -48,6 +48,9 @@ export default async function DashboardPage({
     const dateConditions: SQL[] = [];
     if (start) dateConditions.push(gte(orders.createdAt, start));
     if (end) dateConditions.push(lte(orders.createdAt, end));
+    // Over-quota (locked) orders are hidden from the merchant everywhere,
+    // including every figure on this dashboard, until they upgrade.
+    const notLocked = isNull(orders.quotaLockedAt);
 
     const [summary] = await tx
       .select({
@@ -56,7 +59,7 @@ export default async function DashboardPage({
         customerCount: sql<number>`count(distinct ${orders.customerPhone})`,
       })
       .from(orders)
-      .where(and(eq(orders.storeId, storeId), ne(orders.status, "canceled"), ...dateConditions));
+      .where(and(eq(orders.storeId, storeId), notLocked, ne(orders.status, "canceled"), ...dateConditions));
 
     // Not tied to the period — a live inventory snapshot, not a historical figure.
     const [lowStock] = await tx
@@ -80,7 +83,7 @@ export default async function DashboardPage({
         status: orders.status,
       })
       .from(orders)
-      .where(eq(orders.storeId, storeId))
+      .where(and(eq(orders.storeId, storeId), notLocked))
       .orderBy(desc(orders.createdAt))
       .limit(5);
 
@@ -91,7 +94,7 @@ export default async function DashboardPage({
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
-      .where(and(eq(orderItems.storeId, storeId), ne(orders.status, "canceled"), ...dateConditions))
+      .where(and(eq(orderItems.storeId, storeId), notLocked, ne(orders.status, "canceled"), ...dateConditions))
       .groupBy(orderItems.productName)
       .orderBy(desc(sql`sum(${orderItems.quantity})`))
       .limit(5);
@@ -111,7 +114,7 @@ export default async function DashboardPage({
       .innerJoin(productVariants, eq(productVariants.id, orderItems.productVariantId))
       .innerJoin(products, eq(products.id, productVariants.productId))
       .innerJoin(categories, eq(categories.id, products.categoryId))
-      .where(and(eq(orderItems.storeId, storeId), ne(orders.status, "canceled"), ...dateConditions))
+      .where(and(eq(orderItems.storeId, storeId), notLocked, ne(orders.status, "canceled"), ...dateConditions))
       .groupBy(categories.name)
       .orderBy(desc(sql`sum(${orderItems.quantity})`))
       .limit(5);
@@ -128,7 +131,7 @@ export default async function DashboardPage({
         total: sql<string>`coalesce(sum(${orders.total}), 0)`,
       })
       .from(orders)
-      .where(and(eq(orders.storeId, storeId), ne(orders.status, "canceled"), gte(orders.createdAt, sevenDaysAgo)))
+      .where(and(eq(orders.storeId, storeId), notLocked, ne(orders.status, "canceled"), gte(orders.createdAt, sevenDaysAgo)))
       .groupBy(sql`date_trunc('day', ${orders.createdAt})`);
 
     const salesByDay = new Map(dailySalesRows.map((row) => [row.day, Number(row.total)]));
@@ -150,7 +153,7 @@ export default async function DashboardPage({
       const periodPhones = await tx
         .selectDistinct({ phone: orders.customerPhone })
         .from(orders)
-        .where(and(eq(orders.storeId, storeId), ne(orders.status, "canceled"), ...dateConditions));
+        .where(and(eq(orders.storeId, storeId), notLocked, ne(orders.status, "canceled"), ...dateConditions));
 
       let newCount = 0;
       let returningCount = 0;
@@ -161,6 +164,7 @@ export default async function DashboardPage({
           .where(
             and(
               eq(orders.storeId, storeId),
+              notLocked,
               eq(orders.customerPhone, phone),
               ne(orders.status, "canceled"),
               lt(orders.createdAt, start)

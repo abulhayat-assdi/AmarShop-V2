@@ -8,6 +8,7 @@ import { withStoreContext } from "@/db/context";
 import { categories } from "@/db/schema";
 import { parseImportCsv, type NormalizedProduct } from "@/lib/products/import";
 import { commitImport, existingSkuSet } from "@/lib/products/import-commit";
+import { checkPlanLimit } from "@/lib/billing/limits";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PreviewRow = {
@@ -25,7 +26,13 @@ export type PreviewState = {
   headerError?: MessageRef;
   rows?: PreviewRow[];
   rawCsv?: string;
-  summary?: { willImport: number; skipped: number; newCategories: string[] };
+  summary?: {
+    willImport: number;
+    skipped: number;
+    newCategories: string[];
+    // Set when importing every OK row would exceed the plan's product cap.
+    planLimitBlocked?: { willImport: number; remaining: number };
+  };
 };
 
 const MAX_CSV_BYTES = 1_000_000;
@@ -85,6 +92,7 @@ export async function previewImportAction(
   });
 
   const willImport = rows.filter((r) => r.status === "ok").length;
+  const planCheck = await checkPlanLimit(session.user.storeId, "products", willImport);
   return {
     rows,
     rawCsv: text,
@@ -92,6 +100,10 @@ export async function previewImportAction(
       willImport,
       skipped: rows.length - willImport,
       newCategories: [...newCategories],
+      planLimitBlocked:
+        !planCheck.ok && willImport > 0
+          ? { willImport, remaining: planCheck.remaining }
+          : undefined,
     },
   };
 }
@@ -113,6 +125,16 @@ export async function confirmImportAction(
     .filter((r) => r.result.ok)
     .map((r) => (r.result as { ok: true; product: NormalizedProduct }).product);
   if (products.length === 0) return { error: msg("import.errNothingToImport") };
+
+  const planCheck = await checkPlanLimit(session.user.storeId, "products", products.length);
+  if (!planCheck.ok) {
+    return {
+      error: msg("import.errPlanLimit", {
+        willImport: products.length,
+        remaining: planCheck.remaining,
+      }),
+    };
+  }
 
   let created: number;
   try {

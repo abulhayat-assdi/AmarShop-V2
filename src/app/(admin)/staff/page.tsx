@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { canManageStaffRow, requireRole } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { staffMembers } from "@/db/schema";
+import { checkPlanLimit } from "@/lib/billing/limits";
 import { getTranslator } from "@/lib/i18n/server";
 import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
 import { StaffForm } from "./StaffForm";
@@ -17,10 +19,23 @@ export default async function StaffPage() {
     tx.select().from(staffMembers).where(eq(staffMembers.storeId, session.user.storeId))
   );
 
+  const planLimit = await checkPlanLimit(session.user.storeId, "staff", 0);
+  const atStaffLimit =
+    !planLimit.ok || (planLimit.limit !== null && planLimit.used >= planLimit.limit);
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">{t("admin.staff.title")}</h1>
       <p className="text-sm text-gray-600">{t("admin.staff.roleChangeNote")}</p>
+
+      {atStaffLimit && planLimit.limit !== null && (
+        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {t("billing.staffLimitReached", { used: planLimit.used, limit: planLimit.limit })}{" "}
+          <Link href="/billing" className="underline">
+            {t("admin.nav.billing")}
+          </Link>
+        </p>
+      )}
 
       <StaffForm actorIsOwner={actorIsOwner} />
 

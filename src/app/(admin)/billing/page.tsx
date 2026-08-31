@@ -6,6 +6,7 @@ import {
   getUsage,
   listPlatformInvoices,
 } from "@/lib/billing/subscription";
+import { getOrderQuota } from "@/lib/billing/order-quota";
 import { getPlatformBillingConfig } from "@/lib/billing/platform-config";
 import { PLANS, isValidPlanId, planLimit } from "@/lib/billing/plans";
 import {
@@ -26,6 +27,7 @@ export default async function BillingPage() {
 
   const sub = await getSubscription(storeId);
   const usage = await getUsage(storeId);
+  const orderQuota = await getOrderQuota(storeId);
   const invoices = await listPlatformInvoices(storeId);
   const pending = await getPendingInvoice(storeId);
   const platform = getPlatformBillingConfig();
@@ -34,6 +36,8 @@ export default async function BillingPage() {
   const planName = (id: string) => (isValidPlanId(id) ? t(PLANS[id].nameKey) : id);
   const meter = (key: string, used: number, limit: number | null) =>
     t(key, { used, limit: limit === null ? t("billing.unlimited") : limit });
+  const overClass = (used: number, limit: number | null) =>
+    limit !== null && used >= limit ? "text-red-700" : undefined;
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
@@ -66,8 +70,20 @@ export default async function BillingPage() {
         )}
 
         <div className="mt-2 flex flex-col gap-1 text-sm">
-          <span>{meter("billing.productsMeter", usage.products, planLimit(sub.effectivePlanId, "products"))}</span>
-          <span>{meter("billing.staffMeter", usage.staff, planLimit(sub.effectivePlanId, "staff"))}</span>
+          <span className={overClass(usage.products, planLimit(sub.effectivePlanId, "products"))}>
+            {meter("billing.productsMeter", usage.products, planLimit(sub.effectivePlanId, "products"))}
+          </span>
+          <span className={overClass(usage.staff, planLimit(sub.effectivePlanId, "staff"))}>
+            {meter("billing.staffMeter", usage.staff, planLimit(sub.effectivePlanId, "staff"))}
+          </span>
+          <span className={overClass(orderQuota.usedThisMonth, orderQuota.limit)}>
+            {meter("billing.ordersMeter", orderQuota.usedThisMonth, orderQuota.limit)}
+          </span>
+          {orderQuota.lockedTotal > 0 && (
+            <span className="text-red-700">
+              {t("billing.ordersLocked", { count: orderQuota.lockedTotal })}
+            </span>
+          )}
         </div>
       </section>
 

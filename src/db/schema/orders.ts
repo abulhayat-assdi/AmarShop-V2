@@ -62,11 +62,21 @@ export const orders = pgTable(
     fraudSuccessRatio: numeric("fraud_success_ratio", { precision: 5, scale: 2 }),
     fraudCheckedAt: timestamp("fraud_checked_at", { withTimezone: true }),
     fraudRaw: text("fraud_raw"),
+    // Platform billing (CLAUDE.md rule #3): set when this order arrived
+    // over the store's monthly order quota for its effective plan. NULL =
+    // accessible. A locked order is fully recorded (items, stock, payment,
+    // invoice, customer SMS, /track) — only the merchant admin view hides
+    // it, showing just a count + code/date on /orders/locked, until the
+    // merchant upgrades. See src/lib/billing/order-quota.ts.
+    quotaLockedAt: timestamp("quota_locked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("orders_store_id_idx").on(table.storeId),
+    // Serves the per-order month count on the checkout hot path
+    // (createOrderRecords -> quota decision).
+    index("orders_store_id_created_at_idx").on(table.storeId, table.createdAt),
     uniqueIndex("orders_store_id_order_code_idx").on(table.storeId, table.orderCode),
   ]
 );

@@ -7,6 +7,7 @@ import { products, productVariants, categories, stores } from "@/db/schema";
 import { getPrimaryImageUrls } from "@/lib/products/media";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
 import { getProductForecasts, forecastLevel } from "@/lib/products/forecast";
+import { checkPlanLimit } from "@/lib/billing/limits";
 import { ProductMedia } from "@/components/product-media";
 import { getTranslator } from "@/lib/i18n/server";
 import { PRODUCT_STATUS_KEYS } from "@/lib/enum-labels";
@@ -56,6 +57,9 @@ export default async function ProductsPage({
     rows.map((row) => row.id),
   );
   const forecasts = await getProductForecasts(session.user.storeId);
+  const planLimit = await checkPlanLimit(session.user.storeId, "products", 0);
+  const atProductLimit =
+    !planLimit.ok || (planLimit.limit !== null && planLimit.used >= planLimit.limit);
 
   const forecastClass: Record<string, string> = {
     critical: "text-red-600",
@@ -80,6 +84,15 @@ export default async function ProductsPage({
           </Link>
         </div>
       </div>
+
+      {atProductLimit && planLimit.limit !== null && (
+        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {t("billing.productsLimitReached", { used: planLimit.used, limit: planLimit.limit })}{" "}
+          <Link href="/billing" className="underline">
+            {t("admin.nav.billing")}
+          </Link>
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <form action={setLowStockThreshold} className="flex items-center gap-2">

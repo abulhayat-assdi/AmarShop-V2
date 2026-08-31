@@ -207,6 +207,8 @@ export const en = {
     errSkuExists: "A product with this SKU already exists.",
     errRowConflict: "Row {line} clashed with an existing product — nothing was imported.",
     errNothingToImport: "No valid rows to import.",
+    errPlanLimit:
+      "This import ({willImport} products) exceeds your plan — only {remaining} more allowed. Upgrade your plan or import fewer.",
   },
 
   admin: {
@@ -320,6 +322,7 @@ export const en = {
       colStatus: "Status",
       noOrders: "No orders yet.",
       noOrdersInStatus: "No orders with status “{status}”.",
+      lockedBanner: "{count} order(s) are locked behind your plan.",
       fraudTitle: "Fraud check",
       fraudPending: "Not checked yet.",
       fraudRecheck: "Re-check",
@@ -397,6 +400,18 @@ export const en = {
       createOrder: "Create order",
       creatingOrder: "Creating order…",
     },
+    ordersLocked: {
+      title: "Locked Orders",
+      intro:
+        "Orders received beyond your plan's monthly limit. Their details stay hidden until you upgrade.",
+      count: "{count} order(s) received over your plan limit",
+      whyLocked:
+        "You can see how many came in, but not the customer, items, address or amount. Upgrading unlocks all of them at once.",
+      upgradeCta: "Upgrade to unlock",
+      colCode: "Order",
+      colDate: "Received",
+      empty: "No locked orders.",
+    },
     shipment: {
       title: "Shipment",
       bookCourier: "Book courier",
@@ -424,6 +439,8 @@ export const en = {
       title: "Products",
       addProduct: "Add product",
       importCsv: "Import CSV",
+      errPlanLimit:
+        "You've reached your plan's product limit. Delete a product or upgrade your plan on Billing & Plan.",
       colName: "Name",
       colCategory: "Category",
       colPrice: "Price",
@@ -717,6 +734,7 @@ export const en = {
       errLastOwner: "A store must keep at least one owner.",
       errSelf: "You can't change your own role here — use Account.",
       errForbidden: "You don't have permission to change that person.",
+      errPlanLimit: "You've reached your plan's staff limit. Upgrade your plan to add more.",
     },
     account: {
       title: "Account",
@@ -752,6 +770,8 @@ export const en = {
       skippedTag: "skipped",
       importN: "Import {count} products",
       importing: "Importing…",
+      planLimitNotice:
+        "This import has {willImport} products but your plan has room for only {remaining} more. Upgrade your plan or import fewer.",
     },
     login: {
       signIn: "Sign in",
@@ -767,7 +787,6 @@ export const en = {
       free: "Free",
       starter: "Starter",
       business: "Business",
-      enterprise: "Enterprise",
     },
     status: {
       trialing: "Trial",
@@ -793,6 +812,10 @@ export const en = {
     usageTitle: "Usage",
     productsMeter: "Products: {used} / {limit}",
     staffMeter: "Staff: {used} / {limit}",
+    ordersMeter: "Orders this month: {used} / {limit}",
+    ordersLocked: "{count} order(s) locked — upgrade to unlock them",
+    productsLimitReached: "You're at your plan's product limit ({used} / {limit}) —",
+    staffLimitReached: "You're at your plan's staff limit ({used} / {limit}) —",
     unlimited: "unlimited",
     choosePlanTitle: "Choose a plan",
     perMonth: "৳{amount} / month",
@@ -803,7 +826,6 @@ export const en = {
     yearlyNote: "2 months free",
     currentBadge: "Current",
     choose: "Choose {plan}",
-    enterpriseContact: "Contact us for Enterprise pricing.",
     pendingTitle: "Payment due",
     amountDue: "Amount due: ৳{amount}",
     periodLabel: "For {start} – {end}",

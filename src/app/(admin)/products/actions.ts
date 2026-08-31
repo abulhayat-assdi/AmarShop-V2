@@ -20,6 +20,7 @@ import {
   storeDigitalFiles,
   validateDigitalPdfs,
 } from "@/lib/products/digital";
+import { checkPlanLimit } from "@/lib/billing/limits";
 
 function formMediaFiles(formData: FormData): { images: File[]; videos: File[] } {
   const pick = (name: string) =>
@@ -121,6 +122,10 @@ export async function createProduct(
   const session = await requireStaffSession();
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed.error;
+
+  const planCheck = await checkPlanLimit(session.user.storeId, "products", 1);
+  if (!planCheck.ok) return { error: "admin.products.errPlanLimit" };
+
   const digitalAllowed = await storeIsDigitalEnabled(session.user.storeId);
   const isDigital = parsed.data.isDigital && digitalAllowed;
   const {

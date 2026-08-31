@@ -183,6 +183,13 @@
       "when": 1788148342374,
       "tag": "0025_add_platform_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788152267594,
+      "tag": "0026_add_order_quota_lock",
+      "breakpoints": true
     }
   ]
 }

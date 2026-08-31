@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/roles";
 import { createPlatformInvoice, submitInvoicePayment } from "@/lib/billing/subscription";
-import { isValidCycle, isValidPlanId, PLANS } from "@/lib/billing/plans";
+import { isValidCycle, isValidPlanId } from "@/lib/billing/plans";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type BillingActionState = { error?: MessageRef; ok?: MessageRef };
@@ -17,7 +17,7 @@ export async function selectPlanAction(
 
   const plan = String(formData.get("plan") ?? "");
   const cycle = String(formData.get("cycle") ?? "");
-  if (!isValidPlanId(plan) || PLANS[plan].custom) return { error: msg("billing.errPlan") };
+  if (!isValidPlanId(plan)) return { error: msg("billing.errPlan") };
   if (!isValidCycle(cycle)) return { error: msg("billing.errCycle") };
 
   await createPlatformInvoice(session.user.storeId, plan, cycle);

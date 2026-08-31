@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
@@ -46,6 +46,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       .where(and(eq(orders.storeId, session.user.storeId), eq(orders.id, id)))
       .limit(1);
     if (!order) return null;
+    // Over-quota orders are redacted — only /orders/locked shows them.
+    if (order.quotaLockedAt) return { locked: true as const };
 
     const items = await tx
       .select()
@@ -76,6 +78,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   });
 
   if (!result) notFound();
+  if ("locked" in result) redirect("/orders/locked");
   const { order, items, payment, events, zone } = result;
   const upcoming = nextStatus(order.status);
 

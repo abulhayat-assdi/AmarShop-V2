@@ -7,23 +7,26 @@
 // This is the merchant-pays-AmarShop side (rule #3) — unrelated to the
 // customer-facing Order/Payment/Invoice code in src/lib/payments.
 
-export type PlanId = "free" | "starter" | "business" | "enterprise";
+export type PlanId = "free" | "starter" | "business";
 export type BillingCycle = "monthly" | "yearly";
 
 export type PlanLimits = {
   // null = unlimited.
+  // products/staff are total-count caps (checked on create).
   products: number | null;
   staff: number | null;
+  // orders RECEIVED per calendar month (Asia/Dhaka). Over the cap, an
+  // order is still recorded but locked from the merchant's admin view
+  // until they upgrade — see src/lib/billing/order-quota.ts.
+  orders: number | null;
 };
 
 export type Plan = {
   id: PlanId;
   // i18n key for the display name (rule #7 — never render the id).
   nameKey: string;
-  // BDT per month. Ignored when `custom` is true.
+  // BDT per month.
   monthlyPrice: number;
-  // true = "contact sales", no self-serve price or checkout (enterprise).
-  custom: boolean;
   limits: PlanLimits;
   // Sort order, lowest = entry tier.
   order: number;
@@ -36,43 +39,30 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "free",
     nameKey: "billing.plan.free",
     monthlyPrice: 0,
-    custom: false,
-    limits: { products: 50, staff: 1 },
+    limits: { products: 30, staff: 1, orders: 50 },
     order: 0,
   },
   starter: {
     id: "starter",
     nameKey: "billing.plan.starter",
-    monthlyPrice: 500,
-    custom: false,
-    limits: { products: 500, staff: 3 },
+    monthlyPrice: 1000,
+    limits: { products: 75, staff: 3, orders: 250 },
     order: 1,
   },
   business: {
     id: "business",
     nameKey: "billing.plan.business",
     monthlyPrice: 1500,
-    custom: false,
-    limits: { products: null, staff: null },
+    limits: { products: null, staff: null, orders: null },
     order: 2,
-  },
-  enterprise: {
-    id: "enterprise",
-    nameKey: "billing.plan.enterprise",
-    monthlyPrice: 0,
-    custom: true,
-    limits: { products: null, staff: null },
-    order: 3,
   },
 };
 
-// Every tier, entry-first — for rendering the plan grid.
+// Every tier, entry-first — for rendering the plan grid. Every tier is
+// self-serve (pick + pay online); there is no "contact sales" tier.
 export const PLAN_IDS = (Object.values(PLANS) as Plan[])
   .sort((a, b) => a.order - b.order)
   .map((p) => p.id);
-
-// Tiers a merchant can pick and pay for without talking to sales.
-export const SELF_SERVE_PLAN_IDS = PLAN_IDS.filter((id) => !PLANS[id].custom);
 
 // A yearly subscription is charged this many months of the monthly price
 // (i.e. ~2 months free).
@@ -93,11 +83,9 @@ export function isValidCycle(value: string): value is BillingCycle {
   return value === "monthly" || value === "yearly";
 }
 
-// Price in BDT for a plan on a given cycle. Custom (enterprise) → 0, since
-// it has no self-serve price.
+// Price in BDT for a plan on a given cycle.
 export function planPrice(planId: PlanId, cycle: BillingCycle): number {
   const plan = PLANS[planId];
-  if (plan.custom) return 0;
   return cycle === "yearly" ? plan.monthlyPrice * YEARLY_MONTHS_CHARGED : plan.monthlyPrice;
 }
 

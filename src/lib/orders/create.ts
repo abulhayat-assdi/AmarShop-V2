@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { allocateInvoiceNumber } from "@/lib/invoices/number";
 import { allocateOrderCode } from "@/lib/orders/number";
+import { isOverOrderQuota, monthStartDhaka, resolveOrderLimit } from "@/lib/billing/order-quota";
 
 export { BD_PHONE_PATTERN } from "@/lib/phone";
 
@@ -70,6 +71,20 @@ export async function createOrderRecords(
   tx: TenantTx,
   params: CreateOrderParams
 ): Promise<Order> {
+  // Monthly order quota (src/lib/billing/order-quota.ts). Over the cap the
+  // order is still recorded in full — only quota_locked_at is stamped, and
+  // the merchant's admin hides it until they upgrade. Applies equally to
+  // storefront checkout and staff-entered manual orders (both land here).
+  const orderLimit = await resolveOrderLimit(params.storeId);
+  let quotaLockedAt: Date | null = null;
+  if (orderLimit !== null) {
+    const [{ n }] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(and(eq(orders.storeId, params.storeId), gte(orders.createdAt, monthStartDhaka())));
+    if (isOverOrderQuota(n, orderLimit)) quotaLockedAt = new Date();
+  }
+
   const [order] = await tx
     .insert(orders)
     .values({
@@ -87,6 +102,7 @@ export async function createOrderRecords(
       total: params.total.toFixed(2),
       paymentMethod: params.paymentMethod,
       notes: params.notes,
+      quotaLockedAt,
     })
     .returning();
 

@@ -2,12 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { useTranslator } from "@/components/i18n-provider";
-import {
-  PLANS,
-  SELF_SERVE_PLAN_IDS,
-  planPrice,
-  type BillingCycle,
-} from "@/lib/billing/plans";
+import { PLANS, PLAN_IDS, planPrice, type BillingCycle } from "@/lib/billing/plans";
 import { WALLET_PROVIDER_KEYS } from "@/lib/enum-labels";
 import { selectPlanAction, submitPaymentAction, type BillingActionState } from "./actions";
 
@@ -74,8 +69,8 @@ export function BillingView({
           </p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {SELF_SERVE_PLAN_IDS.map((id) => {
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {PLAN_IDS.map((id) => {
             const plan = PLANS[id];
             const isCurrent = committedPlan === id;
             return (
@@ -117,10 +112,6 @@ export function BillingView({
               </div>
             );
           })}
-          <div className="flex flex-col gap-2 rounded border border-dashed p-4">
-            <div className="font-semibold">{t(PLANS.enterprise.nameKey)}</div>
-            <div className="text-xs text-gray-600">{t("billing.enterpriseContact")}</div>
-          </div>
         </div>
       </section>
 

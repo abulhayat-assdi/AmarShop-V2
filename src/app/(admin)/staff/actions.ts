@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { canManageStaffRow, requireRole, type StaffRole } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { staffMembers } from "@/db/schema";
+import { checkPlanLimit } from "@/lib/billing/limits";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const ROLES: StaffRole[] = ["owner", "admin", "staff"];
@@ -47,6 +48,9 @@ export async function addStaffAction(_prev: StaffState, formData: FormData): Pro
   if (!EMAIL_RE.test(email)) return { error: "admin.staff.errEmail" };
   if (password.length < 8) return { error: "admin.staff.errPassword" };
   if (role === "owner" && session.user.role !== "owner") return { error: "admin.staff.errForbidden" };
+
+  const planCheck = await checkPlanLimit(session.user.storeId, "staff", 1);
+  if (!planCheck.ok) return { error: "admin.staff.errPlanLimit" };
 
   const passwordHash = await bcrypt.hash(password, 10);
   try {

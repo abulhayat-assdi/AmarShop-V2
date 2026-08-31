@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { and, eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc, isNull, sql } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
+import { getOrderQuota } from "@/lib/billing/order-quota";
 import { getTranslator } from "@/lib/i18n/server";
 import { formatOrderCode } from "@/lib/orders/number";
 import {
@@ -32,8 +33,13 @@ export default async function OrdersPage({
   const session = await requireStaffSession();
   const { t } = await getTranslator();
 
+  const quota = await getOrderQuota(session.user.storeId);
+
   const rows = await withStoreContext(session.user.storeId, (tx) => {
-    const conditions = [eq(orders.storeId, session.user.storeId)];
+    const conditions = [
+      eq(orders.storeId, session.user.storeId),
+      isNull(orders.quotaLockedAt),
+    ];
     if (activeStatus !== "all") {
       conditions.push(eq(orders.status, activeStatus));
     }
@@ -69,6 +75,18 @@ export default async function OrdersPage({
           {t("admin.orders.addOrder")}
         </Link>
       </div>
+      {quota.lockedTotal > 0 && (
+        <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {t("admin.orders.lockedBanner", { count: quota.lockedTotal })}{" "}
+          <Link href="/orders/locked" className="underline">
+            {t("admin.ordersLocked.title")}
+          </Link>
+          {" · "}
+          <Link href="/billing" className="underline">
+            {t("admin.nav.billing")}
+          </Link>
+        </p>
+      )}
       <nav className="flex flex-wrap gap-1 border-b text-sm">
         {STATUS_TABS.map((tab) => (
           <Link

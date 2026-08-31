@@ -1,12 +1,11 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
-import { platformInvoices, products, staffMembers, stores } from "@/db/schema";
+import { orders, platformInvoices, products, staffMembers, stores } from "@/db/schema";
 import type { PlatformInvoice, Store } from "@/db/schema";
 import {
   isValidPlanId,
   planPrice,
-  PLANS,
   TRIAL_PLAN,
   type BillingCycle,
   type PlanId,
@@ -142,8 +141,8 @@ export async function createPlatformInvoice(
   planId: PlanId,
   cycle: BillingCycle
 ): Promise<PlatformInvoice> {
-  if (!isValidPlanId(planId) || PLANS[planId].custom) {
-    throw new Error(`plan ${planId} is not self-serve`);
+  if (!isValidPlanId(planId)) {
+    throw new Error(`unknown plan ${planId}`);
   }
   const now = new Date();
   const periodEnd = addPeriod(now, cycle);
@@ -217,6 +216,11 @@ export async function markPlatformInvoicePaid(
       .limit(1);
     if (!inv || inv.status !== "pending") return null;
 
+    // orders is RLS-scoped; platform_invoices / stores are not. Setting
+    // the tenant GUC for this transaction lets the orders unlock below run
+    // and is harmless to the two non-RLS updates.
+    await tx.execute(sql`select set_config('app.current_store_id', ${inv.storeId}, true)`);
+
     const now = new Date();
     await tx
       .update(platformInvoices)
@@ -232,6 +236,14 @@ export async function markPlatformInvoicePaid(
         updatedAt: now,
       })
       .where(eq(stores.id, inv.storeId));
+
+    // A paying upgrade unlocks the store's entire locked-order backlog at
+    // once, even if the new tier's monthly cap is below the backlog size.
+    await tx
+      .update(orders)
+      .set({ quotaLockedAt: null, updatedAt: now })
+      .where(and(eq(orders.storeId, inv.storeId), isNotNull(orders.quotaLockedAt)));
+
     return inv;
   });
 }

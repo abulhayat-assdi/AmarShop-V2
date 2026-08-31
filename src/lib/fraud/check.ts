@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { withStoreContext } from "@/db/context";
 import { orders } from "@/db/schema";
 import { createFraudCheckAdapter } from "./index";
@@ -17,7 +17,13 @@ export async function runFraudCheck(storeId: string, orderId: string): Promise<v
       const [row] = await tx
         .select({ phone: orders.customerPhone })
         .from(orders)
-        .where(and(eq(orders.storeId, storeId), eq(orders.id, orderId)))
+        .where(
+          and(
+            eq(orders.storeId, storeId),
+            eq(orders.id, orderId),
+            isNull(orders.quotaLockedAt)
+          )
+        )
         .limit(1);
       return row?.phone ?? null;
     });

@@ -1,4 +1,4 @@
-import { and, eq, gte, ne, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, productVariants, products } from "@/db/schema";
 
@@ -47,6 +47,7 @@ async function velocityRows(storeId: string): Promise<VelocityRow[]> {
       .where(
         and(
           eq(orderItems.storeId, storeId),
+          isNull(orders.quotaLockedAt),
           ne(orders.status, "canceled"),
           ne(products.isDigital, true),
           gte(orders.createdAt, windowCutoff())
@@ -99,6 +100,7 @@ export async function getRestockSoon(storeId: string, limit = 5): Promise<Restoc
       .where(
         and(
           eq(orderItems.storeId, storeId),
+          isNull(orders.quotaLockedAt),
           ne(orders.status, "canceled"),
           ne(products.isDigital, true),
           gte(orders.createdAt, windowCutoff())
