@@ -1,7 +1,7 @@
 import { and, asc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { platformInvoices, stores } from "@/db/schema";
-import { requirePlatformAdmin } from "@/lib/auth/roles";
+import { requirePlatformAdminPage } from "@/lib/auth/roles";
 import { getTranslator } from "@/lib/i18n/server";
 import { PLANS, isValidPlanId } from "@/lib/billing/plans";
 import { BILLING_CYCLE_KEYS, WALLET_PROVIDER_KEYS } from "@/lib/enum-labels";
@@ -11,7 +11,7 @@ import { markPaidAction, rejectAction } from "./actions";
 // merchant has reported, with verify / reject. The full cross-tenant
 // platform dashboard is a separate Phase 5 slice.
 export default async function PlatformBillingPage() {
-  await requirePlatformAdmin();
+  await requirePlatformAdminPage();
   const { t } = await getTranslator();
 
   const rows = await db
@@ -35,7 +35,7 @@ export default async function PlatformBillingPage() {
   const planName = (id: string) => (isValidPlanId(id) ? t(PLANS[id].nameKey) : id);
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{t("billing.platform.title")}</h1>
         <p className="text-sm text-gray-600">{t("billing.platform.intro")}</p>
@@ -106,6 +106,6 @@ export default async function PlatformBillingPage() {
           )}
         </tbody>
       </table>
-    </main>
+    </div>
   );
 }

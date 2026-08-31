@@ -45,7 +45,14 @@ async function upsertStore(values: NewStore) {
 
 async function upsertStaff(
   storeId: string,
-  values: { name: string; email: string; password: string; role: "owner" | "admin" | "staff"; isPlatformAdmin: boolean }
+  values: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    role: "owner" | "admin" | "staff";
+    isPlatformAdmin: boolean;
+  }
 ) {
   await withStoreContext(storeId, async (tx) => {
     const [existing] = await tx
@@ -60,6 +67,7 @@ async function upsertStaff(
       storeId,
       name: values.name,
       email: values.email,
+      phone: values.phone ?? null,
       passwordHash,
       role: values.role,
       isPlatformAdmin: values.isPlatformAdmin,
@@ -153,6 +161,7 @@ async function main() {
   await upsertStaff(demoStore.id, {
     name: "Demo Owner",
     email: "owner@demo.amarshop.test",
+    phone: "01712345678",
     password: "password123",
     role: "owner",
     isPlatformAdmin: false,

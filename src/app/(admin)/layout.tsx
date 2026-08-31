@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth/config";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
-import { resolveLocale } from "@/lib/i18n/server";
+import { resolveLocale, getTranslator } from "@/lib/i18n/server";
 import { storefrontUrlFor } from "@/lib/tenant/resolve";
 import { getStockAlerts, DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/products/stock";
 import { AdminShell, type AdminNavItem } from "@/components/admin-shell";
@@ -41,6 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .limit(1);
 
   const locale = await resolveLocale();
+  const { t } = await getTranslator();
   const { alerts, total } = await getStockAlerts(
     session.user.storeId,
     store?.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD
@@ -60,6 +62,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       stockAlerts={alerts}
       stockAlertTotal={total}
     >
+      {store && store.status !== "active" && (
+        <div className="mb-4 rounded border border-red-500 bg-red-600 px-4 py-2 text-sm text-white">
+          {t("admin.shell.suspendedNotice")}{" "}
+          <Link href="/billing" className="font-semibold underline">
+            {t("admin.nav.billing")}
+          </Link>
+        </div>
+      )}
       {children}
     </AdminShell>
   );

@@ -19,6 +19,7 @@ export function CreateStoreForm() {
   const [storeType, setStoreType] = useState("ecommerce");
   const [locale, setLocale] = useState("bn");
   const [ownerName, setOwnerName] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [ownerPassword, setOwnerPassword] = useState("");
 
@@ -93,6 +94,17 @@ export function CreateStoreForm() {
           value={ownerName}
           onChange={(e) => setOwnerName(e.target.value)}
           className={`rounded border px-3 py-2 ${errorBorder("ownerName")}`}
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        Mobile number (optional)
+        <input
+          name="ownerPhone"
+          inputMode="numeric"
+          placeholder="01XXXXXXXXX"
+          value={ownerPhone}
+          onChange={(e) => setOwnerPhone(e.target.value)}
+          className={`rounded border px-3 py-2 ${errorBorder("ownerPhone")}`}
         />
       </label>
       <label className="flex flex-col gap-1">

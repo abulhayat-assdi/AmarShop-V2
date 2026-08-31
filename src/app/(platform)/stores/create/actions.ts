@@ -6,10 +6,17 @@ import bcrypt from "bcryptjs";
 import { db } from "@/db/client";
 import { stores, staffMembers } from "@/db/schema";
 import { isReservedSubdomain } from "@/lib/tenant/constants";
+import { BD_PHONE_PATTERN } from "@/lib/phone";
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
-export type CreateStoreField = "name" | "slug" | "ownerName" | "ownerEmail" | "ownerPassword";
+export type CreateStoreField =
+  | "name"
+  | "slug"
+  | "ownerName"
+  | "ownerPhone"
+  | "ownerEmail"
+  | "ownerPassword";
 export type CreateStoreState = { error?: string; field?: CreateStoreField };
 
 // drizzle-orm's postgres-js driver wraps the raw driver error in `.cause`
@@ -46,6 +53,7 @@ export async function createStore(
   const locale = String(formData.get("locale") ?? "bn");
   const digitalEnabled = String(formData.get("storeType") ?? "ecommerce") === "digital";
   const ownerName = String(formData.get("ownerName") ?? "").trim();
+  const ownerPhone = String(formData.get("ownerPhone") ?? "").trim() || null;
   const ownerEmail = String(formData.get("ownerEmail") ?? "")
     .trim()
     .toLowerCase();
@@ -56,6 +64,9 @@ export async function createStore(
   }
   if (!ownerName) {
     return { error: "Your name is required.", field: "ownerName" };
+  }
+  if (ownerPhone && !BD_PHONE_PATTERN.test(ownerPhone)) {
+    return { error: "Enter a valid Bangladeshi mobile number (e.g. 017XXXXXXXX).", field: "ownerPhone" };
   }
   if (!ownerEmail) {
     return { error: "Email is required.", field: "ownerEmail" };
@@ -87,6 +98,7 @@ export async function createStore(
       await tx.insert(staffMembers).values({
         storeId: store.id,
         name: ownerName,
+        phone: ownerPhone,
         email: ownerEmail,
         passwordHash,
         role: "owner",

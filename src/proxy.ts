@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isPlatformHost, resolveHost } from "@/lib/tenant/resolve";
+import { hostname, isPlatformHost, resolveHost } from "@/lib/tenant/resolve";
 import { STORE_ID_HEADER } from "@/lib/tenant/constants";
 
 // Runs before every route. Resolves which store (if any) a request belongs
@@ -9,7 +9,9 @@ import { STORE_ID_HEADER } from "@/lib/tenant/constants";
 // src/lib/tenant/current.ts) instead of re-resolving the host itself.
 // The platform's own admin/marketing hosts skip resolution entirely.
 export async function proxy(request: NextRequest) {
-  const host = request.headers.get("host") ?? "";
+  // Port-less: a "localhost:3000" dev host and a plain "localhost" behind
+  // Caddy must resolve identically (see hostname() in tenant/resolve.ts).
+  const host = hostname(request.headers.get("host") ?? "");
 
   if (isPlatformHost(host)) {
     return NextResponse.next();

@@ -3,21 +3,33 @@ import { db } from "@/db/client";
 import { stores, type Store } from "@/db/schema";
 import { isReservedSubdomain } from "./constants";
 
+// A Host header carries the port for a non-default one — "localhost:3000"
+// under `pnpm dev`, but plain "localhost" via docker-compose's Caddy on
+// :80. The port is never tenant-meaningful (a subdomain or custom domain
+// is the same store on any port), so strip it before every comparison —
+// then a single PLATFORM_ROOT_DOMAIN=localhost serves both run modes.
+// Trailing ":<digits>" only, so IPv6 literals ("[::1]") are left intact.
+export function hostname(host: string): string {
+  return host.replace(/:\d+$/, "");
+}
+
 // The platform's own admin/marketing surfaces (app.amarshop.com,
 // www.amarshop.com, and the bare root domain) are never a merchant
 // storefront — they skip tenant resolution entirely. The reserved list is
 // shared with store creation (./constants.ts) so the two can't drift.
-export function isPlatformHost(host: string): boolean {
+export function isPlatformHost(rawHost: string): boolean {
   const rootDomain = process.env.PLATFORM_ROOT_DOMAIN;
   if (!rootDomain) return false;
+  const host = hostname(rawHost);
   if (host === rootDomain) return true;
   const suffix = `.${rootDomain}`;
   return host.endsWith(suffix) && isReservedSubdomain(host.slice(0, -suffix.length));
 }
 
-function extractSlug(host: string): string | null {
+function extractSlug(rawHost: string): string | null {
   const rootDomain = process.env.PLATFORM_ROOT_DOMAIN;
   if (!rootDomain) return null;
+  const host = hostname(rawHost);
   const suffix = `.${rootDomain}`;
   if (!host.endsWith(suffix)) return null;
   const sub = host.slice(0, -suffix.length);
@@ -60,7 +72,8 @@ function servable() {
   return and(...conditions);
 }
 
-export async function resolveHost(host: string): Promise<HostResolution | null> {
+export async function resolveHost(rawHost: string): Promise<HostResolution | null> {
+  const host = hostname(rawHost);
   const slug = extractSlug(host);
   if (slug) {
     const [store] = await db

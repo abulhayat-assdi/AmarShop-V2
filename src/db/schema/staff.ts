@@ -20,6 +20,9 @@ export const staffMembers = pgTable(
       .references(() => stores.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     email: text("email").notNull(),
+    // Optional contact number for the store owner, collected on the
+    // create-store form and shown on the platform-admin store-detail page.
+    phone: text("phone"),
     passwordHash: text("password_hash").notNull(),
     role: staffRoleEnum("role").notNull().default("staff"),
     // The AmarShop operator's own team (not a merchant) — a staff row still

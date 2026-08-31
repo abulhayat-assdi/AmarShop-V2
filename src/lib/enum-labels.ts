@@ -63,6 +63,17 @@ export const STAFF_ROLE_KEYS: Record<StaffMember["role"], string> = {
   staff: "admin.shell.roleStaff",
 };
 
+// Store lifecycle (src/db/schema/enums.ts storeStatusEnum) — shown on the
+// platform-admin dashboard. "active" = storefront serving; "suspended" =
+// blocked (proxy.ts 404s it); "pending" = created, not yet activated.
+export const STORE_STATUS_KEYS: Record<Store["status"], string> = {
+  pending: "platform.storeStatus.pending",
+  active: "platform.storeStatus.active",
+  suspended: "platform.storeStatus.suspended",
+};
+
+export const STORE_STATUSES = Object.keys(STORE_STATUS_KEYS) as Store["status"][];
+
 export const DISCOUNT_TYPE_KEYS: Record<Coupon["type"], string> = {
   percentage: "admin.coupons.typePercentage",
   fixed: "admin.coupons.typeFixed",
@@ -96,6 +107,10 @@ export const SUBSCRIPTION_STATUS_KEYS: Record<Store["subscriptionStatus"], strin
   past_due: "billing.status.pastDue",
   canceled: "billing.status.canceled",
 };
+
+export const SUBSCRIPTION_STATUSES = Object.keys(
+  SUBSCRIPTION_STATUS_KEYS
+) as Store["subscriptionStatus"][];
 
 export const PLATFORM_INVOICE_STATUS_KEYS: Record<PlatformInvoice["status"], string> = {
   pending: "billing.invoiceStatus.pending",

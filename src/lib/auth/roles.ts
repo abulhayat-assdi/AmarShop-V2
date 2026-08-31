@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { auth } from "./config";
 
 export type StaffRole = "owner" | "admin" | "staff";
@@ -49,6 +50,19 @@ export async function requirePlatformAdmin() {
   const session = await auth();
   if (!session?.user?.isPlatformAdmin) {
     throw new Error("Not authorized");
+  }
+  return session;
+}
+
+// Page/layout variant of requirePlatformAdmin: sends an unauthenticated or
+// non-platform-admin visitor to /login instead of throwing a raw error
+// page (mirrors how (admin)/layout.tsx redirects). Server Actions keep
+// using requirePlatformAdmin() — a thrown error is the right outcome for a
+// mutation, not a redirect.
+export async function requirePlatformAdminPage() {
+  const session = await auth();
+  if (!session?.user?.isPlatformAdmin) {
+    redirect("/login");
   }
   return session;
 }

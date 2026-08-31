@@ -1,6 +1,6 @@
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { withStoreContext } from "@/db/context";
+import { withStoreContext, type TenantTx } from "@/db/context";
 import { orders, platformInvoices, products, staffMembers, stores } from "@/db/schema";
 import type { PlatformInvoice, Store } from "@/db/schema";
 import {
@@ -202,6 +202,35 @@ export async function submitInvoicePayment(
   return row ?? null;
 }
 
+// Put a store onto a paid plan: mark it active on `plan` until `periodEnd`,
+// and unlock its entire quota-locked order backlog at once (a paying
+// customer gets everything, even if the tier's monthly cap is below the
+// backlog). The caller MUST have set app.current_store_id for `tx` — the
+// stores update is RLS-exempt, but the orders unlock is not. Shared by
+// markPlatformInvoicePaid (invoice verified) and the platform-admin
+// subscription override (src/lib/platform/actions.ts).
+export async function applyPaidPlan(
+  tx: TenantTx,
+  storeId: string,
+  opts: { plan: string; cycle: BillingCycle; periodEnd: Date }
+): Promise<void> {
+  const now = new Date();
+  await tx
+    .update(stores)
+    .set({
+      subscriptionPlan: opts.plan,
+      subscriptionStatus: "active",
+      subscriptionCycle: opts.cycle,
+      currentPeriodEndsAt: opts.periodEnd,
+      updatedAt: now,
+    })
+    .where(eq(stores.id, storeId));
+  await tx
+    .update(orders)
+    .set({ quotaLockedAt: null, updatedAt: now })
+    .where(and(eq(orders.storeId, storeId), isNotNull(orders.quotaLockedAt)));
+}
+
 // Platform-admin path — NO storeId scope, this is the cross-tenant verify
 // step. Marks the invoice paid and advances the store's subscription.
 export async function markPlatformInvoicePaid(
@@ -217,32 +246,15 @@ export async function markPlatformInvoicePaid(
     if (!inv || inv.status !== "pending") return null;
 
     // orders is RLS-scoped; platform_invoices / stores are not. Setting
-    // the tenant GUC for this transaction lets the orders unlock below run
-    // and is harmless to the two non-RLS updates.
+    // the tenant GUC for this transaction lets applyPaidPlan's orders
+    // unlock run, and is harmless to the two non-RLS updates.
     await tx.execute(sql`select set_config('app.current_store_id', ${inv.storeId}, true)`);
 
-    const now = new Date();
     await tx
       .update(platformInvoices)
-      .set({ status: "paid", paidAt: now, verifiedByStaffId: staffId, updatedAt: now })
+      .set({ status: "paid", paidAt: new Date(), verifiedByStaffId: staffId, updatedAt: new Date() })
       .where(eq(platformInvoices.id, invoiceId));
-    await tx
-      .update(stores)
-      .set({
-        subscriptionPlan: inv.plan,
-        subscriptionStatus: "active",
-        subscriptionCycle: inv.cycle,
-        currentPeriodEndsAt: inv.periodEnd,
-        updatedAt: now,
-      })
-      .where(eq(stores.id, inv.storeId));
-
-    // A paying upgrade unlocks the store's entire locked-order backlog at
-    // once, even if the new tier's monthly cap is below the backlog size.
-    await tx
-      .update(orders)
-      .set({ quotaLockedAt: null, updatedAt: now })
-      .where(and(eq(orders.storeId, inv.storeId), isNotNull(orders.quotaLockedAt)));
+    await applyPaidPlan(tx, inv.storeId, { plan: inv.plan, cycle: inv.cycle, periodEnd: inv.periodEnd });
 
     return inv;
   });

@@ -13,6 +13,12 @@ type StaffLoginRow = {
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Self-hosted behind a trusted proxy (Caddy) and used on more than one
+  // origin in dev (http://localhost via Caddy AND http://localhost:3000
+  // via `pnpm dev`). Trust the forwarded Host so auth works on both
+  // without juggling AUTH_URL — the recommended setting for non-Vercel
+  // Auth.js deployments.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   providers: [
