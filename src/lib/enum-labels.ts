@@ -57,6 +57,8 @@ export const PRODUCT_STATUS_KEYS: Record<Product["status"], string> = {
   archived: "admin.products.statusArchived",
 };
 
+export const PRODUCT_STATUSES = Object.keys(PRODUCT_STATUS_KEYS) as Product["status"][];
+
 export const STAFF_ROLE_KEYS: Record<StaffMember["role"], string> = {
   owner: "admin.shell.roleOwner",
   admin: "admin.shell.roleAdmin",

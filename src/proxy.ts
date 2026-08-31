@@ -48,6 +48,8 @@ export const config = {
     // platform-internal (Caddy -> app over the Docker network), also
     // store-agnostic — resolving a tenant from its Host header would just
     // 404 it.
-    "/((?!_next/static|_next/image|favicon.ico|uploads/|api/internal/).*)",
+    // /api/v1/* is the public API — it authenticates by Bearer key (which
+    // carries the store), so Host-based tenant resolution must not run.
+    "/((?!_next/static|_next/image|favicon.ico|uploads/|api/internal/|api/v1/).*)",
   ],
 };

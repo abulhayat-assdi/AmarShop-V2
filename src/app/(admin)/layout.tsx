@@ -24,6 +24,7 @@ const NAV: AdminNavItem[] = [
   { href: "/sms-settings", labelKey: "admin.nav.smsSettings" },
   { href: "/marketing-settings", labelKey: "admin.nav.marketingSettings" },
   { href: "/domain-settings", labelKey: "admin.nav.domainSettings" },
+  { href: "/api-keys", labelKey: "admin.nav.apiKeys" },
   { href: "/billing", labelKey: "admin.nav.billing" },
 ];
 
