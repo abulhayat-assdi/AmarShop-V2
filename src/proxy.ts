@@ -50,6 +50,9 @@ export const config = {
     // 404 it.
     // /api/v1/* is the public API — it authenticates by Bearer key (which
     // carries the store), so Host-based tenant resolution must not run.
-    "/((?!_next/static|_next/image|favicon.ico|uploads/|api/internal/|api/v1/).*)",
+    // /oauth/* (the app-install flow) is the same: /oauth/token
+    // authenticates by client credentials, and /oauth/authorize by the
+    // staff session — neither needs the store resolved from the Host.
+    "/((?!_next/static|_next/image|favicon.ico|uploads/|api/internal/|api/v1/|oauth/).*)",
   ],
 };

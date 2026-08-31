@@ -1,12 +1,20 @@
 import { getTranslator } from "@/lib/i18n/server";
 import { authenticate } from "./actions";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
   const { t } = await getTranslator();
+  const nextRaw = (await searchParams).next;
+  const next = Array.isArray(nextRaw) ? nextRaw[0] : nextRaw ?? "";
+
   return (
     <main className="mx-auto flex max-w-sm flex-col gap-6 p-8">
       <h1 className="text-2xl font-semibold">{t("admin.login.signIn")}</h1>
       <form action={authenticate} className="flex flex-col gap-4">
+        <input type="hidden" name="next" value={next} />
         <label className="flex flex-col gap-1">
           {t("admin.login.email")}
           <input name="email" type="email" required className="rounded border px-3 py-2" />

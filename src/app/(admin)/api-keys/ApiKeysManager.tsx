@@ -2,16 +2,11 @@
 
 import { useActionState } from "react";
 import { useTranslator } from "@/components/i18n-provider";
-import { API_SCOPES } from "@/lib/api/scopes";
+import { API_SCOPES, SCOPE_LABEL_KEYS } from "@/lib/api/scopes";
 import type { ApiKeyListItem } from "@/lib/api/keys";
 import { createApiKeyAction, revokeApiKeyAction, type ApiKeyCreateState } from "./actions";
 
 const initial: ApiKeyCreateState = {};
-
-const SCOPE_KEY: Record<(typeof API_SCOPES)[number], string> = {
-  "read:products": "admin.apiKeys.scopeReadProducts",
-  "read:orders": "admin.apiKeys.scopeReadOrders",
-};
 
 function fmtDate(d: Date | string | null): string {
   return d ? new Date(d).toLocaleDateString() : "—";
@@ -40,7 +35,7 @@ export function ApiKeysManager({ keys }: { keys: ApiKeyListItem[] }) {
             <label key={s} className="flex items-center gap-2">
               <input type="checkbox" name="scopes" value={s} defaultChecked />
               <span>
-                {t(SCOPE_KEY[s])} <span className="font-mono text-xs text-gray-500">{s}</span>
+                {t(SCOPE_LABEL_KEYS[s])} <span className="font-mono text-xs text-gray-500">{s}</span>
               </span>
             </label>
           ))}

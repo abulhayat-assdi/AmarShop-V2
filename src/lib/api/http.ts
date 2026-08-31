@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { resolveInstallationToken } from "@/lib/oauth/install";
 import { resolveApiKey } from "./keys";
 import type { ApiScope } from "./scopes";
 
@@ -7,6 +8,15 @@ import type { ApiScope } from "./scopes";
 // Bearer-key auth with a per-key rate limit and scope check, and paging.
 
 export type ApiContext = { storeId: string; keyId: string; scopes: ApiScope[] };
+
+// A /api/v1 caller presents one of two credential kinds, both resolving to
+// the same { storeId, keyId, scopes }: a merchant-minted API key ("ak_…",
+// src/lib/api/keys.ts) or an OAuth app-installation token ("ato_…",
+// src/lib/oauth). `keyId` is the per-credential rate-limit bucket.
+async function resolveCredential(token: string): Promise<ApiContext | null> {
+  if (token.startsWith("ato_")) return resolveInstallationToken(token);
+  return resolveApiKey(token);
+}
 
 export function jsonOk(data: unknown, extra?: Record<string, unknown>): NextResponse {
   return NextResponse.json({ data, ...extra });
@@ -28,7 +38,7 @@ export async function authenticateApi(
     return jsonError(401, "unauthorized", "Provide an API key as `Authorization: Bearer <key>`.");
   }
 
-  const resolved = await resolveApiKey(match[1].trim());
+  const resolved = await resolveCredential(match[1].trim());
   if (!resolved) {
     return jsonError(401, "invalid_key", "That API key is not valid or has been revoked.");
   }

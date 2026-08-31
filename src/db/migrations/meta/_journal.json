@@ -211,6 +211,13 @@
       "when": 1788191609844,
       "tag": "0029_add_api_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1788198183146,
+      "tag": "0030_strong_kitty_pryde",
+      "breakpoints": true
     }
   ]
 }

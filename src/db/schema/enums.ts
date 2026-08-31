@@ -135,3 +135,10 @@ export const platformInvoiceStatusEnum = pgEnum("platform_invoice_status", [
 ]);
 
 export const billingCycleEnum = pgEnum("billing_cycle", ["monthly", "yearly"]);
+
+// ── Developer platform (Phase 6). A third-party OAuth app registered from
+// /platform/apps. "disabled" kills every installation's access token at
+// the next /api/v1 call (the token resolver joins app_installations to
+// oauth_apps and rejects a non-active app). See
+// src/db/schema/oauth-apps.ts and src/lib/oauth.
+export const oauthAppStatusEnum = pgEnum("oauth_app_status", ["active", "disabled"]);

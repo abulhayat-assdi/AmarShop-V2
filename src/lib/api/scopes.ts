@@ -7,6 +7,14 @@ export const API_SCOPES = ["read:products", "read:orders"] as const;
 
 export type ApiScope = (typeof API_SCOPES)[number];
 
+// i18n keys for each scope's human label — the single map shared by the
+// API-keys screen and the OAuth consent screen. Client-safe (keys, not
+// English), same convention as src/lib/enum-labels.ts.
+export const SCOPE_LABEL_KEYS: Record<ApiScope, string> = {
+  "read:products": "admin.apiKeys.scopeReadProducts",
+  "read:orders": "admin.apiKeys.scopeReadOrders",
+};
+
 export function isValidScope(value: string): value is ApiScope {
   return (API_SCOPES as readonly string[]).includes(value);
 }
