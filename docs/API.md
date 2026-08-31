@@ -2,8 +2,9 @@
 
 Read-only REST access to a single store's data. A caller authenticates
 with **either** a merchant-minted API key (below) **or** an OAuth
-app-installation token (see [OAuth](#oauth-app-install) at the end). The
-full write surface and webhooks come in later Phase 6 slices.
+app-installation token (see [OAuth](#oauth-app-install)). For push
+notifications instead of polling, see [Webhooks](#webhooks) at the end.
+The full write surface comes in a later Phase 6 slice.
 
 ## Base URL
 
@@ -209,3 +210,81 @@ The access token **does not expire**. It stops working the moment the
 merchant uninstalls the app (**Admin → Installed Apps**) or a platform
 admin disables it. Re-installing issues a fresh token and revokes the old
 one. There is no refresh-token grant in this version.
+
+---
+
+## Webhooks
+
+Instead of polling `GET /orders`, register an endpoint and AmarShop will
+`POST` a JSON payload to it when an order event happens. The merchant adds
+endpoints in **Admin → Webhooks**; each one subscribes to one or more
+events and gets its own signing secret.
+
+### Events
+
+| Event | Fires when |
+| --- | --- |
+| `order.created` | a customer completes checkout, or the merchant enters a manual order |
+| `order.status_changed` | an order moves to the next status, or is canceled |
+
+`order.created` for a paid gateway order fires at order creation, not at
+payment — a subsequent `order.status_changed` reflects fulfilment
+progress. (Payment events land in a later slice.)
+
+### Request
+
+```
+POST <your endpoint URL>
+Content-Type: application/json
+User-Agent: AmarShop-Webhooks/1
+X-AmarShop-Event: order.created
+X-AmarShop-Delivery: 7c3b…            # unique per delivery row; stable across retries
+X-AmarShop-Signature: sha256=<hex>
+```
+
+```json
+{
+  "id": "7c3b…",
+  "event": "order.created",
+  "createdAt": "2026-09-01T09:15:22.031Z",
+  "data": { "...": "the same object as GET /api/v1/orders/{id}" }
+}
+```
+
+`data` is the exact `OrderDto` the REST API returns — customer name /
+phone / address included, cost price and SEO fields excluded. Orders held
+back by the plan's monthly quota do **not** fire webhooks.
+
+### Verifying the signature
+
+Compute `HMAC-SHA256(rawRequestBody, endpointSecret)` as lowercase hex and
+compare, in constant time, against the hex after `sha256=` in
+`X-AmarShop-Signature`. Use the **raw** body bytes, before any JSON
+parsing.
+
+```js
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verify(rawBody, header, secret) {
+  const expected = "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
+  const a = Buffer.from(header ?? "");
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+```
+
+The secret is shown (behind a "Reveal") on the **Admin → Webhooks**
+screen. Deleting and re-adding the endpoint rotates it.
+
+### Retries & delivery log
+
+Return any `2xx` promptly. A non-2xx response or a connection error is
+retried **twice more** (roughly 2s then 8s later) — three attempts total,
+all within a few seconds of the event. After that the delivery is marked
+**Failed** in the log on **Admin → Webhooks**, where the merchant can hit
+**Resend** to run the three attempts again with the identical payload.
+There is no long-tail automatic retry queue. Endpoints are never
+auto-disabled; a merchant disables or deletes one manually.
+
+Deliver idempotently: dedupe on `X-AmarShop-Delivery`, and treat a
+repeated `(event, data.id)` as the same underlying change.

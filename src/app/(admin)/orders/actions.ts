@@ -24,6 +24,7 @@ import {
 import { COURIER_PROVIDERS } from "@/lib/courier/providers";
 import type { CourierProvider } from "@/lib/courier/types";
 import { sendOrderSms } from "@/lib/sms/notifications";
+import { emitWebhook } from "@/lib/webhooks/dispatch";
 import { runFraudCheck } from "@/lib/fraud/check";
 import { nextStatus } from "./status-pipeline";
 
@@ -65,6 +66,9 @@ export async function advanceOrderStatus(orderId: string) {
   if (advancedTo === "shipped") {
     after(() => sendOrderSms(session.user.storeId, orderId, "order_shipped"));
   }
+  if (advancedTo) {
+    after(() => emitWebhook(session.user.storeId, "order.status_changed", { orderId }));
+  }
 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
@@ -73,7 +77,7 @@ export async function advanceOrderStatus(orderId: string) {
 export async function cancelOrder(orderId: string) {
   const session = await requireStaffSession();
 
-  await withStoreContext(session.user.storeId, async (tx) => {
+  const canceled = await withStoreContext(session.user.storeId, async (tx) => {
     const [order] = await tx
       .select({ id: orders.id, status: orders.status })
       .from(orders)
@@ -85,7 +89,7 @@ export async function cancelOrder(orderId: string) {
         )
       )
       .limit(1);
-    if (!order || order.status === "completed" || order.status === "canceled") return;
+    if (!order || order.status === "completed" || order.status === "canceled") return false;
 
     await tx
       .update(orders)
@@ -96,7 +100,12 @@ export async function cancelOrder(orderId: string) {
       orderId: order.id,
       status: "canceled",
     });
+    return true;
   });
+
+  if (canceled) {
+    after(() => emitWebhook(session.user.storeId, "order.status_changed", { orderId }));
+  }
 
   revalidatePath(`/orders/${orderId}`);
   revalidatePath("/orders");
@@ -257,6 +266,7 @@ export async function createManualOrder(
       return order.id;
     });
     after(() => sendOrderSms(storeId, orderId, "order_placed"));
+    after(() => emitWebhook(storeId, "order.created", { orderId }));
     // Manual orders are always COD — run a BDCourier fraud check.
     after(() => runFraudCheck(storeId, orderId));
   } catch (err) {

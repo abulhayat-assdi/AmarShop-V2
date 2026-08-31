@@ -142,3 +142,9 @@ export const billingCycleEnum = pgEnum("billing_cycle", ["monthly", "yearly"]);
 // oauth_apps and rejects a non-active app). See
 // src/db/schema/oauth-apps.ts and src/lib/oauth.
 export const oauthAppStatusEnum = pgEnum("oauth_app_status", ["active", "disabled"]);
+
+// A webhook_deliveries row (src/db/schema/webhook-deliveries.ts). Delivery
+// is attempted inline (up to 3 tries) from the triggering request's
+// after() hook, so it always resolves to one of these — there is no
+// queued "pending" state. See src/lib/webhooks.
+export const webhookDeliveryStatusEnum = pgEnum("webhook_delivery_status", ["success", "failed"]);

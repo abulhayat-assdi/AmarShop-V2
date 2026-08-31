@@ -24,6 +24,8 @@ export * from "./api-keys";
 export * from "./oauth-apps";
 export * from "./app-installations";
 export * from "./oauth-codes";
+export * from "./webhook-endpoints";
+export * from "./webhook-deliveries";
 export * from "./shipments";
 export * from "./store-courier-settings";
 export * from "./store-payment-settings";

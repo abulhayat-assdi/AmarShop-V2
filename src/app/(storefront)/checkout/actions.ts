@@ -15,6 +15,7 @@ import { BD_PHONE_PATTERN, createOrderRecords, type OrderLine } from "@/lib/orde
 import { evaluateCoupon } from "@/lib/coupons/validate";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { sendOrderSms } from "@/lib/sms/notifications";
+import { emitWebhook } from "@/lib/webhooks/dispatch";
 import { markLeadConverted } from "@/lib/checkout-leads";
 import { runFraudCheck } from "@/lib/fraud/check";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
@@ -354,6 +355,7 @@ export async function placeOrder(
     // Runs after the response is sent — a slow/failing gateway never adds
     // latency to checkout or blocks the order.
     after(() => sendOrderSms(store.id, order.id, "order_placed"));
+    after(() => emitWebhook(store.id, "order.created", { orderId: order.id }));
     // This checkout may have left an incomplete-checkout lead (the form
     // captures name + phone as the customer types) — retire it.
     after(() => markLeadConverted(store.id, cart.id));
