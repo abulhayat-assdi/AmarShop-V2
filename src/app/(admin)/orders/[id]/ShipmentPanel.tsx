@@ -1,31 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import { COURIER_PROVIDER_LABELS } from "@/lib/courier/providers";
 import type { CourierProvider, ShipmentStatus } from "@/lib/courier/types";
+import { SHIPMENT_STATUS_KEYS } from "@/lib/enum-labels";
 import { useTranslator } from "@/components/i18n-provider";
-import {
-  bookShipmentAction,
-  cancelShipmentAction,
-  refreshShipmentAction,
-  type ShipmentActionState,
-} from "../actions";
-
-const SHIPMENT_STATUS_KEYS: Record<ShipmentStatus, string> = {
-  pending: "admin.shipment.statusPending",
-  booked: "admin.shipment.statusBooked",
-  in_transit: "admin.shipment.statusInTransit",
-  delivered: "admin.shipment.statusDelivered",
-  returned: "admin.shipment.statusReturned",
-  cancelled: "admin.shipment.statusCancelled",
-  failed: "admin.shipment.statusFailed",
-};
+import { cancelShipmentAction, refreshShipmentAction, type ShipmentActionState } from "../actions";
+import { CourierSendControl } from "../CourierSendControl";
 
 type ShipmentView = {
   id: string;
   provider: CourierProvider;
   status: ShipmentStatus;
+  consignmentId: string | null;
   trackingCode: string | null;
   trackingUrl: string | null;
   charge: string | null;
@@ -36,6 +23,7 @@ type ShipmentView = {
 
 const EMPTY: ShipmentActionState = {};
 const OPEN_STATUSES: ShipmentStatus[] = ["pending", "booked"];
+const CLOSED: ShipmentStatus[] = ["failed", "cancelled"];
 
 function ActionButton({
   action,
@@ -61,33 +49,41 @@ function ActionButton({
 
 export function ShipmentPanel({
   orderId,
-  hasActiveCourier,
+  configuredProviders,
+  activeProvider,
   shipment,
 }: {
   orderId: string;
-  hasActiveCourier: boolean;
+  configuredProviders: CourierProvider[];
+  activeProvider: CourierProvider | null;
   shipment: ShipmentView | null;
 }) {
   const t = useTranslator();
 
-  if (!shipment) {
+  // No shipment, or the last one failed / was cancelled → the send control
+  // (0 / 1 / many configured couriers).
+  if (!shipment || CLOSED.includes(shipment.status)) {
     return (
       <div className="rounded border p-4">
         <h2 className="mb-2 font-semibold">{t("admin.shipment.title")}</h2>
-        {hasActiveCourier ? (
-          <ActionButton
-            action={bookShipmentAction.bind(null, orderId)}
-            label={t("admin.shipment.bookCourier")}
-            className="rounded bg-black px-4 py-2 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-          />
-        ) : (
-          <p className="text-sm text-gray-600">
-            {t("admin.shipment.notConfigured")}{" "}
-            <Link href="/courier-settings" className="underline">
-              {t("admin.shipment.configureOne")}
-            </Link>
-            .
-          </p>
+        <CourierSendControl
+          orderId={orderId}
+          configuredProviders={configuredProviders}
+          activeProvider={activeProvider}
+          existing={
+            shipment
+              ? {
+                  provider: shipment.provider,
+                  status: shipment.status,
+                  consignmentId: shipment.consignmentId,
+                  trackingCode: shipment.trackingCode,
+                  trackingUrl: shipment.trackingUrl,
+                }
+              : null
+          }
+        />
+        {shipment?.failureReason && (
+          <p className="mt-2 text-xs text-red-600">{shipment.failureReason}</p>
         )}
       </div>
     );
@@ -107,6 +103,9 @@ export function ShipmentPanel({
           <span className="text-gray-500">{t("admin.shipment.status")}</span>{" "}
           {t(SHIPMENT_STATUS_KEYS[shipment.status])}
         </p>
+        {shipment.consignmentId && (
+          <p>{t("admin.shipment.consignment", { id: shipment.consignmentId })}</p>
+        )}
         {shipment.trackingCode && (
           <p>
             <span className="text-gray-500">{t("admin.shipment.tracking")}</span>{" "}
@@ -136,18 +135,21 @@ export function ShipmentPanel({
             {t("admin.shipment.courierSays", { raw: shipment.lastStatusRaw })}
           </p>
         )}
-        {shipment.failureReason && <p className="text-red-600">{shipment.failureReason}</p>}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {shipment.status === "failed" && hasActiveCourier && (
-          <ActionButton
-            action={bookShipmentAction.bind(null, orderId)}
-            label={t("admin.shipment.retryBooking")}
-            className="rounded bg-black px-3 py-1.5 text-sm text-white hover:bg-gray-800 disabled:opacity-50"
-          />
-        )}
-        {shipment.trackingCode && shipment.status !== "cancelled" && shipment.status !== "failed" && (
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <a href={`/orders/${orderId}/label?download=1`} className="text-sm underline">
+          {t("admin.shipment.downloadLabel")}
+        </a>
+        <a
+          href={`/orders/${orderId}/label/print`}
+          target="_blank"
+          rel="noopener"
+          className="text-sm underline"
+        >
+          {t("admin.shipment.printLabel")}
+        </a>
+        {shipment.trackingCode && (
           <ActionButton
             action={refreshShipmentAction.bind(null, orderId, shipment.id)}
             label={t("admin.shipment.refreshStatus")}

@@ -5,6 +5,7 @@ import type {
   Payment,
   PlatformInvoice,
   Product,
+  Shipment,
   StaffMember,
   Store,
 } from "@/db/schema";
@@ -58,6 +59,18 @@ export const PRODUCT_STATUS_KEYS: Record<Product["status"], string> = {
 };
 
 export const PRODUCT_STATUSES = Object.keys(PRODUCT_STATUS_KEYS) as Product["status"][];
+
+// Normalised shipment state (src/lib/courier). Shown on the order detail
+// Shipment panel and the orders-list Courier column.
+export const SHIPMENT_STATUS_KEYS: Record<Shipment["status"], string> = {
+  pending: "admin.shipment.statusPending",
+  booked: "admin.shipment.statusBooked",
+  in_transit: "admin.shipment.statusInTransit",
+  delivered: "admin.shipment.statusDelivered",
+  returned: "admin.shipment.statusReturned",
+  cancelled: "admin.shipment.statusCancelled",
+  failed: "admin.shipment.statusFailed",
+};
 
 export const STAFF_ROLE_KEYS: Record<StaffMember["role"], string> = {
   owner: "admin.shell.roleOwner",

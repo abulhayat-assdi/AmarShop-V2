@@ -4,6 +4,8 @@ import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
 import { getOrderQuota } from "@/lib/billing/order-quota";
+import { getCourierSettingsView } from "@/lib/courier/settings";
+import { getShipmentsForOrders } from "@/lib/courier/shipments";
 import { getTranslator } from "@/lib/i18n/server";
 import { formatOrderCode } from "@/lib/orders/number";
 import {
@@ -13,6 +15,7 @@ import {
   PAYMENT_STATUS_KEYS,
 } from "@/lib/enum-labels";
 import { RiskBadge } from "@/components/risk-badge";
+import { CourierSendControl } from "./CourierSendControl";
 
 type OrderStatusValue = (typeof ORDER_STATUSES)[number];
 const STATUS_TABS = ["all", ...ORDER_STATUSES] as const;
@@ -64,6 +67,12 @@ export default async function OrdersPage({
       .orderBy(desc(orders.createdAt));
   });
 
+  const courier = await getCourierSettingsView(session.user.storeId);
+  const shipmentByOrder = await getShipmentsForOrders(
+    session.user.storeId,
+    rows.map((r) => r.id)
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -111,12 +120,13 @@ export default async function OrdersPage({
             <th className="py-2">{t("admin.orders.colPayment")}</th>
             <th className="py-2">{t("admin.orders.colRisk")}</th>
             <th className="py-2">{t("admin.orders.colStatus")}</th>
+            <th className="py-2">{t("admin.orders.colCourier")}</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-4 text-gray-500">
+              <td colSpan={9} className="py-4 text-gray-500">
                 {activeStatus === "all"
                   ? t("admin.orders.noOrders")
                   : t("admin.orders.noOrdersInStatus", { status: t(ORDER_STATUS_KEYS[activeStatus]) })}
@@ -144,6 +154,15 @@ export default async function OrdersPage({
                   <RiskBadge level={order.fraudRiskLevel} />
                 </td>
                 <td className="py-2">{t(ORDER_STATUS_KEYS[order.status])}</td>
+                <td className="py-2">
+                  <CourierSendControl
+                    orderId={order.id}
+                    configuredProviders={courier.configuredProviders}
+                    activeProvider={courier.activeProvider}
+                    existing={shipmentByOrder.get(order.id) ?? null}
+                    compact
+                  />
+                </td>
               </tr>
             ))
           )}

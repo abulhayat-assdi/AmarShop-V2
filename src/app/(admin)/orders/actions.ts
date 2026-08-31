@@ -21,6 +21,8 @@ import {
   cancelShipment,
   refreshShipmentStatus,
 } from "@/lib/courier/shipments";
+import { COURIER_PROVIDERS } from "@/lib/courier/providers";
+import type { CourierProvider } from "@/lib/courier/types";
 import { sendOrderSms } from "@/lib/sms/notifications";
 import { runFraudCheck } from "@/lib/fraud/check";
 import { nextStatus } from "./status-pipeline";
@@ -279,15 +281,26 @@ export async function createManualOrder(
 
 export type ShipmentActionState = { error?: string };
 
-// Bound with an id and dispatched via useActionState — the (prevState,
-// formData) args React passes are unused, so the params are omitted.
-export async function bookShipmentAction(orderId: string): Promise<ShipmentActionState> {
+// Book the order with a courier. `provider` comes from the form (a hidden
+// input for the single-courier button, a <select> when several are set up);
+// omitted → the store's default courier. Used by the orders-list Courier
+// column and the order-detail Shipment panel.
+export async function sendToCourierAction(
+  orderId: string,
+  _prev: ShipmentActionState,
+  formData: FormData
+): Promise<ShipmentActionState> {
   const session = await requireStaffSession();
+  const raw = String(formData.get("provider") ?? "").trim();
+  const provider =
+    raw && (COURIER_PROVIDERS as string[]).includes(raw) ? (raw as CourierProvider) : undefined;
+
   try {
-    await bookShipment(session.user.storeId, orderId);
+    await bookShipment(session.user.storeId, orderId, provider);
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Could not book the courier." };
   }
+  revalidatePath("/orders");
   revalidatePath(`/orders/${orderId}`);
   return {};
 }

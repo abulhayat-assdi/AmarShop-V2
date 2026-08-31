@@ -43,9 +43,14 @@ export async function getCourierSettingsView(storeId: string): Promise<CourierSe
   };
 }
 
-// Used by the shipment service to build the active adapter.
-export async function getActiveCourierConfig(
-  storeId: string
+// Resolve a SPECIFIC provider's saved credentials (null when that provider
+// has none). The store keeps credentials for every provider it has ever
+// configured, so a merchant can book with any of them — activeProvider is
+// just the picker's default. Used by bookShipment(…, provider) and by
+// refresh/cancel (which resolve by the shipment's OWN provider).
+export async function getCourierConfigFor(
+  storeId: string,
+  provider: CourierProvider
 ): Promise<{ provider: CourierProvider; config: CourierConfig } | null> {
   const [row] = await withStoreContext(storeId, (tx) =>
     tx
@@ -54,12 +59,25 @@ export async function getActiveCourierConfig(
       .where(eq(storeCourierSettings.storeId, storeId))
       .limit(1)
   );
+  if (!row) return null;
+  const creds = parseSecrets(row.secrets)[provider];
+  if (!creds || Object.keys(creds).length === 0) return null;
+  return { provider, config: { sandbox: row.sandbox, credentials: creds } };
+}
+
+// Used by the shipment service to build the store's default adapter.
+export async function getActiveCourierConfig(
+  storeId: string
+): Promise<{ provider: CourierProvider; config: CourierConfig } | null> {
+  const [row] = await withStoreContext(storeId, (tx) =>
+    tx
+      .select({ activeProvider: storeCourierSettings.activeProvider })
+      .from(storeCourierSettings)
+      .where(eq(storeCourierSettings.storeId, storeId))
+      .limit(1)
+  );
   if (!row?.activeProvider) return null;
-  const secrets = parseSecrets(row.secrets);
-  return {
-    provider: row.activeProvider,
-    config: { sandbox: row.sandbox, credentials: secrets[row.activeProvider] ?? {} },
-  };
+  return getCourierConfigFor(storeId, row.activeProvider);
 }
 
 export async function saveCourierSettings(

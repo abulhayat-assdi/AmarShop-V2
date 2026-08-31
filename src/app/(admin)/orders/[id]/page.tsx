@@ -257,13 +257,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       {hasPhysical && (
         <ShipmentPanel
           orderId={order.id}
-          hasActiveCourier={courierView.activeProvider !== null}
+          configuredProviders={courierView.configuredProviders}
+          activeProvider={courierView.activeProvider}
           shipment={
             shipment
               ? {
                   id: shipment.id,
                   provider: shipment.provider,
                   status: shipment.status,
+                  consignmentId: shipment.consignmentId,
                   trackingCode: shipment.trackingCode,
                   trackingUrl: shipment.trackingUrl,
                   charge: shipment.charge,
