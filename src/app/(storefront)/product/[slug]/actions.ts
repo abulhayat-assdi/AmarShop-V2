@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getOrCreateCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
-import { carts, cartItems, productVariants } from "@/db/schema";
+import { carts, cartItems, productVariants, products } from "@/db/schema";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type AddToCartState = { error?: MessageRef; notice?: MessageRef; ok?: boolean };
@@ -31,8 +31,13 @@ export async function addToCart(
   try {
     const result = await withStoreContext(store.id, async (tx) => {
       const [variant] = await tx
-        .select({ id: productVariants.id, quantity: productVariants.quantity })
+        .select({
+          id: productVariants.id,
+          quantity: productVariants.quantity,
+          isDigital: products.isDigital,
+        })
         .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
         .where(and(eq(productVariants.storeId, store.id), eq(productVariants.id, productVariantId)))
         .limit(1);
 
@@ -57,7 +62,10 @@ export async function addToCart(
         .limit(1);
 
       const desiredQuantity = (existingItem?.quantity ?? 0) + requestedQuantity;
-      const cappedQuantity = Math.min(desiredQuantity, variant.quantity);
+      // Digital products have no stock — never cap them.
+      const cappedQuantity = variant.isDigital
+        ? desiredQuantity
+        : Math.min(desiredQuantity, variant.quantity);
 
       if (existingItem) {
         await tx

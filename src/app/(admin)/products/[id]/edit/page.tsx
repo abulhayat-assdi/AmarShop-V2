@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
+import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
-import { categories, products, productVariants } from "@/db/schema";
+import { categories, products, productVariants, stores } from "@/db/schema";
 import { getProductMedia } from "@/lib/products/media";
+import { getDigitalFiles } from "@/lib/products/digital";
 import { getTranslator } from "@/lib/i18n/server";
 import { ProductForm } from "../../ProductForm";
 import { updateProduct } from "../../actions";
@@ -42,6 +44,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   }
 
   const media = await getProductMedia(session.user.storeId, product.id);
+  const [store] = await db
+    .select({ digitalEnabled: stores.digitalEnabled })
+    .from(stores)
+    .where(eq(stores.id, session.user.storeId))
+    .limit(1);
+  const digitalFiles = store?.digitalEnabled
+    ? await getDigitalFiles(session.user.storeId, product.id)
+    : [];
   const { t } = await getTranslator();
 
   return (
@@ -53,6 +63,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         submitLabel={t("admin.products.saveChanges")}
         productId={product.id}
         existingMedia={media.map((m) => ({ id: m.id, kind: m.kind, url: m.url }))}
+        digitalAllowed={store?.digitalEnabled ?? false}
+        existingDigitalFiles={digitalFiles}
         initialValues={{
           name: product.name,
           categoryId: product.categoryId ?? "",
@@ -65,6 +77,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           price: variant.price,
           discountedPrice: variant.discountedPrice ?? "",
           quantity: String(variant.quantity),
+          isDigital: product.isDigital,
         }}
       />
     </div>

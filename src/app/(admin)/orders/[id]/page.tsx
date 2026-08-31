@@ -5,6 +5,7 @@ import { withStoreContext } from "@/db/context";
 import { orders, orderItems, orderStatusEvents, payments, deliveryZones } from "@/db/schema";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
 import { getCourierSettingsView } from "@/lib/courier/settings";
+import { getOrderDigitalFiles, orderHasPhysicalLine } from "@/lib/products/digital";
 import { getTranslator } from "@/lib/i18n/server";
 import { advanceOrderStatus, cancelOrder, markPaymentReceived, recheckFraud } from "../actions";
 import { nextStatus } from "../status-pipeline";
@@ -78,9 +79,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const { order, items, payment, events, zone } = result;
   const upcoming = nextStatus(order.status);
 
-  const [shipment, courierView] = await Promise.all([
+  const [shipment, courierView, digitalFiles, hasPhysical] = await Promise.all([
     getShipmentForOrder(session.user.storeId, order.id),
     getCourierSettingsView(session.user.storeId),
+    getOrderDigitalFiles(session.user.storeId, order.id),
+    orderHasPhysicalLine(session.user.storeId, order.id),
   ]);
   const { t } = await getTranslator();
 
@@ -235,25 +238,40 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
-      <ShipmentPanel
-        orderId={order.id}
-        hasActiveCourier={courierView.activeProvider !== null}
-        shipment={
-          shipment
-            ? {
-                id: shipment.id,
-                provider: shipment.provider,
-                status: shipment.status,
-                trackingCode: shipment.trackingCode,
-                trackingUrl: shipment.trackingUrl,
-                charge: shipment.charge,
-                codAmount: shipment.codAmount,
-                lastStatusRaw: shipment.lastStatusRaw,
-                failureReason: shipment.failureReason,
-              }
-            : null
-        }
-      />
+      {digitalFiles.length > 0 && (
+        <div className="rounded border p-4">
+          <h2 className="mb-2 font-semibold">{t("confirmation.downloads")}</h2>
+          <ul className="flex flex-col gap-1 text-sm text-gray-600">
+            {digitalFiles.map((f) => (
+              <li key={f.fileId} className="font-mono text-xs">
+                {f.fileName}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {hasPhysical && (
+        <ShipmentPanel
+          orderId={order.id}
+          hasActiveCourier={courierView.activeProvider !== null}
+          shipment={
+            shipment
+              ? {
+                  id: shipment.id,
+                  provider: shipment.provider,
+                  status: shipment.status,
+                  trackingCode: shipment.trackingCode,
+                  trackingUrl: shipment.trackingUrl,
+                  charge: shipment.charge,
+                  codAmount: shipment.codAmount,
+                  lastStatusRaw: shipment.lastStatusRaw,
+                  failureReason: shipment.failureReason,
+                }
+              : null
+          }
+        />
+      )}
 
       <div className="rounded border p-4">
         <h2 className="mb-2 font-semibold">

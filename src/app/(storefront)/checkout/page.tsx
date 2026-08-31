@@ -21,6 +21,7 @@ export default async function CheckoutPage() {
             id: cartItems.id,
             quantity: cartItems.quantity,
             productName: products.name,
+            isDigital: products.isDigital,
             price: productVariants.price,
             discountedPrice: productVariants.discountedPrice,
           })
@@ -35,9 +36,13 @@ export default async function CheckoutPage() {
     redirect("/cart");
   }
 
-  const zones = await withStoreContext(store.id, (tx) =>
-    tx.select().from(deliveryZones).where(eq(deliveryZones.storeId, store.id))
-  );
+  const digitalOnly = items.every((item) => item.isDigital);
+
+  const zones = digitalOnly
+    ? []
+    : await withStoreContext(store.id, (tx) =>
+        tx.select().from(deliveryZones).where(eq(deliveryZones.storeId, store.id))
+      );
 
   const subtotal = items.reduce(
     (sum, item) => sum + Number(item.discountedPrice ?? item.price) * item.quantity,
@@ -62,7 +67,12 @@ export default async function CheckoutPage() {
           ))}
         </ul>
       </div>
-      <CheckoutForm subtotal={subtotal} zones={zones} manualWallet={manualWallet} />
+      <CheckoutForm
+        subtotal={subtotal}
+        zones={zones}
+        manualWallet={manualWallet}
+        digitalOnly={digitalOnly}
+      />
     </div>
   );
 }

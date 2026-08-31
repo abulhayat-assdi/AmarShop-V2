@@ -202,6 +202,7 @@ export async function createManualOrder(
           sku: variant.sku,
           unitPrice: String(variant.discountedPrice ?? variant.price),
           quantity: line.quantity,
+          isDigital: false,
         });
       }
 

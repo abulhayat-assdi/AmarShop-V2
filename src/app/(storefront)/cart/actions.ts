@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
-import { carts, cartItems, productVariants } from "@/db/schema";
+import { carts, cartItems, productVariants, products } from "@/db/schema";
 
 // Resolves the caller's OWN cart from their cookie token. RLS already
 // confines every query here to the current store, but it does NOT stop one
@@ -48,12 +48,15 @@ export async function updateCartItemQuantity(cartItemId: string, quantity: numbe
     }
 
     const [variant] = await tx
-      .select({ quantity: productVariants.quantity })
+      .select({ quantity: productVariants.quantity, isDigital: products.isDigital })
       .from(productVariants)
+      .innerJoin(products, eq(products.id, productVariants.productId))
       .where(eq(productVariants.id, item.productVariantId))
       .limit(1);
 
-    const cappedQuantity = Math.min(quantity, variant?.quantity ?? quantity);
+    const cappedQuantity = variant?.isDigital
+      ? quantity
+      : Math.min(quantity, variant?.quantity ?? quantity);
 
     await tx
       .update(cartItems)

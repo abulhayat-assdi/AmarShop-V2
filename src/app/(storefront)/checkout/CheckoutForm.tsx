@@ -24,10 +24,12 @@ export function CheckoutForm({
   subtotal,
   zones,
   manualWallet,
+  digitalOnly,
 }: {
   subtotal: number;
   zones: DeliveryZone[];
   manualWallet: ManualWalletConfig | null;
+  digitalOnly: boolean;
 }) {
   const [state, formAction, isPending] = useActionState(
     placeOrder,
@@ -44,7 +46,9 @@ export function CheckoutForm({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [zoneId, setZoneId] = useState(zones[0]?.id ?? "");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>("cod");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentChoice>(
+    digitalOnly ? "sslcommerz" : "cod",
+  );
   const walletChoices: ("bkash" | "nagad")[] = [
     ...(manualWallet?.bkashNumber ? (["bkash"] as const) : []),
     ...(manualWallet?.nagadNumber ? (["nagad"] as const) : []),
@@ -160,50 +164,58 @@ export function CheckoutForm({
           />
         </label>
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 font-semibold">
-            {t("checkout.delivery")}
-          </legend>
-          {zones.length === 0 ? (
-            <p className="text-sm text-amber-600">{t("checkout.noZones")}</p>
-          ) : (
-            zones.map((zone) => (
-              <label
-                key={zone.id}
-                className={`flex items-center justify-between gap-2 rounded border p-3 ${
-                  state.field === "deliveryZoneId" ? "border-red-500" : ""
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="deliveryZoneId"
-                    value={zone.id}
-                    checked={zoneId === zone.id}
-                    onChange={() => setZoneId(zone.id)}
-                  />
-                  {zone.name}
-                </span>
-                <span>৳{zone.charge}</span>
-              </label>
-            ))
-          )}
-        </fieldset>
+        {digitalOnly ? (
+          <p className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+            {t("checkout.digitalOnlyNote")}
+          </p>
+        ) : (
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 font-semibold">
+              {t("checkout.delivery")}
+            </legend>
+            {zones.length === 0 ? (
+              <p className="text-sm text-amber-600">{t("checkout.noZones")}</p>
+            ) : (
+              zones.map((zone) => (
+                <label
+                  key={zone.id}
+                  className={`flex items-center justify-between gap-2 rounded border p-3 ${
+                    state.field === "deliveryZoneId" ? "border-red-500" : ""
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="deliveryZoneId"
+                      value={zone.id}
+                      checked={zoneId === zone.id}
+                      onChange={() => setZoneId(zone.id)}
+                    />
+                    {zone.name}
+                  </span>
+                  <span>৳{zone.charge}</span>
+                </label>
+              ))
+            )}
+          </fieldset>
+        )}
 
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 font-semibold">
             {t("checkout.paymentMethod")}
           </legend>
-          <label className="flex items-center gap-2 rounded border p-3">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cod"
-              checked={paymentMethod === "cod"}
-              onChange={() => setPaymentMethod("cod")}
-            />
-            {t("common.paymentCod")}
-          </label>
+          {!digitalOnly && (
+            <label className="flex items-center gap-2 rounded border p-3">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="cod"
+                checked={paymentMethod === "cod"}
+                onChange={() => setPaymentMethod("cod")}
+              />
+              {t("common.paymentCod")}
+            </label>
+          )}
           <label className="flex items-center gap-2 rounded border p-3">
             <input
               type="radio"
@@ -316,10 +328,12 @@ export function CheckoutForm({
               <span>−৳{discount.toFixed(2)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span>{t("common.delivery")}</span>
-            <span>৳{deliveryCharge.toFixed(2)}</span>
-          </div>
+          {!digitalOnly && (
+            <div className="flex justify-between">
+              <span>{t("common.delivery")}</span>
+              <span>৳{deliveryCharge.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-base font-semibold">
             <span>{t("common.total")}</span>
             <span>৳{total.toFixed(2)}</span>
@@ -328,7 +342,7 @@ export function CheckoutForm({
 
         <button
           type="submit"
-          disabled={isPending || zones.length === 0}
+          disabled={isPending || (!digitalOnly && zones.length === 0)}
           className="rounded bg-black px-4 py-2 text-white hover:bg-gray-800 disabled:opacity-50"
         >
           {isPending ? t("checkout.placingOrder") : t("checkout.placeOrder")}

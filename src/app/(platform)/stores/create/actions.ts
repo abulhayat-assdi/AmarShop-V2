@@ -44,6 +44,7 @@ export async function createStore(
     .trim()
     .toLowerCase();
   const locale = String(formData.get("locale") ?? "bn");
+  const digitalEnabled = String(formData.get("storeType") ?? "ecommerce") === "digital";
   const ownerName = String(formData.get("ownerName") ?? "").trim();
   const ownerEmail = String(formData.get("ownerEmail") ?? "")
     .trim()
@@ -78,7 +79,7 @@ export async function createStore(
     await db.transaction(async (tx) => {
       const [store] = await tx
         .insert(stores)
-        .values({ name, slug, locale, status: "active" })
+        .values({ name, slug, locale, status: "active", digitalEnabled })
         .returning();
 
       await tx.execute(sql`select set_config('app.current_store_id', ${store.id}, true)`);

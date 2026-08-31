@@ -32,6 +32,11 @@ export const stores = pgTable(
     // an out-of-stock alert. Read by the dashboard card and the admin
     // bell (src/lib/products/stock.ts) — one value, not a hardcoded const.
     lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
+    // Chosen on the "create store" form: a digital store may sell digital
+    // (PDF) products alongside physical ones; a plain e-commerce store
+    // never sees the digital-product option. Creation-time choice, no
+    // later toggle. See src/lib/products/digital.ts.
+    digitalEnabled: boolean("digital_enabled").notNull().default(false),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, lte, ne } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { withStoreContext } from "@/db/context";
@@ -31,12 +31,16 @@ export default async function ProductsPage({
 
   const rows = await withStoreContext(session.user.storeId, (tx) => {
     const conditions = [eq(products.storeId, session.user.storeId)];
-    if (lowOnly) conditions.push(lte(productVariants.quantity, threshold));
+    if (lowOnly) {
+      conditions.push(ne(products.isDigital, true));
+      conditions.push(lte(productVariants.quantity, threshold));
+    }
     return tx
       .select({
         id: products.id,
         name: products.name,
         status: products.status,
+        isDigital: products.isDigital,
         categoryName: categories.name,
         price: productVariants.price,
         quantity: productVariants.quantity,
@@ -147,14 +151,16 @@ export default async function ProductsPage({
                   <td className="py-2">৳{product.price}</td>
                   <td
                     className={`py-2 ${
-                      qty === 0
-                        ? "text-red-600"
-                        : qty <= threshold
-                          ? "text-amber-600"
-                          : ""
+                      product.isDigital
+                        ? "text-gray-400"
+                        : qty === 0
+                          ? "text-red-600"
+                          : qty <= threshold
+                            ? "text-amber-600"
+                            : ""
                     }`}
                   >
-                    {product.quantity}
+                    {product.isDigital ? "—" : product.quantity}
                   </td>
                   <td
                     className={`py-2 ${

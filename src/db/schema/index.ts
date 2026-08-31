@@ -6,6 +6,7 @@ export * from "./categories";
 export * from "./products";
 export * from "./product-variants";
 export * from "./product-media";
+export * from "./product-digital-files";
 export * from "./carts";
 export * from "./cart-items";
 export * from "./checkout-leads";

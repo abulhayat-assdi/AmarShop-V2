@@ -3,6 +3,11 @@ import { withStoreContext } from "@/db/context";
 import { orders, orderItems, payments } from "@/db/schema";
 import type { Order, Payment } from "@/db/schema";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
+import {
+  canReleaseDownloads,
+  getOrderDigitalFiles,
+  orderHasPhysicalLine,
+} from "@/lib/products/digital";
 
 export type OrderStatus = Order["status"];
 
@@ -23,6 +28,9 @@ export type TrackedOrderView = {
   customerName: string;
   address: string;
   shipment: { status: string; trackingUrl: string | null } | null;
+  downloads: { fileName: string; href: string }[];
+  // digital files exist on this order but aren't released yet.
+  digitalPending: boolean;
 };
 
 // The public /track lookup: a store's order by its per-store number, gated
@@ -51,17 +59,30 @@ export async function findTrackedOrder(
       .where(and(eq(orderItems.storeId, storeId), eq(orderItems.orderId, order.id)));
 
     const [payment] = await tx
-      .select({ status: payments.status })
+      .select({ status: payments.status, transactionId: payments.transactionId })
       .from(payments)
       .where(and(eq(payments.storeId, storeId), eq(payments.orderId, order.id)))
       .limit(1);
 
-    return { order, items, paymentStatus: payment?.status ?? "pending" };
+    return {
+      order,
+      items,
+      paymentStatus: payment?.status ?? "pending",
+      tranId: payment?.transactionId ?? null,
+    };
   });
 
   if (!found) return null;
 
   const shipment = await getShipmentForOrder(storeId, found.order.id);
+  const digitalFiles = await getOrderDigitalFiles(storeId, found.order.id);
+  const downloadsReleased =
+    digitalFiles.length > 0 &&
+    canReleaseDownloads(
+      { id: found.order.id },
+      { status: found.paymentStatus },
+      await orderHasPhysicalLine(storeId, found.order.id)
+    );
 
   return {
     orderCode: found.order.orderCode,
@@ -81,5 +102,13 @@ export async function findTrackedOrder(
       shipment && shipment.status !== "cancelled" && shipment.status !== "failed"
         ? { status: shipment.status, trackingUrl: shipment.trackingUrl }
         : null,
+    downloads:
+      found.tranId && downloadsReleased
+        ? digitalFiles.map((f) => ({
+            fileName: f.fileName,
+            href: `/order/${found.tranId}/download/${f.fileId}`,
+          }))
+        : [],
+    digitalPending: digitalFiles.length > 0 && !downloadsReleased,
   };
 }

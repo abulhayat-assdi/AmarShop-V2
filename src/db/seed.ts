@@ -144,6 +144,7 @@ async function main() {
     status: "active",
     locale: "bn",
     isDemo: true,
+    digitalEnabled: true,
   });
   await upsertStaff(demoStore.id, {
     name: "Demo Owner",

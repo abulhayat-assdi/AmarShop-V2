@@ -43,10 +43,12 @@ async function velocityRows(storeId: string): Promise<VelocityRow[]> {
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
       .innerJoin(productVariants, eq(productVariants.id, orderItems.productVariantId))
+      .innerJoin(products, eq(products.id, productVariants.productId))
       .where(
         and(
           eq(orderItems.storeId, storeId),
           ne(orders.status, "canceled"),
+          ne(products.isDigital, true),
           gte(orders.createdAt, windowCutoff())
         )
       )
@@ -98,6 +100,7 @@ export async function getRestockSoon(storeId: string, limit = 5): Promise<Restoc
         and(
           eq(orderItems.storeId, storeId),
           ne(orders.status, "canceled"),
+          ne(products.isDigital, true),
           gte(orders.createdAt, windowCutoff())
         )
       )

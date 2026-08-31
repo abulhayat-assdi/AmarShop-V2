@@ -14,6 +14,12 @@ import {
   storeProductMedia,
   validateMediaFiles,
 } from "@/lib/products/media";
+import {
+  getDigitalFiles,
+  removeDigitalFile,
+  storeDigitalFiles,
+  validateDigitalPdfs,
+} from "@/lib/products/digital";
 
 function formMediaFiles(formData: FormData): { images: File[]; videos: File[] } {
   const pick = (name: string) =>
@@ -21,7 +27,20 @@ function formMediaFiles(formData: FormData): { images: File[]; videos: File[] } 
   return { images: pick("images"), videos: pick("videos") };
 }
 
-export type ProductField = "name" | "categoryId" | "sku" | "price" | "quantity";
+function formDigitalFiles(formData: FormData): File[] {
+  return formData.getAll("digitalFiles").filter((v): v is File => v instanceof File && v.size > 0);
+}
+
+async function storeIsDigitalEnabled(storeId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ digitalEnabled: stores.digitalEnabled })
+    .from(stores)
+    .where(eq(stores.id, storeId))
+    .limit(1);
+  return row?.digitalEnabled ?? false;
+}
+
+export type ProductField = "name" | "categoryId" | "sku" | "price" | "quantity" | "digitalFiles";
 export type ProductFormState = { error?: string; field?: ProductField };
 
 type ParsedProduct = {
@@ -36,6 +55,7 @@ type ParsedProduct = {
   price: string;
   discountedPrice: string | null;
   quantity: number;
+  isDigital: boolean;
 };
 
 function parseProductForm(formData: FormData): { error: ProductFormState } | { data: ParsedProduct } {
@@ -50,6 +70,7 @@ function parseProductForm(formData: FormData): { error: ProductFormState } | { d
   const price = String(formData.get("price") ?? "").trim();
   const discountedPriceRaw = String(formData.get("discountedPrice") ?? "").trim();
   const quantityRaw = String(formData.get("quantity") ?? "").trim();
+  const isDigital = formData.get("isDigital") === "on";
 
   if (!name) return { error: { error: "Product name is required.", field: "name" } };
   if (!sku) return { error: { error: "SKU is required.", field: "sku" } };
@@ -59,10 +80,11 @@ function parseProductForm(formData: FormData): { error: ProductFormState } | { d
     return { error: { error: "Enter a valid price.", field: "price" } };
   }
 
-  const quantity = quantityRaw === "" ? 0 : Number(quantityRaw);
+  let quantity = quantityRaw === "" ? 0 : Number(quantityRaw);
   if (Number.isNaN(quantity) || quantity < 0 || !Number.isInteger(quantity)) {
     return { error: { error: "Enter a valid whole-number stock quantity.", field: "quantity" } };
   }
+  if (isDigital) quantity = 0;
 
   return {
     data: {
@@ -77,6 +99,7 @@ function parseProductForm(formData: FormData): { error: ProductFormState } | { d
       price,
       discountedPrice: discountedPriceRaw || null,
       quantity,
+      isDigital,
     },
   };
 }
@@ -98,6 +121,8 @@ export async function createProduct(
   const session = await requireStaffSession();
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed.error;
+  const digitalAllowed = await storeIsDigitalEnabled(session.user.storeId);
+  const isDigital = parsed.data.isDigital && digitalAllowed;
   const {
     name,
     categoryId,
@@ -109,14 +134,17 @@ export async function createProduct(
     sku,
     price,
     discountedPrice,
-    quantity,
   } = parsed.data;
+  const quantity = isDigital ? 0 : parsed.data.quantity;
 
   // Validate media before creating anything — pure type/size/count checks,
   // so a bad file never leaves a half-made product behind.
   const newMedia = formMediaFiles(formData);
   const mediaCheck = validateMediaFiles(newMedia.images, newMedia.videos);
   if ("error" in mediaCheck) return { error: mediaCheck.error };
+
+  const newDigital = isDigital ? await validateDigitalPdfs(formDigitalFiles(formData)) : { ok: [] };
+  if ("error" in newDigital) return { error: newDigital.error, field: "digitalFiles" };
 
   let newProductId: string;
   try {
@@ -158,6 +186,7 @@ export async function createProduct(
           seoTitle,
           seoDescription,
           vatPercent,
+          isDigital,
         })
         .returning();
 
@@ -183,6 +212,9 @@ export async function createProduct(
   }
 
   await storeProductMedia(session.user.storeId, newProductId, mediaCheck.ok);
+  if (newDigital.ok.length > 0) {
+    await storeDigitalFiles(session.user.storeId, newProductId, newDigital.ok);
+  }
 
   revalidatePath("/products");
   // Land on the edit page — that's where media management lives.
@@ -197,6 +229,8 @@ export async function updateProduct(
   const session = await requireStaffSession();
   const parsed = parseProductForm(formData);
   if ("error" in parsed) return parsed.error;
+  const digitalAllowed = await storeIsDigitalEnabled(session.user.storeId);
+  const isDigital = parsed.data.isDigital && digitalAllowed;
   const {
     name,
     categoryId,
@@ -208,8 +242,8 @@ export async function updateProduct(
     sku,
     price,
     discountedPrice,
-    quantity,
   } = parsed.data;
+  const quantity = isDigital ? 0 : parsed.data.quantity;
 
   const newMedia = formMediaFiles(formData);
   let mediaToStore: { images: File[]; videos: File[] } = { images: [], videos: [] };
@@ -218,6 +252,15 @@ export async function updateProduct(
     const mediaCheck = validateMediaFiles(newMedia.images, newMedia.videos, existing);
     if ("error" in mediaCheck) return { error: mediaCheck.error };
     mediaToStore = mediaCheck.ok;
+  }
+
+  const rawDigital = formDigitalFiles(formData);
+  let digitalToStore: { name: string; buf: Buffer }[] = [];
+  if (isDigital && rawDigital.length > 0) {
+    const existing = await getDigitalFiles(session.user.storeId, productId);
+    const check = await validateDigitalPdfs(rawDigital, existing.length);
+    if ("error" in check) return { error: check.error, field: "digitalFiles" };
+    digitalToStore = check.ok;
   }
 
   try {
@@ -243,6 +286,7 @@ export async function updateProduct(
           seoTitle,
           seoDescription,
           vatPercent,
+          isDigital,
           updatedAt: new Date(),
         })
         .where(and(eq(products.storeId, session.user.storeId), eq(products.id, productId)))
@@ -278,10 +322,21 @@ export async function updateProduct(
   if (mediaToStore.images.length > 0 || mediaToStore.videos.length > 0) {
     await storeProductMedia(session.user.storeId, productId, mediaToStore);
   }
+  if (digitalToStore.length > 0) {
+    await storeDigitalFiles(session.user.storeId, productId, digitalToStore);
+  }
 
   revalidatePath(`/products/${productId}/edit`);
   revalidatePath("/products");
   redirect("/products");
+}
+
+// Bound with (productId, fileId) from the edit form's per-file "Remove"
+// button.
+export async function removeDigitalFileAction(productId: string, fileId: string) {
+  const session = await requireStaffSession();
+  await removeDigitalFile(session.user.storeId, productId, fileId);
+  revalidatePath(`/products/${productId}/edit`);
 }
 
 // The per-store low-stock threshold, set from the Products page. Plain

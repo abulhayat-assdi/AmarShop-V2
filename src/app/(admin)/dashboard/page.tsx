@@ -62,9 +62,11 @@ export default async function DashboardPage({
     const [lowStock] = await tx
       .select({ count: sql<number>`count(*)` })
       .from(productVariants)
+      .innerJoin(products, eq(products.id, productVariants.productId))
       .where(
         and(
           eq(productVariants.storeId, storeId),
+          ne(products.isDigital, true),
           gt(productVariants.quantity, 0),
           lte(productVariants.quantity, lowStockThreshold)
         )

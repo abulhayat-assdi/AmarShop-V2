@@ -53,6 +53,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         name: products.name,
         brand: products.brand,
         description: products.description,
+        isDigital: products.isDigital,
         categoryName: categories.name,
         sku: productVariants.sku,
         price: productVariants.price,
@@ -105,12 +106,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
         <p className="text-sm text-gray-600">
-          {product.quantity > 0
-            ? t("pdp.inStock", { count: product.quantity })
-            : t("common.outOfStock")}
+          {product.isDigital
+            ? t("pdp.digital")
+            : product.quantity > 0
+              ? t("pdp.inStock", { count: product.quantity })
+              : t("common.outOfStock")}
         </p>
         {product.description && <p className="text-gray-700">{product.description}</p>}
-        <AddToCartForm productVariantId={product.variantId} maxQuantity={product.quantity} />
+        <AddToCartForm
+          productVariantId={product.variantId}
+          maxQuantity={product.isDigital ? 99 : product.quantity}
+        />
       </div>
     </div>
   );

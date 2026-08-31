@@ -8,7 +8,7 @@ import {
   MEDIA_UPLOAD_HINT,
 } from "@/lib/products/media-constants";
 import { useTranslator } from "@/components/i18n-provider";
-import { deleteProductMedia } from "./actions";
+import { deleteProductMedia, removeDigitalFileAction } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
 import {
   generateDescriptionAction,
@@ -20,6 +20,7 @@ import {
 type CategoryOption = { id: string; name: string };
 
 type ExistingMedia = { id: string; kind: "image" | "video"; url: string };
+type ExistingDigitalFile = { id: string; fileName: string; sizeBytes: number };
 
 type ProductFormValues = {
   name: string;
@@ -33,6 +34,7 @@ type ProductFormValues = {
   price: string;
   discountedPrice: string;
   quantity: string;
+  isDigital: boolean;
 };
 
 const emptyValues: ProductFormValues = {
@@ -47,6 +49,7 @@ const emptyValues: ProductFormValues = {
   price: "",
   discountedPrice: "",
   quantity: "0",
+  isDigital: false,
 };
 
 const initialState: ProductFormState = {};
@@ -61,6 +64,10 @@ type ProductFormProps = {
   // Edit only: the product's current media, with a per-item remove button.
   productId?: string;
   existingMedia?: ExistingMedia[];
+  // Whether this store may sell digital products (stores.digitalEnabled).
+  digitalAllowed?: boolean;
+  // Edit only: the product's current digital PDF files.
+  existingDigitalFiles?: ExistingDigitalFile[];
 };
 
 // Shared by create and edit — same controlled-inputs + per-field red-border
@@ -74,6 +81,8 @@ export function ProductForm({
   initialValues,
   productId,
   existingMedia,
+  digitalAllowed = false,
+  existingDigitalFiles = [],
 }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [aiState, aiAction, aiPending] = useActionState(
@@ -98,6 +107,7 @@ export function ProductForm({
   const [price, setPrice] = useState(values.price);
   const [discountedPrice, setDiscountedPrice] = useState(values.discountedPrice);
   const [quantity, setQuantity] = useState(values.quantity);
+  const [isDigital, setIsDigital] = useState(values.isDigital);
 
   // Render-time reconcile (same no-effect pattern as CheckoutForm's coupon
   // block): when the AI action returns fresh text, drop it into the
@@ -190,6 +200,55 @@ export function ProductForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
+
+        {digitalAllowed && (
+          <div className="flex flex-col gap-2 rounded border p-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                name="isDigital"
+                checked={isDigital}
+                onChange={(e) => setIsDigital(e.target.checked)}
+              />
+              {t("admin.products.isDigital")}
+            </label>
+            {isDigital && (
+              <>
+                {existingDigitalFiles.length > 0 && (
+                  <ul className="flex flex-col gap-1 text-sm">
+                    {existingDigitalFiles.map((f) => (
+                      <li key={f.id} className="flex items-center gap-3">
+                        <span className="font-mono text-xs">{f.fileName}</span>
+                        <span className="text-xs text-gray-400">
+                          {(f.sizeBytes / 1024).toFixed(0)} KB
+                        </span>
+                        {productId && (
+                          <form action={removeDigitalFileAction.bind(null, productId, f.id)}>
+                            <button type="submit" className="text-xs text-red-600 underline">
+                              {t("admin.products.removeFile")}
+                            </button>
+                          </form>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <label className="flex flex-col gap-1 text-sm">
+                  {t("admin.products.digitalFiles")}
+                  <input
+                    type="file"
+                    name="digitalFiles"
+                    accept="application/pdf,.pdf"
+                    multiple
+                    className="rounded border border-gray-300 px-3 py-2 text-sm"
+                  />
+                  <span className="text-xs text-gray-500">{t("admin.products.digitalFileHint")}</span>
+                </label>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <label className="flex flex-col gap-1">
             {t("admin.products.descriptionOptional")}
@@ -323,20 +382,24 @@ export function ProductForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
-        <label className="flex flex-col gap-1">
-          {t("admin.products.stockQuantity")}
-          <input
-            name="quantity"
-            type="number"
-            step="1"
-            min="0"
-            required
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            onWheel={blurOnWheel}
-            className={`rounded border px-3 py-2 ${errorBorder("quantity")}`}
-          />
-        </label>
+        {isDigital ? (
+          <input type="hidden" name="quantity" value="0" />
+        ) : (
+          <label className="flex flex-col gap-1">
+            {t("admin.products.stockQuantity")}
+            <input
+              name="quantity"
+              type="number"
+              step="1"
+              min="0"
+              required
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              onWheel={blurOnWheel}
+              className={`rounded border px-3 py-2 ${errorBorder("quantity")}`}
+            />
+          </label>
+        )}
         <button
           type="submit"
           disabled={isPending}

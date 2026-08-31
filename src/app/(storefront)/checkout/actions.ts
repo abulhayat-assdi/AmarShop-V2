@@ -112,6 +112,7 @@ type CartLine = {
   discountedPrice: string | null;
   quantity: number;
   available: number;
+  isDigital: boolean;
 };
 
 export async function placeOrder(
@@ -143,7 +144,8 @@ export async function placeOrder(
     return { error: msg("checkout.errPhone"), field: "phone" };
   }
   if (!customerAddress) return { error: msg("checkout.errAddress"), field: "address" };
-  if (!deliveryZoneId) return { error: msg("checkout.errZone"), field: "deliveryZoneId" };
+  // The delivery zone is required only for orders with a physical item —
+  // checked inside the read tx below, once the cart's contents are known.
 
   // Manual bKash / Nagad: validate the customer-reported details before the
   // order is written. getManualWalletConfig is re-checked here — the form
@@ -190,7 +192,7 @@ export async function placeOrder(
   let redirectTarget: string;
 
   try {
-    const { cart, items, zone, coupon } = await withStoreContext(store.id, async (tx) => {
+    const { cart, items, zone, coupon, digitalOnly } = await withStoreContext(store.id, async (tx) => {
       const [cart] = await tx
         .select()
         .from(carts)
@@ -209,6 +211,7 @@ export async function placeOrder(
           discountedPrice: productVariants.discountedPrice,
           quantity: cartItems.quantity,
           available: productVariants.quantity,
+          isDigital: products.isDigital,
         })
         .from(cartItems)
         .innerJoin(productVariants, eq(productVariants.id, cartItems.productVariantId))
@@ -218,8 +221,9 @@ export async function placeOrder(
       if (items.length === 0) {
         throw Object.assign(new Error("Cart is empty"), { isEmpty: true });
       }
+      const digitalOnly = items.every((item) => item.isDigital);
       for (const item of items) {
-        if (item.quantity > item.available) {
+        if (!item.isDigital && item.quantity > item.available) {
           throw Object.assign(
             new Error(`Only ${item.available} of "${item.productName}" left in stock.`),
             { isOutOfStock: true, productName: item.productName, available: item.available }
@@ -227,13 +231,20 @@ export async function placeOrder(
         }
       }
 
-      const [zone] = await tx
-        .select()
-        .from(deliveryZones)
-        .where(and(eq(deliveryZones.storeId, store.id), eq(deliveryZones.id, deliveryZoneId)))
-        .limit(1);
-      if (!zone) {
-        throw Object.assign(new Error("Invalid delivery zone"), { isInvalidZone: true });
+      let zone: typeof deliveryZones.$inferSelect | null = null;
+      if (!digitalOnly) {
+        if (!deliveryZoneId) {
+          throw Object.assign(new Error("Delivery zone required"), { isZoneMissing: true });
+        }
+        const [found] = await tx
+          .select()
+          .from(deliveryZones)
+          .where(and(eq(deliveryZones.storeId, store.id), eq(deliveryZones.id, deliveryZoneId)))
+          .limit(1);
+        if (!found) {
+          throw Object.assign(new Error("Invalid delivery zone"), { isInvalidZone: true });
+        }
+        zone = found;
       }
 
       // Coupon judged here, in the read tx, so its discount is baked into
@@ -250,7 +261,7 @@ export async function placeOrder(
           storeId: store.id,
           code: couponCode,
           subtotal,
-          deliveryCharge: Number(zone.charge),
+          deliveryCharge: zone ? Number(zone.charge) : 0,
           phone: customerPhone,
         });
         if (!evaluation.ok) {
@@ -266,12 +277,17 @@ export async function placeOrder(
         };
       }
 
-      return { cart, items, zone, coupon };
+      return { cart, items, zone, coupon, digitalOnly };
     });
+
+    if (digitalOnly && paymentMethod === "cod") {
+      return { error: msg("checkout.errCodDigital") };
+    }
 
     const lines: OrderLine[] = items.map((item) => ({
       variantId: item.variantId,
       productName: item.productName,
+      isDigital: item.isDigital,
       sku: item.sku,
       unitPrice: String(item.discountedPrice ?? item.price),
       quantity: item.quantity,
@@ -281,7 +297,7 @@ export async function placeOrder(
       (sum, line) => sum + Number(line.unitPrice) * line.quantity,
       0
     );
-    const deliveryCharge = Number(zone.charge);
+    const deliveryCharge = zone ? Number(zone.charge) : 0;
     const discountAmount = coupon?.discountAmount ?? 0;
     // discountAmount already folds in a free-delivery waiver, so this
     // identity holds for every coupon type.
@@ -301,7 +317,7 @@ export async function placeOrder(
       customerPhone,
       customerAddress,
       customerEmail: customerEmail ?? undefined,
-      deliveryZoneName: zone.name,
+      deliveryZoneName: zone?.name ?? "Digital",
       storeId: store.id,
       // On the store's own host so the handlers can resolve the store via
       // getCurrentStore(); value_a carries the store id as a fallback.
@@ -316,7 +332,7 @@ export async function placeOrder(
         storeId: store.id,
         cartId: cart.id,
         lines,
-        deliveryZoneId: zone.id,
+        deliveryZoneId: zone?.id ?? null,
         deliveryCharge,
         subtotal,
         discountAmount,
@@ -360,6 +376,9 @@ export async function placeOrder(
             ? msg("checkout.errSoldOut", { name: e.productName ?? "" })
             : msg("checkout.errStockLeft", { count: e.available, name: e.productName ?? "" }),
       };
+    }
+    if ((err as { isZoneMissing?: boolean } | null)?.isZoneMissing) {
+      return { error: msg("checkout.errZone"), field: "deliveryZoneId" };
     }
     if ((err as { isInvalidZone?: boolean } | null)?.isInvalidZone) {
       return { error: msg("checkout.errZoneInvalid"), field: "deliveryZoneId" };

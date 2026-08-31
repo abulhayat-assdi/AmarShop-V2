@@ -7,6 +7,11 @@ import { orders, orderItems, payments } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
 import { formatOrderCode } from "@/lib/orders/number";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
+import {
+  canReleaseDownloads,
+  getOrderDigitalFiles,
+  orderHasPhysicalLine,
+} from "@/lib/products/digital";
 import { StorefrontConversion } from "@/components/storefront-conversion";
 
 // Reached from both COD's immediate redirect and SSLCommerz's success_url.
@@ -56,6 +61,15 @@ export default async function OrderConfirmationPage({
   if (!result) notFound();
   const { order, items, payment } = result;
   const { t } = await getTranslator(store.locale);
+
+  const digitalFiles = await getOrderDigitalFiles(store.id, order.id);
+  const downloadsReleased =
+    digitalFiles.length > 0 &&
+    canReleaseDownloads(
+      { id: order.id },
+      payment,
+      await orderHasPhysicalLine(store.id, order.id)
+    );
 
   const shipment = await getShipmentForOrder(store.id, order.id);
   const trackingUrl =
@@ -132,6 +146,29 @@ export default async function OrderConfirmationPage({
           </div>
         </div>
       </div>
+
+      {digitalFiles.length > 0 && (
+        <div className="rounded border p-4">
+          <h2 className="mb-2 font-semibold">{t("confirmation.downloads")}</h2>
+          {downloadsReleased ? (
+            <ul className="flex flex-col gap-1 text-sm">
+              {digitalFiles.map((f) => (
+                <li key={f.fileId}>
+                  <a
+                    href={`/order/${tranId}/download/${f.fileId}`}
+                    className="underline"
+                    rel="noopener"
+                  >
+                    {f.fileName}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500">{t("confirmation.downloadPending")}</p>
+          )}
+        </div>
+      )}
 
       <div className="text-sm text-gray-600">
         <p>{t("confirmation.deliveringTo", { address: order.customerAddress })}</p>

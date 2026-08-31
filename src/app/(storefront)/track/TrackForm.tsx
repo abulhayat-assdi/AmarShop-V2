@@ -71,6 +71,25 @@ function OrderResult({ order }: { order: TrackedOrderView }) {
         <p>{t("confirmation.deliveringTo", { address: order.address })}</p>
       </div>
 
+      {(order.downloads.length > 0 || order.digitalPending) && (
+        <div className="border-t pt-3 text-sm">
+          <div className="font-semibold">{t("track.downloads")}</div>
+          {order.downloads.length > 0 ? (
+            <ul className="flex flex-col gap-1">
+              {order.downloads.map((d, i) => (
+                <li key={i}>
+                  <a href={d.href} className="underline" rel="noopener">
+                    {d.fileName}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-500">{t("confirmation.downloadPending")}</p>
+          )}
+        </div>
+      )}
+
       {order.shipment && (
         <div className="border-t pt-3 text-sm">
           <div className="font-semibold">{t("track.courierHeading")}</div>

@@ -1,4 +1,13 @@
-import { pgTable, uuid, text, numeric, timestamp, uniqueIndex, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  numeric,
+  boolean,
+  timestamp,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/pg-core";
 import { stores } from "./stores";
 import { categories } from "./categories";
 import { productStatusEnum } from "./enums";
@@ -23,6 +32,11 @@ export const products = pgTable(
     slug: text("slug").notNull(),
     brand: text("brand"),
     description: text("description"),
+    // A digital product: no stock, no shipping. Delivery is one or more
+    // PDF files (product_digital_files), downloaded after purchase via
+    // /order/[tranId]/download/[fileId]. Only settable when the store's
+    // digitalEnabled is true.
+    isDigital: boolean("is_digital").notNull().default(false),
     // Optional SEO overrides for the storefront PDP's <title> / meta
     // description (src/app/(storefront)/product/[slug]/page.tsx). Can be
     // written by the AI SEO writer (src/lib/ai) or by hand. Fall back to

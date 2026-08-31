@@ -169,6 +169,13 @@
       "when": 1788109013435,
       "tag": "0023_add_order_fraud_check",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788114614793,
+      "tag": "0024_add_digital_products",
+      "breakpoints": true
     }
   ]
 }

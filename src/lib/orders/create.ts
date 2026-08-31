@@ -25,6 +25,8 @@ export type OrderLine = {
   sku: string;
   unitPrice: string;
   quantity: number;
+  // A digital line has no stock — skip the decrement.
+  isDigital: boolean;
 };
 
 export type CreateOrderParams = {
@@ -33,7 +35,8 @@ export type CreateOrderParams = {
   // for a staff-entered manual order.
   cartId?: string | null;
   lines: OrderLine[];
-  deliveryZoneId: string;
+  // null for an all-digital order (no delivery).
+  deliveryZoneId: string | null;
   deliveryCharge: number;
   subtotal: number;
   // Already validated by the caller (evaluateCoupon). null = no coupon.
@@ -100,6 +103,9 @@ export async function createOrderRecords(
       quantity: line.quantity,
       lineTotal: (unitPrice * line.quantity).toFixed(2),
     });
+
+    // Digital lines have no stock.
+    if (line.isDigital) continue;
 
     // Atomic, re-checked decrement — protects against a concurrent order
     // selling the last unit between an earlier stock check and this exact

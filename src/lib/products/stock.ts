@@ -1,4 +1,4 @@
-import { and, asc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, lte, ne, sql } from "drizzle-orm";
 import { withStoreContext } from "@/db/context";
 import { productVariants, products } from "@/db/schema";
 
@@ -26,6 +26,7 @@ export async function getStockAlerts(
   return withStoreContext(storeId, async (tx) => {
     const where = and(
       eq(productVariants.storeId, storeId),
+      ne(products.isDigital, true),
       lte(productVariants.quantity, threshold)
     );
 
@@ -45,6 +46,7 @@ export async function getStockAlerts(
     const [{ total }] = await tx
       .select({ total: sql<number>`count(*)::int` })
       .from(productVariants)
+      .innerJoin(products, eq(products.id, productVariants.productId))
       .where(where);
 
     return {

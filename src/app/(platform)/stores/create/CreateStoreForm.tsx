@@ -16,6 +16,7 @@ export function CreateStoreForm() {
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
+  const [storeType, setStoreType] = useState("ecommerce");
   const [locale, setLocale] = useState("bn");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -55,6 +56,21 @@ export function CreateStoreForm() {
           />
           <span className="text-sm text-gray-500">.amarshop.com</span>
         </div>
+      </label>
+      <label className="flex flex-col gap-1">
+        What will you sell?
+        <select
+          name="storeType"
+          value={storeType}
+          onChange={(e) => setStoreType(e.target.value)}
+          className="rounded border border-gray-300 px-3 py-2"
+        >
+          <option value="ecommerce">Physical products</option>
+          <option value="digital">Digital products (PDF; physical also allowed)</option>
+        </select>
+        <span className="text-xs text-gray-500">
+          This can&apos;t be changed later.
+        </span>
       </label>
       <label className="flex flex-col gap-1">
         Language
