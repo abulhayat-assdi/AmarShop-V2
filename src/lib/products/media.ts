@@ -4,11 +4,11 @@ import { randomUUID } from "crypto";
 import { promises as fs } from "fs";
 import os from "os";
 import path from "path";
-import sharp from "sharp";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { withStoreContext } from "@/db/context";
 import { productMedia } from "@/db/schema";
 import { getStorageAdapter } from "@/lib/storage";
+import { optimizeImage } from "@/lib/images/optimize";
 import {
   ALLOWED_IMAGE_TYPES,
   ALLOWED_VIDEO_TYPES,
@@ -33,29 +33,9 @@ export function mediaUrl(storageKey: string): string {
 }
 
 // ---------- optimization ----------
-
-type OptimizedImage = {
-  data: Buffer;
-  contentType: "image/webp";
-  width: number | null;
-  height: number | null;
-};
-
-// Re-encode to WebP, honour EXIF orientation, cap the long edge at 2048,
-// drop metadata. A 4 MB photo does this in well under a second.
-export async function optimizeImage(input: Buffer): Promise<OptimizedImage> {
-  const { data, info } = await sharp(input)
-    .rotate()
-    .resize(2048, 2048, { fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toBuffer({ resolveWithObject: true });
-  return {
-    data,
-    contentType: "image/webp",
-    width: info.width ?? null,
-    height: info.height ?? null,
-  };
-}
+// optimizeImage now lives in src/lib/images/optimize.ts; still re-exported
+// here so existing `@/lib/products/media` importers keep working.
+export { optimizeImage };
 
 type RemuxedVideo = {
   data: Buffer;

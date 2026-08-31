@@ -176,6 +176,7 @@ export type OAuthAppListItem = {
   developerName: string;
   developerEmail: string;
   homepageUrl: string | null;
+  logoUrl: string | null;
   description: string | null;
   clientId: string;
   clientSecretPrefix: string;
@@ -195,6 +196,7 @@ export async function listOAuthApps(): Promise<OAuthAppListItem[]> {
       developerName: oauthApps.developerName,
       developerEmail: oauthApps.developerEmail,
       homepageUrl: oauthApps.homepageUrl,
+      logoUrl: oauthApps.logoUrl,
       description: oauthApps.description,
       clientId: oauthApps.clientId,
       clientSecretPrefix: oauthApps.clientSecretPrefix,

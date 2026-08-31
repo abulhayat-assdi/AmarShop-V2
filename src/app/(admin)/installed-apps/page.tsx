@@ -43,23 +43,35 @@ export default async function InstalledAppsPage() {
             apps.map((a) => (
               <tr key={a.id} className="border-b align-top">
                 <td className="py-2">
-                  {a.homepageUrl ? (
-                    <a
-                      href={a.homepageUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="underline"
-                    >
-                      {a.appName}
-                    </a>
-                  ) : (
-                    a.appName
-                  )}
-                  {a.appStatus === "disabled" && (
-                    <span className="mt-1 block text-xs text-red-600">
-                      {t("admin.installedApps.disabledBadge")}
+                  <span className="flex items-start gap-2">
+                    {a.logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={a.logoUrl}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded border border-gray-200 object-cover"
+                      />
+                    )}
+                    <span>
+                      {a.homepageUrl ? (
+                        <a
+                          href={a.homepageUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="underline"
+                        >
+                          {a.appName}
+                        </a>
+                      ) : (
+                        a.appName
+                      )}
+                      {a.appStatus === "disabled" && (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {t("admin.installedApps.disabledBadge")}
+                        </span>
+                      )}
                     </span>
-                  )}
+                  </span>
                 </td>
                 <td className="py-2 text-xs text-gray-600">{a.developerName}</td>
                 <td className="py-2">

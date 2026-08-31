@@ -152,6 +152,11 @@ A platform admin registers your app in **`/platform/apps`** and gives you:
 - an exact-match **redirect-URI allowlist**
 - the set of scopes the app may request (a subset of the table above)
 
+You also supply a name, developer name + contact email, an optional
+homepage URL, and an optional logo (PNG/JPEG/WebP ≤ 2 MB) — the name and
+logo are what the merchant sees on the consent screen and in their
+**Installed Apps** list.
+
 ### 2. Send the merchant to the consent screen
 
 ```

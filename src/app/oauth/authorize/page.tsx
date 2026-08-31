@@ -106,9 +106,19 @@ export default async function AuthorizePage({
   return (
     <Shell>
       <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-semibold">
-          {t("oauth.consent.heading", { app: app.name })}
-        </h1>
+        <div className="flex items-center gap-3">
+          {app.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={app.logoUrl}
+              alt=""
+              className="h-12 w-12 rounded border border-gray-200 object-cover"
+            />
+          )}
+          <h1 className="text-xl font-semibold">
+            {t("oauth.consent.heading", { app: app.name })}
+          </h1>
+        </div>
         <p className="text-sm text-gray-600">
           {t("oauth.consent.subheading", {
             app: app.name,

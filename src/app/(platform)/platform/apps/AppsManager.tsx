@@ -7,6 +7,7 @@ import type { OAuthAppListItem } from "@/lib/oauth/apps";
 import {
   createAppAction,
   regenerateSecretAction,
+  removeAppLogoAction,
   setAppStatusAction,
   updateAppAction,
   type AppFormState,
@@ -85,6 +86,30 @@ function AppFields({
           className={`${inputCls} font-mono text-xs`}
         />
       </label>
+      <div className="flex flex-col gap-1 text-sm">
+        <span>{t("platform.apps.logoLabel")}</span>
+        <div className="flex items-center gap-3">
+          {app?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={app.logoUrl}
+              alt=""
+              className="h-10 w-10 rounded border border-gray-200 object-cover"
+            />
+          )}
+          <input name="logo" type="file" accept="image/png,image/jpeg,image/webp" />
+        </div>
+        <span className="text-xs text-gray-500">{t("platform.apps.logoHint")}</span>
+        {app?.logoUrl && (
+          <button
+            type="button"
+            onClick={() => removeAppLogoAction(app.id)}
+            className="self-start text-xs text-red-600 underline"
+          >
+            {t("platform.apps.removeLogo")}
+          </button>
+        )}
+      </div>
       <fieldset className="flex flex-col gap-1 text-sm">
         <legend className="font-medium">{t("platform.apps.scopesLabel")}</legend>
         {API_SCOPES.map((s: ApiScope) => (
@@ -228,10 +253,22 @@ export function AppsManager({ apps }: { apps: OAuthAppListItem[] }) {
               <Fragment key={a.id}>
                 <tr className="border-b align-top">
                   <td className="py-2">
-                    {a.name}
-                    {a.description && (
-                      <span className="block text-xs text-gray-500">{a.description}</span>
-                    )}
+                    <span className="flex items-start gap-2">
+                      {a.logoUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={a.logoUrl}
+                          alt=""
+                          className="h-6 w-6 shrink-0 rounded border border-gray-200 object-cover"
+                        />
+                      )}
+                      <span>
+                        {a.name}
+                        {a.description && (
+                          <span className="block text-xs text-gray-500">{a.description}</span>
+                        )}
+                      </span>
+                    </span>
                   </td>
                   <td className="py-2 text-xs text-gray-600">
                     {a.developerName}

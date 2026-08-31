@@ -10,6 +10,12 @@ import {
   setOAuthAppStatus,
   updateOAuthApp,
 } from "@/lib/oauth/apps";
+import {
+  isRealFile,
+  removeOAuthAppLogo,
+  setOAuthAppLogo,
+  validateLogoFile,
+} from "@/lib/oauth/logo";
 
 export type AppFormState = {
   error?: string;
@@ -46,7 +52,14 @@ export async function createAppAction(
   const err = validate(input);
   if (err) return { error: err };
 
+  const logo = formData.get("logo");
+  if (isRealFile(logo)) {
+    const logoErr = validateLogoFile(logo);
+    if (logoErr) return { error: logoErr };
+  }
+
   const created = await createOAuthApp(input);
+  if (isRealFile(logo)) await setOAuthAppLogo(created.id, logo);
   revalidatePath("/platform/apps");
   return { created: { clientId: created.clientId, secret: created.secret } };
 }
@@ -61,9 +74,22 @@ export async function updateAppAction(
   const err = validate(input);
   if (err) return { error: err };
 
+  const logo = formData.get("logo");
+  if (isRealFile(logo)) {
+    const logoErr = validateLogoFile(logo);
+    if (logoErr) return { error: logoErr };
+  }
+
   await updateOAuthApp(appId, input);
+  if (isRealFile(logo)) await setOAuthAppLogo(appId, logo);
   revalidatePath("/platform/apps");
   return { ok: true };
+}
+
+export async function removeAppLogoAction(appId: string): Promise<void> {
+  await requirePlatformAdmin();
+  await removeOAuthAppLogo(appId);
+  revalidatePath("/platform/apps");
 }
 
 export async function regenerateSecretAction(appId: string): Promise<AppFormState> {
