@@ -445,7 +445,7 @@ export const en = {
       brandOptional: "Brand (optional)",
       isDigital: "This is a digital product",
       digitalFiles: "PDF file(s)",
-      digitalFileHint: "PDF only, up to 50 MB each; up to 10 files.",
+      digitalFileHint: "PDF only, up to {mb} MB each; up to {max} files.",
       removeFile: "Remove",
       descriptionOptional: "Description (optional)",
       aiGenerate: "Generate with AI",

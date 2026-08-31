@@ -7,6 +7,7 @@ import {
   ALLOWED_VIDEO_TYPES,
   MEDIA_UPLOAD_HINT,
 } from "@/lib/products/media-constants";
+import { MAX_DIGITAL_FILES, MAX_DIGITAL_FILE_MB } from "@/lib/products/digital-constants";
 import { useTranslator } from "@/components/i18n-provider";
 import { deleteProductMedia, removeDigitalFileAction } from "./actions";
 import type { ProductField, ProductFormState } from "./actions";
@@ -242,7 +243,12 @@ export function ProductForm({
                     multiple
                     className="rounded border border-gray-300 px-3 py-2 text-sm"
                   />
-                  <span className="text-xs text-gray-500">{t("admin.products.digitalFileHint")}</span>
+                  <span className="text-xs text-gray-500">
+                    {t("admin.products.digitalFileHint", {
+                      mb: MAX_DIGITAL_FILE_MB,
+                      max: MAX_DIGITAL_FILES,
+                    })}
+                  </span>
                 </label>
               </>
             )}

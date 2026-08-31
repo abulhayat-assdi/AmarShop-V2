@@ -446,7 +446,7 @@ export const bn: Messages = {
       brandOptional: "ব্র্যান্ড (ঐচ্ছিক)",
       isDigital: "এটি একটি ডিজিটাল পণ্য",
       digitalFiles: "PDF ফাইল",
-      digitalFileHint: "শুধু PDF, প্রতিটি সর্বোচ্চ ৫০ MB; সর্বোচ্চ ১০টি ফাইল।",
+      digitalFileHint: "শুধু PDF, প্রতিটি সর্বোচ্চ {mb} MB; সর্বোচ্চ {max}টি ফাইল।",
       removeFile: "সরান",
       descriptionOptional: "বিবরণ (ঐচ্ছিক)",
       aiGenerate: "AI দিয়ে লিখুন",

@@ -92,10 +92,15 @@ export async function GET(
     return new Response("Not found", { status: 404 });
   }
 
+  // Strip quotes, backslashes and control chars so a crafted upload
+  // filename can't break out of the header or inject one.
+  const safeName =
+    data.file.fileName.replace(/["\\\x00-\x1f\x7f]/g, "_").slice(0, 200) || "download.pdf";
+
   return new Response(new Uint8Array(bytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${data.file.fileName.replace(/"/g, "")}"`,
+      "Content-Disposition": `attachment; filename="${safeName}"`,
       "Content-Length": String(bytes.length),
       "Cache-Control": "private, no-store",
     },

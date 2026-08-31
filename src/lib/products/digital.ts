@@ -10,8 +10,14 @@ import {
   type Order,
 } from "@/db/schema";
 
-export const MAX_DIGITAL_FILE_BYTES = 50 * 1024 * 1024;
-export const MAX_DIGITAL_FILES = 10;
+import {
+  MAX_DIGITAL_FILE_BYTES,
+  MAX_DIGITAL_FILE_MB,
+  MAX_DIGITAL_FILES,
+} from "./digital-constants";
+
+export { MAX_DIGITAL_FILE_BYTES, MAX_DIGITAL_FILES } from "./digital-constants";
+
 const PDF_MAGIC = "%PDF-";
 
 export type DigitalValidation =
@@ -40,7 +46,7 @@ export async function validateDigitalPdfs(
   const out: { name: string; buf: Buffer }[] = [];
   for (const file of files) {
     if (file.size > MAX_DIGITAL_FILE_BYTES) {
-      return { error: `"${file.name}" is larger than ${MAX_DIGITAL_FILE_BYTES / (1024 * 1024)} MB.` };
+      return { error: `"${file.name}" is larger than ${MAX_DIGITAL_FILE_MB} MB.` };
     }
     const isPdfType = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdfType) return { error: `"${file.name}" isn't a PDF.` };
