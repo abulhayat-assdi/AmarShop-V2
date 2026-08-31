@@ -19,6 +19,7 @@ export * from "./order-items";
 export * from "./order-status-events";
 export * from "./payments";
 export * from "./invoices";
+export * from "./platform-invoices";
 export * from "./shipments";
 export * from "./store-courier-settings";
 export * from "./store-payment-settings";

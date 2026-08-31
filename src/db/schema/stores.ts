@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
-import { storeStatusEnum } from "./enums";
+import { storeStatusEnum, subscriptionStatusEnum, billingCycleEnum } from "./enums";
 
 // The tenant table itself — never store_id-scoped or RLS-restricted by
 // app.current_store_id, since resolving *which* store a request belongs to
@@ -37,6 +37,19 @@ export const stores = pgTable(
     // never sees the digital-product option. Creation-time choice, no
     // later toggle. See src/lib/products/digital.ts.
     digitalEnabled: boolean("digital_enabled").notNull().default(false),
+    // ── Platform billing (CLAUDE.md rule #3): the store's subscription to
+    // AmarShop itself. Read/written only through src/lib/billing — never
+    // mixed with the customer-facing Order/Payment/Invoice tables. These
+    // columns live here (not a child table) because, like the rest of this
+    // row, they're resolved before the app.current_store_id RLS GUC exists.
+    // `subscriptionPlan` = the plan the merchant has committed to; the plan
+    // whose limits actually apply right now (trial grants a higher tier) is
+    // computed by effectivePlanId() in src/lib/billing/subscription.ts.
+    subscriptionPlan: text("subscription_plan").notNull().default("free"),
+    subscriptionStatus: subscriptionStatusEnum("subscription_status").notNull().default("trialing"),
+    subscriptionCycle: billingCycleEnum("subscription_cycle"),
+    trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
+    currentPeriodEndsAt: timestamp("current_period_ends_at", { withTimezone: true }),
     locale: text("locale").notNull().default("bn"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

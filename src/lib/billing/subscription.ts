@@ -1,0 +1,245 @@
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "@/db/client";
+import { withStoreContext } from "@/db/context";
+import { platformInvoices, products, staffMembers, stores } from "@/db/schema";
+import type { PlatformInvoice, Store } from "@/db/schema";
+import {
+  isValidPlanId,
+  planPrice,
+  PLANS,
+  TRIAL_PLAN,
+  type BillingCycle,
+  type PlanId,
+} from "./plans";
+
+// The merchant-pays-AmarShop billing module (CLAUDE.md rule #3). Every
+// function here takes an explicit storeId and scopes with `where store_id
+// = ?` — `stores` and `platform_invoices` both sit outside the
+// app.current_store_id RLS boundary (see src/db/schema/platform-invoices.ts).
+// The only place withStoreContext is used is getUsage(), which counts
+// genuinely tenant-scoped tables (products, staff).
+
+type SubscriptionRow = {
+  subscriptionPlan: string;
+  subscriptionStatus: Store["subscriptionStatus"];
+  trialEndsAt: Date | null;
+  currentPeriodEndsAt: Date | null;
+};
+
+// The plan whose limits actually apply to a store right now. Pure and
+// exported so it can be unit-tested without a DB:
+//   - a paid, unexpired subscription  → the committed plan
+//   - inside the trial window         → TRIAL_PLAN (a courtesy upgrade)
+//   - anything else (trial over, past_due, canceled) → "free"
+export function effectivePlanId(row: SubscriptionRow, now: Date = new Date()): PlanId {
+  if (
+    row.subscriptionStatus === "active" &&
+    row.currentPeriodEndsAt &&
+    row.currentPeriodEndsAt > now
+  ) {
+    return isValidPlanId(row.subscriptionPlan) ? row.subscriptionPlan : "free";
+  }
+  if (row.subscriptionStatus === "trialing" && row.trialEndsAt && row.trialEndsAt > now) {
+    return TRIAL_PLAN;
+  }
+  return "free";
+}
+
+export type SubscriptionView = {
+  plan: string;
+  status: Store["subscriptionStatus"];
+  cycle: BillingCycle | null;
+  trialEndsAt: Date | null;
+  currentPeriodEndsAt: Date | null;
+  effectivePlanId: PlanId;
+  inTrial: boolean;
+  trialDaysLeft: number;
+};
+
+export async function getSubscription(storeId: string): Promise<SubscriptionView> {
+  const [row] = await db
+    .select({
+      subscriptionPlan: stores.subscriptionPlan,
+      subscriptionStatus: stores.subscriptionStatus,
+      subscriptionCycle: stores.subscriptionCycle,
+      trialEndsAt: stores.trialEndsAt,
+      currentPeriodEndsAt: stores.currentPeriodEndsAt,
+    })
+    .from(stores)
+    .where(eq(stores.id, storeId))
+    .limit(1);
+
+  if (!row) throw new Error(`store ${storeId} not found`);
+
+  const now = new Date();
+  const inTrial =
+    row.subscriptionStatus === "trialing" && !!row.trialEndsAt && row.trialEndsAt > now;
+  const trialDaysLeft = inTrial
+    ? Math.ceil((row.trialEndsAt!.getTime() - now.getTime()) / 86_400_000)
+    : 0;
+
+  return {
+    plan: row.subscriptionPlan,
+    status: row.subscriptionStatus,
+    cycle: row.subscriptionCycle,
+    trialEndsAt: row.trialEndsAt,
+    currentPeriodEndsAt: row.currentPeriodEndsAt,
+    effectivePlanId: effectivePlanId(row, now),
+    inTrial,
+    trialDaysLeft,
+  };
+}
+
+export type PlanUsage = { products: number; staff: number };
+
+// Real counts for the Billing page meters (CLAUDE.md rule #8 — a shown
+// count is accurate or absent). products/staff ARE tenant-scoped, so this
+// is the one function here that goes through withStoreContext.
+export async function getUsage(storeId: string): Promise<PlanUsage> {
+  return withStoreContext(storeId, async (tx) => {
+    const [p] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(products)
+      .where(eq(products.storeId, storeId));
+    const [s] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(staffMembers)
+      .where(eq(staffMembers.storeId, storeId));
+    return { products: p?.n ?? 0, staff: s?.n ?? 0 };
+  });
+}
+
+export function listPlatformInvoices(storeId: string): Promise<PlatformInvoice[]> {
+  return db
+    .select()
+    .from(platformInvoices)
+    .where(eq(platformInvoices.storeId, storeId))
+    .orderBy(desc(platformInvoices.createdAt));
+}
+
+export async function getPendingInvoice(storeId: string): Promise<PlatformInvoice | null> {
+  const [row] = await db
+    .select()
+    .from(platformInvoices)
+    .where(and(eq(platformInvoices.storeId, storeId), eq(platformInvoices.status, "pending")))
+    .orderBy(desc(platformInvoices.createdAt))
+    .limit(1);
+  return row ?? null;
+}
+
+function addPeriod(start: Date, cycle: BillingCycle): Date {
+  const end = new Date(start);
+  if (cycle === "yearly") end.setFullYear(end.getFullYear() + 1);
+  else end.setMonth(end.getMonth() + 1);
+  return end;
+}
+
+// Merchant picks a plan → a fresh `pending` invoice for the next period.
+// Any earlier still-pending invoice for this store is voided first, so a
+// store never has more than one open invoice.
+export async function createPlatformInvoice(
+  storeId: string,
+  planId: PlanId,
+  cycle: BillingCycle
+): Promise<PlatformInvoice> {
+  if (!isValidPlanId(planId) || PLANS[planId].custom) {
+    throw new Error(`plan ${planId} is not self-serve`);
+  }
+  const now = new Date();
+  const periodEnd = addPeriod(now, cycle);
+  const amount = planPrice(planId, cycle).toFixed(2);
+
+  return db.transaction(async (tx) => {
+    await tx
+      .update(platformInvoices)
+      .set({ status: "void", updatedAt: now })
+      .where(and(eq(platformInvoices.storeId, storeId), eq(platformInvoices.status, "pending")));
+
+    const [row] = await tx
+      .insert(platformInvoices)
+      .values({
+        storeId,
+        plan: planId,
+        cycle,
+        amount,
+        status: "pending",
+        periodStart: now,
+        periodEnd,
+      })
+      .returning();
+    return row;
+  });
+}
+
+export type ManualPaymentReport = {
+  walletProvider: NonNullable<PlatformInvoice["walletProvider"]>;
+  senderMsisdn: string;
+  senderReference: string;
+};
+
+// Merchant reports their bKash/Nagad transfer against a pending invoice.
+// The invoice stays `pending` until a platform admin verifies it.
+export async function submitInvoicePayment(
+  storeId: string,
+  invoiceId: string,
+  report: ManualPaymentReport
+): Promise<PlatformInvoice | null> {
+  const [row] = await db
+    .update(platformInvoices)
+    .set({
+      walletProvider: report.walletProvider,
+      senderMsisdn: report.senderMsisdn,
+      senderReference: report.senderReference,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(platformInvoices.id, invoiceId),
+        eq(platformInvoices.storeId, storeId),
+        eq(platformInvoices.status, "pending")
+      )
+    )
+    .returning();
+  return row ?? null;
+}
+
+// Platform-admin path — NO storeId scope, this is the cross-tenant verify
+// step. Marks the invoice paid and advances the store's subscription.
+export async function markPlatformInvoicePaid(
+  invoiceId: string,
+  staffId: string | null
+): Promise<PlatformInvoice | null> {
+  return db.transaction(async (tx) => {
+    const [inv] = await tx
+      .select()
+      .from(platformInvoices)
+      .where(eq(platformInvoices.id, invoiceId))
+      .limit(1);
+    if (!inv || inv.status !== "pending") return null;
+
+    const now = new Date();
+    await tx
+      .update(platformInvoices)
+      .set({ status: "paid", paidAt: now, verifiedByStaffId: staffId, updatedAt: now })
+      .where(eq(platformInvoices.id, invoiceId));
+    await tx
+      .update(stores)
+      .set({
+        subscriptionPlan: inv.plan,
+        subscriptionStatus: "active",
+        subscriptionCycle: inv.cycle,
+        currentPeriodEndsAt: inv.periodEnd,
+        updatedAt: now,
+      })
+      .where(eq(stores.id, inv.storeId));
+    return inv;
+  });
+}
+
+// Platform admin rejects a claimed payment (or cancels an unpaid selection).
+export async function voidPlatformInvoice(invoiceId: string): Promise<void> {
+  await db
+    .update(platformInvoices)
+    .set({ status: "void", updatedAt: new Date() })
+    .where(and(eq(platformInvoices.id, invoiceId), eq(platformInvoices.status, "pending")));
+}

@@ -176,6 +176,13 @@
       "when": 1788114614793,
       "tag": "0024_add_digital_products",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788148342374,
+      "tag": "0025_add_platform_billing",
+      "breakpoints": true
     }
   ]
 }

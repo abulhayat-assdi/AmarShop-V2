@@ -108,3 +108,30 @@ export const shipmentStatusEnum = pgEnum("shipment_status", [
   "cancelled",
   "failed",
 ]);
+
+// ── Platform billing (CLAUDE.md rule #3: the merchant-pays-the-platform
+// system, kept entirely separate from Order/Payment/Invoice). See
+// src/lib/billing and src/db/schema/platform-invoices.ts.
+
+// A store's subscription lifecycle. "trialing" = inside the free trial
+// window (trial_ends_at); "active" = a platform invoice is paid and
+// current_period_ends_at is in the future; "past_due" = the paid period
+// lapsed with no renewal; "canceled" = the merchant stopped.
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+]);
+
+// A platform_invoices row: "pending" = created when the merchant picked a
+// plan, awaiting their manual payment + our verification; "paid" = a
+// platform admin confirmed the bKash/Nagad transfer; "void" = superseded
+// by a newer selection or rejected.
+export const platformInvoiceStatusEnum = pgEnum("platform_invoice_status", [
+  "pending",
+  "paid",
+  "void",
+]);
+
+export const billingCycleEnum = pgEnum("billing_cycle", ["monthly", "yearly"]);

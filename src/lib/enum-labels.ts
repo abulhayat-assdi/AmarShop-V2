@@ -3,8 +3,10 @@ import type {
   Coupon,
   Order,
   Payment,
+  PlatformInvoice,
   Product,
   StaffMember,
+  Store,
 } from "@/db/schema";
 
 // The single place every user-facing enum value is mapped to a display
@@ -83,4 +85,25 @@ export const FRAUD_RISK_LEVEL_KEYS: Record<NonNullable<Order["fraudRiskLevel"]>,
   high: "admin.orders.fraudLevel.high",
   danger: "admin.orders.fraudLevel.danger",
   unknown: "admin.orders.fraudLevel.unknown",
+};
+
+// ── Platform billing (merchant → AmarShop). Kept distinct from the
+// customer-facing PAYMENT_STATUS_KEYS above (CLAUDE.md rule #3).
+
+export const SUBSCRIPTION_STATUS_KEYS: Record<Store["subscriptionStatus"], string> = {
+  trialing: "billing.status.trialing",
+  active: "billing.status.active",
+  past_due: "billing.status.pastDue",
+  canceled: "billing.status.canceled",
+};
+
+export const PLATFORM_INVOICE_STATUS_KEYS: Record<PlatformInvoice["status"], string> = {
+  pending: "billing.invoiceStatus.pending",
+  paid: "billing.invoiceStatus.paid",
+  void: "billing.invoiceStatus.void",
+};
+
+export const BILLING_CYCLE_KEYS: Record<PlatformInvoice["cycle"], string> = {
+  monthly: "billing.cycle.monthly",
+  yearly: "billing.cycle.yearly",
 };

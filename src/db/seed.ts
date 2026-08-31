@@ -145,6 +145,10 @@ async function main() {
     locale: "bn",
     isDemo: true,
     digitalEnabled: true,
+    // A live 7-day trial so the Billing page has real state to show on a
+    // fresh seed (the 0025 migration backfills this for pre-existing rows).
+    subscriptionStatus: "trialing",
+    trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
   await upsertStaff(demoStore.id, {
     name: "Demo Owner",
