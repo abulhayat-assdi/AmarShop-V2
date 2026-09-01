@@ -97,4 +97,5 @@ export const NAV_PERMISSION: Partial<Record<string, Permission>> = {
   "/menu-builder": "settings:manage",
   "/checkout-settings": "settings:manage",
   "/default-pages": "settings:manage",
+  "/redirects": "settings:manage",
 };

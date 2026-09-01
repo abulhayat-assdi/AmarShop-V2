@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { hostname, isPlatformHost, resolveHost } from "@/lib/tenant/resolve";
 import { STORE_ID_HEADER } from "@/lib/tenant/constants";
+import { findRedirect } from "@/lib/redirects/lookup";
+import { isAbsoluteUrl } from "@/lib/redirects/normalize";
 
 // Runs before every route. Resolves which store (if any) a request belongs
 // to, purely from the Host header, and attaches it to request context via
@@ -29,6 +31,19 @@ export async function proxy(request: NextRequest) {
     const proto = request.headers.get("x-forwarded-proto") ?? "https";
     const { pathname, search } = request.nextUrl;
     return NextResponse.redirect(`${proto}://${resolution.canonicalHost}${pathname}${search}`, 308);
+  }
+
+  // Merchant-configured storefront redirects (Admin -> URL Redirects).
+  // Only for plain navigations — 301/302 would turn a POST into a GET.
+  if (request.method === "GET" || request.method === "HEAD") {
+    const hit = await findRedirect(resolution.store.id, request.nextUrl.pathname);
+    if (hit) {
+      const proto = request.headers.get("x-forwarded-proto") ?? "https";
+      const dest = isAbsoluteUrl(hit.target)
+        ? hit.target
+        : `${proto}://${resolution.canonicalHost}${hit.target}`;
+      return NextResponse.redirect(dest, hit.statusCode);
+    }
   }
 
   const requestHeaders = new Headers(request.headers);

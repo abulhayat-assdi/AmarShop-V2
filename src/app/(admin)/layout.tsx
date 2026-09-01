@@ -37,6 +37,7 @@ const NAV: AdminNavItem[] = [
   { href: "/shop-preview", labelKey: "admin.nav.shopPreview" },
   { href: "/checkout-settings", labelKey: "admin.nav.checkoutSettings" },
   { href: "/default-pages", labelKey: "admin.nav.defaultPages" },
+  { href: "/redirects", labelKey: "admin.nav.redirects" },
   { href: "/domain-settings", labelKey: "admin.nav.domainSettings" },
   { href: "/api-keys", labelKey: "admin.nav.apiKeys" },
   { href: "/installed-apps", labelKey: "admin.nav.installedApps" },
