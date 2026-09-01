@@ -41,3 +41,6 @@ export * from "./checkout-custom-fields";
 export * from "./order-custom-field-answers";
 export * from "./media-folders";
 export * from "./media-assets";
+export * from "./forms";
+export * from "./form-fields";
+export * from "./form-submissions";

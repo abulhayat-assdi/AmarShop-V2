@@ -170,3 +170,23 @@ export const checkoutFieldTypeEnum = pgEnum("checkout_field_type", ["text", "tex
 // the library accepts images and PDF documents, never video. Images are
 // re-encoded to WebP on upload; documents are stored as-is.
 export const mediaAssetKindEnum = pgEnum("media_asset_kind", ["image", "document"]);
+
+// A form_fields row's input type (src/db/schema/form-fields.ts) — the
+// store's own custom forms (Admin -> Forms). "dropdown"/"radio"/"checkbox"
+// read their choices from form_fields.options (one per line);
+// FORM_FIELD_TYPES in src/lib/forms/types.ts is the client-safe mirror.
+export const formFieldTypeEnum = pgEnum("form_field_type", [
+  "text",
+  "email",
+  "phone",
+  "textarea",
+  "dropdown",
+  "radio",
+  "checkbox",
+  "number",
+  "date",
+]);
+
+// A forms row's publish state (src/db/schema/forms.ts) — same shape as
+// contentStatusEnum: only "published" forms render at /form/[slug].
+export const formStatusEnum = pgEnum("form_status", ["draft", "published"]);
