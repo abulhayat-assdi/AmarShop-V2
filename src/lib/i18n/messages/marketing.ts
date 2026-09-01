@@ -16,6 +16,7 @@ const en = {
     features: "Features",
     pricing: "Pricing",
     about: "About",
+    testimonials: "Testimonials",
     signIn: "Sign in",
     startTrial: "Start Free Trial",
   },
@@ -27,6 +28,7 @@ const en = {
     linkPricing: "Pricing",
     linkAbout: "About",
     linkFaq: "FAQ",
+    linkTestimonials: "Testimonials",
     linkSignIn: "Sign in",
     linkStartTrial: "Start free trial",
     madeIn: "Built for Bangladesh",
@@ -171,6 +173,14 @@ const en = {
     kicker: "Support",
     title: "Frequently asked questions",
     subtitle: "Everything a merchant usually asks before starting.",
+  },
+  testimonials: {
+    kicker: "Testimonials",
+    title: "Merchants who run their shop on {brand}",
+    subtitle: "Real quotes from stores selling with us.",
+    homeTitle: "What merchants say",
+    seeAll: "See all testimonials",
+    empty: "We're gathering testimonials from merchants now — check back soon.",
   },
   about: {
     hero: {
@@ -462,6 +472,7 @@ const bn = {
     features: "ফিচার",
     pricing: "প্রাইসিং",
     about: "পরিচিতি",
+    testimonials: "মতামত",
     signIn: "সাইন ইন",
     startTrial: "ফ্রি ট্রায়াল শুরু করুন",
   },
@@ -473,6 +484,7 @@ const bn = {
     linkPricing: "প্রাইসিং",
     linkAbout: "পরিচিতি",
     linkFaq: "সাধারণ প্রশ্ন",
+    linkTestimonials: "মতামত",
     linkSignIn: "সাইন ইন",
     linkStartTrial: "ফ্রি ট্রায়াল",
     madeIn: "বাংলাদেশের জন্য তৈরি",
@@ -617,6 +629,14 @@ const bn = {
     kicker: "সহায়তা",
     title: "সাধারণ জিজ্ঞাসা",
     subtitle: "শুরুর আগে একজন মার্চেন্ট সাধারণত যা জানতে চান।",
+  },
+  testimonials: {
+    kicker: "মতামত",
+    title: "যেসব মার্চেন্ট {brand}-এ দোকান চালান",
+    subtitle: "আমাদের সাথে বিক্রি করা দোকানগুলোর আসল কথা।",
+    homeTitle: "মার্চেন্টরা যা বলেন",
+    seeAll: "সব মতামত দেখুন",
+    empty: "মার্চেন্টদের মতামত সংগ্রহ করা হচ্ছে — শীঘ্রই দেখুন।",
   },
   about: {
     hero: {

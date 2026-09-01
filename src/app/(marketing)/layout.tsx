@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getMarketingTranslator } from "@/lib/i18n/marketing-server";
+import { hasPublishedTestimonials } from "@/lib/testimonials/query";
 import { I18nProvider } from "@/components/i18n-provider";
 import { MarketingHeader, MarketingFooter } from "@/components/marketing/chrome";
 
@@ -20,6 +21,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   }
 
   const { locale, messages, t } = await getMarketingTranslator();
+  const hasTestimonials = await hasPublishedTestimonials();
 
   // Rendered into the root layout's <body className="min-h-full flex
   // flex-col">, so header / main / footer are direct flex children and
@@ -27,9 +29,9 @@ export default async function MarketingLayout({ children }: { children: React.Re
   // storefront layout, no wrapper div.
   return (
     <I18nProvider locale={locale} messages={messages}>
-      <MarketingHeader t={t} locale={locale} />
+      <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} />
       <main className="flex-1">{children}</main>
-      <MarketingFooter t={t} />
+      <MarketingFooter t={t} hasTestimonials={hasTestimonials} />
     </I18nProvider>
   );
 }

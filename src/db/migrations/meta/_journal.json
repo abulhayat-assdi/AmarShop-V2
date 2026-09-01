@@ -337,6 +337,13 @@
       "when": 1788284996982,
       "tag": "0047_add_product_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788288165366,
+      "tag": "0048_add_testimonials",
+      "breakpoints": true
     }
   ]
 }

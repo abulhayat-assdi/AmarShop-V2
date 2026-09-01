@@ -22,6 +22,10 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           <Link href="/platform/apps" className="hover:underline">
             {t("platform.nav.apps")}
           </Link>
+          {/* English-only, like /stores/create — an operator surface. */}
+          <Link href="/platform/testimonials" className="hover:underline">
+            Testimonials
+          </Link>
           <Link href="/stores/create" className="hover:underline">
             {t("platform.nav.createStore")}
           </Link>

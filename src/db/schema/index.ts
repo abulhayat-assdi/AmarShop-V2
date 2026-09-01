@@ -48,3 +48,4 @@ export * from "./store-email-settings";
 export * from "./email-messages";
 export * from "./redirects";
 export * from "./product-reviews";
+export * from "./testimonials";

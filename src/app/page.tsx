@@ -24,6 +24,8 @@ import {
 } from "@/components/marketing/sections";
 import { FeatureTabs } from "@/components/marketing/feature-tabs";
 import { PricingSection } from "@/components/marketing/pricing-section";
+import { TestimonialGrid } from "@/components/marketing/testimonials";
+import { getPublishedTestimonials } from "@/lib/testimonials/query";
 import { BRAND_NAME } from "@/lib/marketing/constants";
 
 // The one URL shared between the storefront and the platform root (App
@@ -155,10 +157,15 @@ export default async function Home() {
   // marketing chrome components directly, mirroring the storefront chrome
   // split (see src/components/storefront-chrome.tsx).
   const { locale, messages, t } = await getMarketingTranslator();
+  // One query drives both the nav/footer link and the preview section — a
+  // testimonials block only exists when a platform admin has published one
+  // (CLAUDE.md rule #8), never an empty placeholder.
+  const testimonialPreview = await getPublishedTestimonials(3);
+  const hasTestimonials = testimonialPreview.length > 0;
 
   return (
     <I18nProvider locale={locale} messages={messages}>
-      <MarketingHeader t={t} locale={locale} />
+      <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} />
       <main className="flex-1">
         <Hero t={t} />
         <ProblemSolution t={t} />
@@ -191,11 +198,27 @@ export default async function Home() {
           </p>
         </section>
 
+        {hasTestimonials && (
+          <section className="mx-auto max-w-6xl px-4 py-16">
+            <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+              {t("marketing.testimonials.homeTitle")}
+            </h2>
+            <div className="mt-10">
+              <TestimonialGrid items={testimonialPreview} />
+            </div>
+            <p className="mt-6 text-center text-sm">
+              <Link href="/testimonials" className="underline">
+                {t("marketing.testimonials.seeAll")}
+              </Link>
+            </p>
+          </section>
+        )}
+
         <DeveloperTeaser t={t} />
         <Faq t={t} limit={8} />
         <ClosingCta t={t} />
       </main>
-      <MarketingFooter t={t} />
+      <MarketingFooter t={t} hasTestimonials={hasTestimonials} />
     </I18nProvider>
   );
 }
