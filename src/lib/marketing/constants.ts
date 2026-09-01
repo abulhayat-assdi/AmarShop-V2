@@ -25,7 +25,9 @@ export const MARKETING_NAV = [
 
 // The plan the pricing grid highlights / pre-selects (SITE_STRUCTURE.md
 // Part A: "Pre-select your recommended tier"). A presentation choice, so it
-// lives here rather than in src/lib/billing/plans.ts — must be one of that
-// file's PlanId values.
-export const RECOMMENDED_PLAN_ID = "starter";
+// lives here rather than in src/lib/billing/plans.ts — type-checked
+// against that file's PlanId union.
+import type { PlanId } from "@/lib/billing/plans";
+
+export const RECOMMENDED_PLAN_ID: PlanId = "starter";
 

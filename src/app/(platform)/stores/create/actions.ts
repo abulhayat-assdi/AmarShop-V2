@@ -1,120 +1,52 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { sql } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-import { db } from "@/db/client";
-import { stores, staffMembers } from "@/db/schema";
-import { isReservedSubdomain } from "@/lib/tenant/constants";
-import { BD_PHONE_PATTERN } from "@/lib/phone";
+import { requirePlatformAdmin } from "@/lib/auth/roles";
+import {
+  createStoreWithOwner,
+  type CreateStoreError,
+  type CreateStoreField,
+} from "@/lib/stores/create";
 
-const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
-export type CreateStoreField =
-  | "name"
-  | "slug"
-  | "ownerName"
-  | "ownerPhone"
-  | "ownerEmail"
-  | "ownerPassword";
+export type { CreateStoreField };
 export type CreateStoreState = { error?: string; field?: CreateStoreField };
 
-// drizzle-orm's postgres-js driver wraps the raw driver error in `.cause`
-// (a DrizzleQueryError with { query, params, cause }) rather than exposing
-// `code`/`constraint_name` directly on the thrown error — verified against
-// a real duplicate-key failure, not assumed.
-function isUniqueViolation(err: unknown, constraint: string): boolean {
-  const cause = (err as { cause?: unknown } | null)?.cause;
-  return (
-    typeof cause === "object" &&
-    cause !== null &&
-    (cause as { code?: string }).code === "23505" &&
-    (cause as { constraint_name?: string }).constraint_name === constraint
-  );
-}
+// Platform-admin store creation. The public self-serve path is
+// src/app/(marketing)/signup — both call createStoreWithOwner(); this one
+// keeps its English-only copy and lands on /login (no auto sign-in).
+const MESSAGES: Record<CreateStoreError, string> = {
+  name_required: "Store name is required.",
+  owner_name_required: "Your name is required.",
+  invalid_phone: "Enter a valid Bangladeshi mobile number (e.g. 017XXXXXXXX).",
+  email_required: "Email is required.",
+  weak_password: "Password must be at least 8 characters.",
+  invalid_slug: "Subdomain must be lowercase letters, numbers, and hyphens only.",
+  slug_taken: "That subdomain is already taken — try another one.",
+  email_taken: "That email is already registered — use a different email, or sign in instead.",
+  invalid_locale: "Invalid locale.",
+};
 
-// Minimal Phase-0 store creation: enough to exercise proxy.ts tenant
-// resolution end to end (create a store, then hit {slug}.<platform host>).
-// Full onboarding UX (plan selection, ToS, etc.) is Phase 1 (SITE_STRUCTURE.md).
-//
-// Store + owner staff row are created in ONE transaction on purpose: a
-// duplicate owner email used to leave behind an orphaned, ownerless store
-// still holding its slug forever (the store insert had already committed
-// by the time the staff insert failed) — a real bug hit during local
-// testing, not a hypothetical.
 export async function createStore(
   _prevState: CreateStoreState,
   formData: FormData
 ): Promise<CreateStoreState> {
-  const name = String(formData.get("name") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "")
-    .trim()
-    .toLowerCase();
-  const locale = String(formData.get("locale") ?? "bn");
-  const digitalEnabled = String(formData.get("storeType") ?? "ecommerce") === "digital";
-  const ownerName = String(formData.get("ownerName") ?? "").trim();
-  const ownerPhone = String(formData.get("ownerPhone") ?? "").trim() || null;
-  const ownerEmail = String(formData.get("ownerEmail") ?? "")
-    .trim()
-    .toLowerCase();
-  const ownerPassword = String(formData.get("ownerPassword") ?? "");
+  // Guard the action itself, not just the page — a Server Action is a POST
+  // endpoint callable independent of its form.
+  await requirePlatformAdmin();
 
-  if (!name) {
-    return { error: "Store name is required.", field: "name" };
-  }
-  if (!ownerName) {
-    return { error: "Your name is required.", field: "ownerName" };
-  }
-  if (ownerPhone && !BD_PHONE_PATTERN.test(ownerPhone)) {
-    return { error: "Enter a valid Bangladeshi mobile number (e.g. 017XXXXXXXX).", field: "ownerPhone" };
-  }
-  if (!ownerEmail) {
-    return { error: "Email is required.", field: "ownerEmail" };
-  }
-  if (ownerPassword.length < 8) {
-    return { error: "Password must be at least 8 characters.", field: "ownerPassword" };
-  }
-  if (!SLUG_PATTERN.test(slug) || isReservedSubdomain(slug)) {
-    return {
-      error: "Subdomain must be lowercase letters, numbers, and hyphens only.",
-      field: "slug",
-    };
-  }
-  if (locale !== "bn" && locale !== "en") {
-    return { error: "Invalid locale." };
-  }
+  const result = await createStoreWithOwner({
+    name: String(formData.get("name") ?? ""),
+    slug: String(formData.get("slug") ?? ""),
+    locale: String(formData.get("locale") ?? "bn"),
+    digitalEnabled: String(formData.get("storeType") ?? "ecommerce") === "digital",
+    ownerName: String(formData.get("ownerName") ?? ""),
+    ownerPhone: String(formData.get("ownerPhone") ?? "") || null,
+    ownerEmail: String(formData.get("ownerEmail") ?? ""),
+    ownerPassword: String(formData.get("ownerPassword") ?? ""),
+  });
 
-  const passwordHash = await bcrypt.hash(ownerPassword, 10);
-
-  try {
-    await db.transaction(async (tx) => {
-      const [store] = await tx
-        .insert(stores)
-        .values({ name, slug, locale, status: "active", digitalEnabled })
-        .returning();
-
-      await tx.execute(sql`select set_config('app.current_store_id', ${store.id}, true)`);
-
-      await tx.insert(staffMembers).values({
-        storeId: store.id,
-        name: ownerName,
-        phone: ownerPhone,
-        email: ownerEmail,
-        passwordHash,
-        role: "owner",
-      });
-    });
-  } catch (err) {
-    if (isUniqueViolation(err, "stores_slug_idx")) {
-      return { error: "That subdomain is already taken — try another one.", field: "slug" };
-    }
-    if (isUniqueViolation(err, "staff_members_email_idx")) {
-      return {
-        error: "That email is already registered — use a different email, or sign in instead.",
-        field: "ownerEmail",
-      };
-    }
-    throw err;
+  if (!result.ok) {
+    return { error: MESSAGES[result.code], field: result.field };
   }
 
   redirect("/login");
