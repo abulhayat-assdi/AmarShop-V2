@@ -44,3 +44,5 @@ export * from "./media-assets";
 export * from "./forms";
 export * from "./form-fields";
 export * from "./form-submissions";
+export * from "./store-email-settings";
+export * from "./email-messages";

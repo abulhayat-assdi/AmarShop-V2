@@ -190,3 +190,27 @@ export const formFieldTypeEnum = pgEnum("form_field_type", [
 // A forms row's publish state (src/db/schema/forms.ts) — same shape as
 // contentStatusEnum: only "published" forms render at /form/[slug].
 export const formStatusEnum = pgEnum("form_status", ["draft", "published"]);
+
+// One technical adapter (src/lib/email/smtp.ts, nodemailer over SMTP)
+// serves smtp/sendgrid/mailgun/ses — they're all SMTP-shaped
+// (host+port+username+password); this enum is the provider *label* a
+// merchant picks (drives host/port presets + credential-blob key), not a
+// separate implementation per value. "log" mirrors smsProviderEnum's dev
+// fallback. See src/db/schema/store-email-settings.ts.
+export const emailProviderEnum = pgEnum("email_provider", [
+  "smtp",
+  "sendgrid",
+  "mailgun",
+  "ses",
+  "log",
+]);
+
+// An email_messages row's delivery outcome — same 3-value shape as
+// smsMessageStatusEnum. Today every send is synchronous (Admin -> Email
+// Gateways' "Send test email"), so "pending" is unused in practice but
+// kept for parity / a future async send path.
+export const emailMessageStatusEnum = pgEnum("email_message_status", [
+  "pending",
+  "sent",
+  "failed",
+]);
