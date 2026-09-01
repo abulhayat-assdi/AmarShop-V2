@@ -61,6 +61,12 @@ export function MarketingFooter({ t }: { t: Translator }) {
         </nav>
         <nav className="flex flex-col gap-2 text-sm">
           <span className="font-medium text-gray-900">{t("marketing.footer.colCompany")}</span>
+          <Link href="/about" className="text-gray-500 hover:text-black">
+            {t("marketing.footer.linkAbout")}
+          </Link>
+          <Link href="/faq" className="text-gray-500 hover:text-black">
+            {t("marketing.footer.linkFaq")}
+          </Link>
           <Link href="/login" className="text-gray-500 hover:text-black">
             {t("marketing.footer.linkSignIn")}
           </Link>

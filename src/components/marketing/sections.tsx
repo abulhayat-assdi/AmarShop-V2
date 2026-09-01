@@ -129,11 +129,26 @@ export function DeveloperTeaser({ t }: { t: Translator }) {
   );
 }
 
-export function Faq({ t }: { t: Translator }) {
-  const items = [1, 2, 3, 4, 5, 6, 7, 8];
+// `limit` caps how many of the marketing.home.faq.q1..qN pairs to show —
+// the homepage teaser passes a small number, the dedicated /faq page shows
+// them all. One question bank, no duplicated copy (rule #4).
+export function Faq({
+  t,
+  limit = 12,
+  showHeading = true,
+}: {
+  t: Translator;
+  limit?: number;
+  showHeading?: boolean;
+}) {
+  const items = Array.from({ length: limit }, (_, i) => i + 1);
   return (
     <section className="mx-auto max-w-3xl px-4 py-16">
-      <h2 className="text-center text-2xl font-semibold sm:text-3xl">{t("marketing.home.faq.title")}</h2>
+      {showHeading && (
+        <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+          {t("marketing.home.faq.title")}
+        </h2>
+      )}
       <div className="mt-10 flex flex-col divide-y divide-gray-200 border-y border-gray-200">
         {items.map((n) => (
           <details key={n} className="group py-4">

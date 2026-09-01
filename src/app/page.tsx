@@ -192,7 +192,7 @@ export default async function Home() {
         </section>
 
         <DeveloperTeaser t={t} />
-        <Faq t={t} />
+        <Faq t={t} limit={8} />
         <ClosingCta t={t} />
       </main>
       <MarketingFooter t={t} />

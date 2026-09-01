@@ -15,6 +15,7 @@ const en = {
   nav: {
     features: "Features",
     pricing: "Pricing",
+    about: "About",
     signIn: "Sign in",
     startTrial: "Start Free Trial",
   },
@@ -24,6 +25,8 @@ const en = {
     colCompany: "Company",
     linkFeatures: "Features",
     linkPricing: "Pricing",
+    linkAbout: "About",
+    linkFaq: "FAQ",
     linkSignIn: "Sign in",
     linkStartTrial: "Start free trial",
     madeIn: "Built for Bangladesh",
@@ -149,11 +152,55 @@ const en = {
       a7: "Yes, any time — every plan is self-serve.",
       q8: "Do you take a commission on my sales?",
       a8: "No. You pay the monthly plan price only; your customers' payments go straight to you.",
+      q9: "Can I sell digital products?",
+      a9: "Yes — attach PDFs to a product and they sell with secure, payment-gated download links, no shipping.",
+      q10: "Do I need my own courier account?",
+      a10: "Yes. You connect your own REDX, Pathao or Steadfast credentials; {brand} books and tracks through them.",
+      q11: "Can my team have separate logins?",
+      a11: "Yes. Invite staff with their own accounts and grant access per area with roles.",
+      q12: "Is there an API?",
+      a12: "Yes — a scoped, rate-limited REST API for products and orders, plus OAuth app installs.",
     },
     closing: {
       title: "Start selling online this week",
       subtitle: "Free plan available. {days}-day trial on paid plans, no credit card.",
       cta: "Start your free trial",
+    },
+  },
+  faqPage: {
+    kicker: "Support",
+    title: "Frequently asked questions",
+    subtitle: "Everything a merchant usually asks before starting.",
+  },
+  about: {
+    hero: {
+      kicker: "About",
+      title: "Built for Bangladeshi merchants, end to end",
+      body: "Selling online here means cash on delivery, three courier networks, bKash and Nagad, and customers who expect Bengali. {brand} is one platform that handles all of it — storefront, orders, payments, delivery and invoices — so a merchant can run the whole shop from one dashboard.",
+    },
+    valuesTitle: "What we build around",
+    values: {
+      v1: {
+        title: "One source of truth",
+        body: "Every price, limit and count on the site is read from one place, so nothing drifts out of sync.",
+      },
+      v2: {
+        title: "Local by default",
+        body: "COD, bKash/Nagad, REDX/Pathao/Steadfast and a Bengali-first UI are built in, not add-ons.",
+      },
+      v3: {
+        title: "Honest numbers",
+        body: "A count a merchant sees is real or it isn't shown — no aspirational placeholders.",
+      },
+      v4: {
+        title: "Own your store",
+        body: "Your domain, your customer payments, no sales commission — the platform fee is the only cost.",
+      },
+    },
+    storyTitle: "The story",
+    story: {
+      p1: "{company} started from a simple observation: most small merchants in Bangladesh run their shop across DMs, spreadsheets and screenshots, losing orders and time to tools that were never built for this market.",
+      p2: "So we're building the platform we wished existed — modelled on what a mature e-commerce back office needs, shipped in focused pieces, and tuned for how stores here actually operate.",
     },
   },
   pricing: {
@@ -414,6 +461,7 @@ const bn = {
   nav: {
     features: "ফিচার",
     pricing: "প্রাইসিং",
+    about: "পরিচিতি",
     signIn: "সাইন ইন",
     startTrial: "ফ্রি ট্রায়াল শুরু করুন",
   },
@@ -423,6 +471,8 @@ const bn = {
     colCompany: "কোম্পানি",
     linkFeatures: "ফিচার",
     linkPricing: "প্রাইসিং",
+    linkAbout: "পরিচিতি",
+    linkFaq: "সাধারণ প্রশ্ন",
     linkSignIn: "সাইন ইন",
     linkStartTrial: "ফ্রি ট্রায়াল",
     madeIn: "বাংলাদেশের জন্য তৈরি",
@@ -548,11 +598,55 @@ const bn = {
       a7: "হ্যাঁ, যেকোনো সময় — প্রতিটা প্ল্যান সেল্‌ফ-সার্ভ।",
       q8: "আমার বিক্রির উপর কি কমিশন নেন?",
       a8: "না। শুধু মাসিক প্ল্যানের দাম দেন; কাস্টমারের পেমেন্ট সরাসরি আপনার কাছে যায়।",
+      q9: "আমি কি ডিজিটাল পণ্য বিক্রি করতে পারব?",
+      a9: "হ্যাঁ — পণ্যে PDF যুক্ত করলে সেগুলো পেমেন্ট-গেটেড নিরাপদ ডাউনলোড লিংকে বিক্রি হয়, শিপিং লাগে না।",
+      q10: "কুরিয়ারের নিজস্ব অ্যাকাউন্ট কি লাগবে?",
+      a10: "হ্যাঁ। আপনি নিজের REDX, Pathao বা Steadfast ক্রেডেনশিয়াল যুক্ত করেন; {brand} সেগুলো দিয়েই বুক ও ট্র্যাক করে।",
+      q11: "টিমের আলাদা লগইন কি হতে পারে?",
+      a11: "হ্যাঁ। স্টাফদের নিজস্ব অ্যাকাউন্টে আমন্ত্রণ জানান আর রোল দিয়ে ক্ষেত্র অনুযায়ী অ্যাক্সেস দিন।",
+      q12: "কোনো API আছে?",
+      a12: "হ্যাঁ — পণ্য ও অর্ডারের জন্য স্কোপড, রেট-লিমিটেড REST API, সাথে OAuth অ্যাপ ইনস্টল।",
     },
     closing: {
       title: "এই সপ্তাহেই অনলাইনে বিক্রি শুরু করুন",
       subtitle: "Free প্ল্যান আছে। পেইড প্ল্যানে {days} দিনের ট্রায়াল, ক্রেডিট কার্ড লাগে না।",
       cta: "ফ্রি ট্রায়াল শুরু করুন",
+    },
+  },
+  faqPage: {
+    kicker: "সহায়তা",
+    title: "সাধারণ জিজ্ঞাসা",
+    subtitle: "শুরুর আগে একজন মার্চেন্ট সাধারণত যা জানতে চান।",
+  },
+  about: {
+    hero: {
+      kicker: "পরিচিতি",
+      title: "বাংলাদেশি মার্চেন্টদের জন্য, শুরু থেকে শেষ পর্যন্ত",
+      body: "এখানে অনলাইনে বিক্রি মানে ক্যাশ অন ডেলিভারি, তিনটি কুরিয়ার নেটওয়ার্ক, বিকাশ ও নগদ, আর বাংলা প্রত্যাশা করা কাস্টমার। {brand} একটাই প্ল্যাটফর্ম যা এর সবটা সামলায় — স্টোরফ্রন্ট, অর্ডার, পেমেন্ট, ডেলিভারি আর ইনভয়েস — যাতে একজন মার্চেন্ট পুরো দোকান একটাই ড্যাশবোর্ড থেকে চালাতে পারেন।",
+    },
+    valuesTitle: "আমরা যা ঘিরে তৈরি করি",
+    values: {
+      v1: {
+        title: "এক সত্যের উৎস",
+        body: "সাইটের প্রতিটা দাম, লিমিট আর সংখ্যা এক জায়গা থেকে পড়া হয়, তাই কিছুই বেঠিক হয়ে যায় না।",
+      },
+      v2: {
+        title: "ডিফল্টেই স্থানীয়",
+        body: "COD, বিকাশ/নগদ, REDX/Pathao/Steadfast আর বাংলা-প্রথম UI বিল্ট-ইন, আলাদা অ্যাড-অন নয়।",
+      },
+      v3: {
+        title: "সৎ সংখ্যা",
+        body: "মার্চেন্ট যে সংখ্যা দেখেন তা সত্যি, নয়তো দেখানো হয় না — কোনো কল্পনার প্লেসহোল্ডার নেই।",
+      },
+      v4: {
+        title: "দোকান আপনার",
+        body: "আপনার ডোমেইন, আপনার কাস্টমার পেমেন্ট, বিক্রির কমিশন নেই — শুধু প্ল্যাটফর্ম ফি-ই একমাত্র খরচ।",
+      },
+    },
+    storyTitle: "গল্পটা",
+    story: {
+      p1: "{company}-এর শুরু একটা সরল পর্যবেক্ষণ থেকে: বাংলাদেশের বেশির ভাগ ছোট মার্চেন্ট তাঁদের দোকান চালান DM, স্প্রেডশিট আর স্ক্রিনশটের মধ্য দিয়ে — এমন টুল দিয়ে যা কখনো এই বাজারের জন্য বানানো হয়নি, ফলে অর্ডার আর সময় দুটোই নষ্ট হয়।",
+      p2: "তাই আমরা সেই প্ল্যাটফর্মটাই বানাচ্ছি যেটা থাকা উচিত ছিল — একটা পরিণত ই-কমার্স ব্যাক অফিসের যা দরকার তার আদলে, ছোট ছোট ধাপে, আর এখানকার দোকান আসলে যেভাবে চলে সেভাবে।",
     },
   },
   pricing: {

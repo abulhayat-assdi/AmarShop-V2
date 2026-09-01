@@ -21,6 +21,7 @@ export const BRAND_NAME = "AmarShop";
 export const MARKETING_NAV = [
   { key: "features", href: "/features" },
   { key: "pricing", href: "/pricing" },
+  { key: "about", href: "/about" },
 ] as const;
 
 // The plan the pricing grid highlights / pre-selects (SITE_STRUCTURE.md
