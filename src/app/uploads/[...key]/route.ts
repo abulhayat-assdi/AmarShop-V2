@@ -1,12 +1,17 @@
 import { getStorageAdapter } from "@/lib/storage";
 
-// Serves uploaded bytes (product images + videos) from the storage adapter.
-// LocalStorageAdapter.url() points here; nothing else serves /uploads.
+// Serves uploaded bytes (product images + videos, store/OAuth logos, and
+// Media Library files) from the storage adapter. LocalStorageAdapter.url()
+// points here; nothing else serves /uploads.
 //
-// Public and unscoped on purpose — product media is public catalog content
-// shown on the open storefront. Content type comes from the key's own
-// (adapter-controlled) extension, so this route needs no tenant context.
-// proxy.ts skips /uploads in its matcher.
+// Public and unscoped on purpose — everything served here is content the
+// merchant intends to show on the open storefront (product media, a logo,
+// a Media Library image/PDF linked from a page or blog post). Content type
+// comes from the key's own (adapter-controlled) extension, so this route
+// needs no tenant context. Digital-product PDFs are the exception: those
+// are gated behind /order/[tranId]/download/[fileId] and never get a
+// storage-adapter URL, so they never reach here. proxy.ts skips /uploads
+// in its matcher.
 //
 // Range requests are honoured so <video> can seek. The adapter only offers
 // a whole-buffer get(); slicing a <=50 MB buffer in memory is fine at this
@@ -19,6 +24,7 @@ const CONTENT_TYPE_BY_EXT: Record<string, string> = {
   webp: "image/webp",
   mp4: "video/mp4",
   webm: "video/webm",
+  pdf: "application/pdf",
 };
 
 const IMMUTABLE = "public, max-age=31536000, immutable";

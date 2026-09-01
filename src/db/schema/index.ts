@@ -39,3 +39,5 @@ export * from "./nav-menus";
 export * from "./nav-menu-items";
 export * from "./checkout-custom-fields";
 export * from "./order-custom-field-answers";
+export * from "./media-folders";
+export * from "./media-assets";

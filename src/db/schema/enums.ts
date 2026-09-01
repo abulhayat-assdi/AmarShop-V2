@@ -164,3 +164,9 @@ export const navMenuItemKindEnum = pgEnum("nav_menu_item_kind", ["custom_link", 
 // Dropdown/checkbox are deliberately not included yet — see CLAUDE.md's
 // "Deliberately not built" note for this batch.
 export const checkoutFieldTypeEnum = pgEnum("checkout_field_type", ["text", "textarea"]);
+
+// A media_assets row (src/db/schema/media-assets.ts) — the store's own
+// Media Library. Distinct from mediaKindEnum (product photos/videos):
+// the library accepts images and PDF documents, never video. Images are
+// re-encoded to WebP on upload; documents are stored as-is.
+export const mediaAssetKindEnum = pgEnum("media_asset_kind", ["image", "document"]);

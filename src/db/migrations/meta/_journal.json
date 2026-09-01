@@ -302,6 +302,13 @@
       "when": 1788270380369,
       "tag": "0042_add_nav_menus_one_active_index",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1788274917225,
+      "tag": "0043_add_media_library",
+      "breakpoints": true
     }
   ]
 }

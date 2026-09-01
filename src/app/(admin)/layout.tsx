@@ -21,6 +21,7 @@ const NAV: AdminNavItem[] = [
   { href: "/categories", labelKey: "admin.nav.categories" },
   { href: "/coupons", labelKey: "admin.nav.coupons" },
   { href: "/content", labelKey: "admin.nav.content" },
+  { href: "/media", labelKey: "admin.nav.media" },
   { href: "/staff", labelKey: "admin.nav.staff" },
   { href: "/roles", labelKey: "admin.nav.roles" },
   { href: "/delivery-zones", labelKey: "admin.nav.deliveryZones" },
