@@ -10,6 +10,7 @@ import {
   payments,
   invoices,
   productVariants,
+  orderCustomFieldAnswers,
   type Order,
 } from "@/db/schema";
 import { allocateInvoiceNumber } from "@/lib/invoices/number";
@@ -60,6 +61,11 @@ export type CreateOrderParams = {
   senderMsisdn?: string | null;
   customerReference?: string | null;
   tranId: string;
+  // Admin -> Checkout Settings. Already-validated (required fields
+  // checked) by the caller (src/app/(storefront)/checkout/actions.ts) —
+  // this just persists the snapshot. Omitted/empty for manual/API-created
+  // orders, which don't prompt for them.
+  customFieldAnswers?: { fieldId: string; label: string; value: string }[];
 };
 
 // The single atomic order-creation transaction, shared by storefront
@@ -142,6 +148,16 @@ export async function createOrderRecords(
         productName: line.productName,
       });
     }
+  }
+
+  for (const answer of params.customFieldAnswers ?? []) {
+    await tx.insert(orderCustomFieldAnswers).values({
+      storeId: params.storeId,
+      orderId: order.id,
+      fieldId: answer.fieldId,
+      label: answer.label,
+      value: answer.value,
+    });
   }
 
   // Coupon redemption — the same guarded-UPDATE trick as the stock

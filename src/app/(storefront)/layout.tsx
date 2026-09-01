@@ -9,6 +9,7 @@ import { StorefrontMaintenance } from "@/components/storefront-maintenance";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
 import { getStorefrontChrome } from "@/lib/cms/queries";
+import { getActiveMenuLinks } from "@/lib/menus/query";
 
 // /category/* and /product/* only ever make sense on a resolved store host
 // — proxy.ts already 404s an unresolved subdomain, but someone hitting
@@ -34,6 +35,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
   );
   const cartItemCount = await getCartItemCount(store.id);
   const { hasPosts, footerPages } = await getStorefrontChrome(store.id);
+  const menuLinks = await getActiveMenuLinks(store.id);
 
   return (
     <I18nProvider locale={locale} messages={messages}>
@@ -42,6 +44,7 @@ export default async function StorefrontLayout({ children }: { children: React.R
         categories={categoryRows}
         cartItemCount={cartItemCount}
         hasBlog={hasPosts}
+        menuLinks={menuLinks}
       />
       <main className="mx-auto max-w-5xl p-4">{children}</main>
       <StorefrontFooter store={store} footerPages={footerPages} />

@@ -18,6 +18,7 @@ import { sendOrderSms } from "@/lib/sms/notifications";
 import { emitWebhook } from "@/lib/webhooks/dispatch";
 import { markLeadConverted } from "@/lib/checkout-leads";
 import { runFraudCheck } from "@/lib/fraud/check";
+import { listActiveCheckoutFields } from "@/lib/checkout-fields/query";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
 
 export type PlaceOrderField = "name" | "phone" | "address" | "deliveryZoneId" | "couponCode";
@@ -147,6 +148,19 @@ export async function placeOrder(
   if (!customerAddress) return { error: msg("checkout.errAddress"), field: "address" };
   // The delivery zone is required only for orders with a physical item —
   // checked inside the read tx below, once the cart's contents are known.
+
+  // Admin -> Checkout Settings. Re-fetch the active field list server-side
+  // (never trust which fields the client's form claims exist) — this is
+  // also where each answer's `label` gets its snapshot value, so a later
+  // relabel/deletion of the field definition never changes what an
+  // existing order shows (src/db/schema/order-custom-field-answers.ts).
+  const activeFields = await listActiveCheckoutFields(store.id);
+  const customFieldAnswers: { fieldId: string; label: string; value: string }[] = [];
+  for (const f of activeFields) {
+    const value = String(formData.get(`customField_${f.id}`) ?? "").trim();
+    if (f.required && !value) return { error: msg("checkout.errCustomField", { label: f.label }) };
+    if (value) customFieldAnswers.push({ fieldId: f.id, label: f.label, value });
+  }
 
   // Manual bKash / Nagad: validate the customer-reported details before the
   // order is written. getManualWalletConfig is re-checked here — the form
@@ -349,6 +363,7 @@ export async function placeOrder(
         senderMsisdn,
         customerReference,
         tranId,
+        customFieldAnswers,
       })
     );
 

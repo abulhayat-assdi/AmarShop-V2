@@ -86,6 +86,31 @@ export const stores = pgTable(
     // delete at /platform/stores/[id]. Irreversible data loss stays a
     // platform-admin action, never a single in-product click.
     deletionRequestedAt: timestamp("deletion_requested_at", { withTimezone: true }),
+    // Admin -> Appearance (src/lib/appearance/logo.ts). Public URL, same
+    // "URL persisted, not the storage key" convention as oauth_apps.logo_url
+    // — logos are single-field-per-row, unlike product_media's collection.
+    logoUrl: text("logo_url"),
+    // A single brand accent color, hex (#RRGGBB). No secondary/typography
+    // yet — see CLAUDE.md's "Deliberately not built" note on why a font
+    // picker is deferred (Bengali-glyph risk).
+    primaryColor: text("primary_color"),
+    // Admin -> Appearance -> Footer. A short tagline shown under the store
+    // name, plus optional social links — the "Headers/Footers" backlog
+    // item folded into two plain fields rather than an invented
+    // drag-and-drop widget builder (no precedent anywhere in this repo).
+    footerTagline: text("footer_tagline"),
+    socialWhatsapp: text("social_whatsapp"),
+    socialFacebook: text("social_facebook"),
+    socialInstagram: text("social_instagram"),
+    // Admin -> Default Pages. Show/hide + reorder the homepage's two
+    // existing sections (src/app/page.tsx) — not a block/content editor,
+    // just toggling and typed-order-numbering what's already there. See
+    // CLAUDE.md's "Deliberately not built" note on why a real section
+    // builder is out of scope this round.
+    homeShowCategories: boolean("home_show_categories").notNull().default(true),
+    homeCategoriesOrder: integer("home_categories_order").notNull().default(1),
+    homeShowNewArrivals: boolean("home_show_new_arrivals").notNull().default(true),
+    homeNewArrivalsOrder: integer("home_new_arrivals_order").notNull().default(2),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

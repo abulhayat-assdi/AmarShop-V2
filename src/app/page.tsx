@@ -9,6 +9,7 @@ import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/st
 import { StorefrontMaintenance } from "@/components/storefront-maintenance";
 import { getPrimaryImageUrls } from "@/lib/products/media";
 import { getStorefrontChrome } from "@/lib/cms/queries";
+import { getActiveMenuLinks } from "@/lib/menus/query";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
 import { signOutAction } from "./actions";
@@ -52,48 +53,70 @@ export default async function Home() {
     );
     const cartItemCount = await getCartItemCount(store.id);
     const { hasPosts, footerPages } = await getStorefrontChrome(store.id);
+    const menuLinks = await getActiveMenuLinks(store.id);
     const { locale, messages, t } = await getTranslator(store.locale);
 
     return (
       <I18nProvider locale={locale} messages={messages}>
         <StorefrontHeader
           store={store}
+          menuLinks={menuLinks}
           categories={categoryRows}
           cartItemCount={cartItemCount}
           hasBlog={hasPosts}
         />
         <main className="mx-auto flex max-w-5xl flex-col gap-8 p-4">
-          {categoryRows.length > 0 && (
-            <section className="flex flex-col gap-4">
-              <h2 className="text-lg font-semibold">{t("home.categories")}</h2>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {categoryRows.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/category/${category.slug}`}
-                    className="rounded border p-4 text-center hover:border-gray-400"
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-          <section className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">{t("home.newArrivals")}</h2>
-            {productRows.length === 0 ? (
-              <p className="text-gray-500">{t("home.noProducts")}</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                {productRows.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{ ...product, imageUrl: imageUrls[product.id] ?? null }}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          {/* Admin -> Default Pages: show/hide + reorder these two
+              sections. Not a block editor — just the two sections this
+              page has always had. */}
+          {[
+            {
+              key: "categories",
+              order: store.homeCategoriesOrder,
+              show: store.homeShowCategories && categoryRows.length > 0,
+              node: (
+                <section key="categories" className="flex flex-col gap-4">
+                  <h2 className="text-lg font-semibold">{t("home.categories")}</h2>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    {categoryRows.map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/category/${category.slug}`}
+                        className="rounded border p-4 text-center hover:border-gray-400"
+                      >
+                        {category.name}
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              ),
+            },
+            {
+              key: "newArrivals",
+              order: store.homeNewArrivalsOrder,
+              show: store.homeShowNewArrivals,
+              node: (
+                <section key="newArrivals" className="flex flex-col gap-4">
+                  <h2 className="text-lg font-semibold">{t("home.newArrivals")}</h2>
+                  {productRows.length === 0 ? (
+                    <p className="text-gray-500">{t("home.noProducts")}</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                      {productRows.map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={{ ...product, imageUrl: imageUrls[product.id] ?? null }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </section>
+              ),
+            },
+          ]
+            .filter((s) => s.show)
+            .sort((a, b) => a.order - b.order)
+            .map((s) => s.node)}
         </main>
         <StorefrontFooter store={store} footerPages={footerPages} />
       </I18nProvider>

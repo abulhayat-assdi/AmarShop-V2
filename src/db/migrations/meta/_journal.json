@@ -267,6 +267,41 @@
       "when": 1788210407478,
       "tag": "0037_add_custom_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1788228016683,
+      "tag": "0038_add_appearance",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1788228231881,
+      "tag": "0039_add_nav_menus",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1788269630324,
+      "tag": "0040_add_checkout_custom_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788270004044,
+      "tag": "0041_add_default_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788270380369,
+      "tag": "0042_add_nav_menus_one_active_index",
+      "breakpoints": true
     }
   ]
 }

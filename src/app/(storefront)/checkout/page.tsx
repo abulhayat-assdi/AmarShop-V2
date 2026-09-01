@@ -6,6 +6,7 @@ import { withStoreContext } from "@/db/context";
 import { cartItems, productVariants, products, deliveryZones } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
 import { getManualWalletConfig } from "@/lib/payments/settings";
+import { listActiveCheckoutFields } from "@/lib/checkout-fields/query";
 import { CheckoutForm } from "./CheckoutForm";
 
 export default async function CheckoutPage() {
@@ -49,6 +50,7 @@ export default async function CheckoutPage() {
     0
   );
   const manualWallet = await getManualWalletConfig(store.id);
+  const customFields = await listActiveCheckoutFields(store.id);
   const { t } = await getTranslator(store.locale);
 
   return (
@@ -72,6 +74,7 @@ export default async function CheckoutPage() {
         zones={zones}
         manualWallet={manualWallet}
         digitalOnly={digitalOnly}
+        customFields={customFields}
       />
     </div>
   );

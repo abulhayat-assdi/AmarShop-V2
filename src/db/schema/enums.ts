@@ -153,3 +153,14 @@ export const webhookDeliveryStatusEnum = pgEnum("webhook_delivery_status", ["suc
 // color/ordering. See src/lib/notices/categories.ts for which `category`
 // gets which severity.
 export const noticeSeverityEnum = pgEnum("notice_severity", ["info", "warning", "critical"]);
+
+// A nav_menu_items row (src/db/schema/nav-menu-items.ts) — what the item
+// links to. "custom_link" uses its own `url`; "page"/"category" resolve
+// their href from the referenced row's slug at read time (so a renamed
+// page/category slug never leaves a dangling link).
+export const navMenuItemKindEnum = pgEnum("nav_menu_item_kind", ["custom_link", "page", "category"]);
+
+// A checkout_custom_fields row's input type (src/db/schema/checkout-custom-fields.ts).
+// Dropdown/checkbox are deliberately not included yet — see CLAUDE.md's
+// "Deliberately not built" note for this batch.
+export const checkoutFieldTypeEnum = pgEnum("checkout_field_type", ["text", "textarea"]);

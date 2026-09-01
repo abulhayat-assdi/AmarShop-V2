@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "nav_menus_one_active_per_store_idx" ON "nav_menus" USING btree ("store_id") WHERE "nav_menus"."is_active" = true;

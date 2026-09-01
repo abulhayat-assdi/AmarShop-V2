@@ -4,6 +4,7 @@ import { ProductMedia } from "@/components/product-media";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { getTranslator } from "@/lib/i18n/server";
+import type { ResolvedMenuLink } from "@/lib/menus/query";
 
 // Shared by both src/app/(storefront)/layout.tsx and the storefront branch
 // of src/app/page.tsx (the root path is reached from both a resolved store
@@ -16,11 +17,17 @@ export async function StorefrontHeader({
   categories,
   cartItemCount,
   hasBlog,
+  menuLinks,
 }: {
   store: Store;
   categories: Category[];
   cartItemCount: number;
   hasBlog: boolean;
+  // Admin -> Menu Builder. Empty/omitted = fall back to the plain category
+  // list below, so a store that's never touched Menu Builder keeps working
+  // exactly as before (src/lib/menus/query.ts's getActiveMenuLinks()
+  // already returns [] in that case).
+  menuLinks?: ResolvedMenuLink[];
 }) {
   const { locale, t } = await getTranslator(store.locale);
   return (
@@ -28,17 +35,37 @@ export async function StorefrontHeader({
       <StorefrontAnalytics
         analytics={{ metaPixelId: store.metaPixelId, ga4MeasurementId: store.ga4MeasurementId }}
       />
-    <header className="border-b">
+    <header className="border-b" style={store.primaryColor ? { borderBottomColor: store.primaryColor } : undefined}>
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 p-4">
-        <Link href="/" className="text-lg font-semibold">
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-lg font-semibold"
+          style={store.primaryColor ? { color: store.primaryColor } : undefined}
+        >
+          {store.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- storefront-served upload (Admin -> Appearance), not a Next-optimizable static asset
+            <img src={store.logoUrl} alt="" className="h-8 w-8 rounded object-contain" />
+          )}
           {store.name}
         </Link>
         <nav className="flex flex-wrap items-center gap-4 text-sm">
-          {categories.map((category) => (
-            <Link key={category.id} href={`/category/${category.slug}`} className="hover:underline">
-              {category.name}
-            </Link>
-          ))}
+          {menuLinks && menuLinks.length > 0
+            ? menuLinks.map((link) => (
+                <Link
+                  key={link.id}
+                  href={link.href}
+                  target={link.openInNewTab ? "_blank" : undefined}
+                  rel={link.openInNewTab ? "noopener noreferrer" : undefined}
+                  className="hover:underline"
+                >
+                  {link.label}
+                </Link>
+              ))
+            : categories.map((category) => (
+                <Link key={category.id} href={`/category/${category.slug}`} className="hover:underline">
+                  {category.name}
+                </Link>
+              ))}
           {hasBlog && (
             <Link href="/blog" className="hover:underline">
               {t("nav.blog")}
@@ -68,15 +95,31 @@ export function StorefrontFooter({
   store: Store;
   footerPages: { slug: string; title: string }[];
 }) {
+  const socialLinks = [
+    { href: store.socialWhatsapp, label: "WhatsApp" },
+    { href: store.socialFacebook, label: "Facebook" },
+    { href: store.socialInstagram, label: "Instagram" },
+  ].filter((s): s is { href: string; label: string } => !!s.href);
+
   return (
     <footer className="mt-12 border-t">
       <div className="mx-auto flex max-w-5xl flex-col gap-2 p-4 text-sm text-gray-500">
+        {store.footerTagline && <p>{store.footerTagline}</p>}
         {footerPages.length > 0 && (
           <nav className="flex flex-wrap gap-4">
             {footerPages.map((page) => (
               <Link key={page.slug} href={`/pages/${page.slug}`} className="hover:underline">
                 {page.title}
               </Link>
+            ))}
+          </nav>
+        )}
+        {socialLinks.length > 0 && (
+          <nav className="flex flex-wrap gap-4">
+            {socialLinks.map((s) => (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                {s.label}
+              </a>
             ))}
           </nav>
         )}

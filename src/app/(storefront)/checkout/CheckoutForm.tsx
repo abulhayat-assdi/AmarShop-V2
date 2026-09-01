@@ -13,7 +13,7 @@ import {
 import { saveCheckoutLeadAction } from "./lead-actions";
 import { CouponField, type AppliedCoupon } from "./CouponField";
 import type { ManualWalletConfig } from "@/lib/payments/settings";
-import type { DeliveryZone } from "@/db/schema";
+import type { DeliveryZone, CheckoutCustomField } from "@/db/schema";
 
 const initialState: PlaceOrderState = {};
 const initialCouponState: ApplyCouponState = {};
@@ -25,11 +25,18 @@ export function CheckoutForm({
   zones,
   manualWallet,
   digitalOnly,
+  customFields,
 }: {
   subtotal: number;
   zones: DeliveryZone[];
   manualWallet: ManualWalletConfig | null;
   digitalOnly: boolean;
+  // Admin -> Checkout Settings. Rendered after the built-in "Order Notes"
+  // field, in displayOrder. Field name is `customField_<id>` — placeOrder
+  // reads every key matching that prefix generically (src/(storefront)/
+  // checkout/actions.ts), so this component doesn't need updating when a
+  // merchant adds/removes fields.
+  customFields: CheckoutCustomField[];
 }) {
   const [state, formAction, isPending] = useActionState(
     placeOrder,
@@ -313,6 +320,31 @@ export function CheckoutForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
+
+        {customFields.map((f) =>
+          f.fieldType === "textarea" ? (
+            <label key={f.id} className="flex flex-col gap-1">
+              {f.label}
+              {f.required && " *"}
+              <textarea
+                name={`customField_${f.id}`}
+                required={f.required}
+                rows={2}
+                className="rounded border border-gray-300 px-3 py-2"
+              />
+            </label>
+          ) : (
+            <label key={f.id} className="flex flex-col gap-1">
+              {f.label}
+              {f.required && " *"}
+              <input
+                name={`customField_${f.id}`}
+                required={f.required}
+                className="rounded border border-gray-300 px-3 py-2"
+              />
+            </label>
+          )
+        )}
 
         <div className="flex flex-col gap-1 rounded border p-4 text-sm">
           <div className="flex justify-between">

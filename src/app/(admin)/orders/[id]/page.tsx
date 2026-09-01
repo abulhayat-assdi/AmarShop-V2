@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { requireStaffSession } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
-import { orders, orderItems, orderStatusEvents, payments, deliveryZones } from "@/db/schema";
+import { orders, orderItems, orderStatusEvents, payments, deliveryZones, orderCustomFieldAnswers } from "@/db/schema";
 import { getShipmentForOrder } from "@/lib/courier/shipments";
 import { getCourierSettingsView } from "@/lib/courier/settings";
 import { getOrderDigitalFiles, orderHasPhysicalLine } from "@/lib/products/digital";
@@ -74,12 +74,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           .limit(1)
       : [];
 
-    return { order, items, payment, events, zone };
+    const customFieldAnswers = await tx
+      .select()
+      .from(orderCustomFieldAnswers)
+      .where(and(eq(orderCustomFieldAnswers.storeId, session.user.storeId), eq(orderCustomFieldAnswers.orderId, id)));
+
+    return { order, items, payment, events, zone, customFieldAnswers };
   });
 
   if (!result) notFound();
   if ("locked" in result) redirect("/orders/locked");
-  const { order, items, payment, events, zone } = result;
+  const { order, items, payment, events, zone, customFieldAnswers } = result;
   const upcoming = nextStatus(order.status);
 
   const [shipment, courierView, digitalFiles, hasPhysical] = await Promise.all([
@@ -110,6 +115,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <p>৳{order.deliveryCharge}</p>
           {order.notes && (
             <p className="mt-2 text-gray-600">{t("admin.orders.note", { note: order.notes })}</p>
+          )}
+          {customFieldAnswers.length > 0 && (
+            <dl className="mt-2 flex flex-col gap-1 text-sm">
+              {customFieldAnswers.map((a) => (
+                <div key={a.id}>
+                  <dt className="text-xs text-gray-500">{a.label}</dt>
+                  <dd className="text-gray-700">{a.value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
         </div>
       </div>

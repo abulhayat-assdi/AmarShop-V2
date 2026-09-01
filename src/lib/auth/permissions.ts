@@ -88,4 +88,8 @@ export const NAV_PERMISSION: Partial<Record<string, Permission>> = {
   "/billing": "billing:manage",
   "/support": "support:manage",
   "/guest-checkout": "guest_checkout:manage",
+  "/appearance": "settings:manage",
+  "/menu-builder": "settings:manage",
+  "/checkout-settings": "settings:manage",
+  "/default-pages": "settings:manage",
 };
