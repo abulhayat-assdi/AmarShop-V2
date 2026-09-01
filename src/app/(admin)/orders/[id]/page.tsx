@@ -17,23 +17,9 @@ import {
   WALLET_PROVIDER_KEYS,
 } from "@/lib/enum-labels";
 import { RiskBadge } from "@/components/risk-badge";
+// Verdict-line parser shared with the /fraud-checker history list.
+import { parseFraudVerdict as fraudVerdict } from "@/lib/fraud";
 import { ShipmentPanel } from "./ShipmentPanel";
-
-// Pull the short verdict line out of the stored fraud-check blob
-// (orders.fraudRaw = { provider, verdict, response }). Defensive — may be
-// the stub or, on a provider failure, { error: "unavailable" }.
-function fraudVerdict(raw: string | null): string | null {
-  if (!raw) return null;
-  try {
-    const obj = JSON.parse(raw) as { verdict?: unknown; error?: unknown };
-    if (obj.error) return null;
-    return typeof obj.verdict === "string" && obj.verdict.trim()
-      ? obj.verdict.trim().slice(0, 300)
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

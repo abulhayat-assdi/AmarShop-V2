@@ -23,3 +23,20 @@ export type FraudCheckResult = {
   // stored for the admin detail panel. Opaque — never trusted for logic.
   raw: unknown;
 };
+
+// Pull the short verdict line out of the stored blob
+// (orders.fraudRaw = { provider, verdict, response }). Defensive — may be
+// the stub or, on a provider failure, { error: "unavailable" }. Shared by
+// the order-detail fraud panel and the /fraud-checker history list.
+export function parseFraudVerdict(raw: string | null): string | null {
+  if (!raw) return null;
+  try {
+    const obj = JSON.parse(raw) as { verdict?: unknown; error?: unknown };
+    if (obj.error) return null;
+    return typeof obj.verdict === "string" && obj.verdict.trim()
+      ? obj.verdict.trim().slice(0, 300)
+      : null;
+  } catch {
+    return null;
+  }
+}

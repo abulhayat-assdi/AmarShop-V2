@@ -17,6 +17,7 @@ const NAV: AdminNavItem[] = [
   { href: "/dashboard", labelKey: "admin.nav.dashboard" },
   { href: "/orders", labelKey: "admin.nav.orders" },
   { href: "/abandoned-checkouts", labelKey: "admin.nav.abandonedCheckouts" },
+  { href: "/fraud-checker", labelKey: "admin.nav.fraudChecker" },
   { href: "/products", labelKey: "admin.nav.products" },
   { href: "/categories", labelKey: "admin.nav.categories" },
   { href: "/coupons", labelKey: "admin.nav.coupons" },
