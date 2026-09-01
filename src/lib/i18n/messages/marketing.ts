@@ -1,0 +1,750 @@
+// Copy for the public marketing site (SITE_STRUCTURE.md Part A). Kept in
+// its OWN module — deliberately NOT merged into en.ts / bn.ts — so the
+// marketing build can't collide with storefront/admin i18n work. The
+// marketing translator (src/lib/i18n/marketing-server.ts) merges this in
+// under a `marketing.*` namespace before rendering, so pages call
+// t("marketing.home.hero.title") exactly like any other key.
+//
+// en is the source of truth for the shape; bn is checked against it with
+// `satisfies`. {placeholders} are filled by the translator.
+
+// No `as const`: typeof en must widen to string-valued so `bn satisfies
+// MarketingCopy` below checks shape parity (same keys, no extras) without
+// also demanding bn's Bengali strings equal en's English literals.
+const en = {
+  nav: {
+    features: "Features",
+    pricing: "Pricing",
+    signIn: "Sign in",
+    startTrial: "Start Free Trial",
+  },
+  footer: {
+    tagline: "Everything a Bangladeshi merchant needs to sell online.",
+    colProduct: "Product",
+    colCompany: "Company",
+    linkFeatures: "Features",
+    linkPricing: "Pricing",
+    linkSignIn: "Sign in",
+    linkStartTrial: "Start free trial",
+    madeIn: "Built for Bangladesh",
+    copyright: "© {year} {brand}",
+  },
+  home: {
+    hero: {
+      kicker: "E-commerce platform for Bangladesh",
+      title: "Run your whole shop from one dashboard",
+      subtitle:
+        "Storefront, orders, payments, courier booking and invoices — in Bengali and English, with cash on delivery built in.",
+      ctaPrimary: "Start Free Trial",
+      ctaSecondary: "See pricing",
+      trust1: "No credit card to start",
+      trust2: "Bengali & English",
+      trust3: "COD + online payment",
+      trust4: "REDX · Pathao · Steadfast",
+      mockLabel: "Admin dashboard",
+    },
+    problem: {
+      title: "From scattered DMs to one clean workflow",
+      socialTitle: "Selling on Facebook & Instagram",
+      social1: "Orders lost in DMs and comment threads",
+      social2: "Manual courier booking for every parcel",
+      social3: "No stock count, no invoice, no history",
+      social4: "Payment screenshots instead of a record",
+      withTitle: "Selling with {brand}",
+      with1: "Every order in one list with a clear status",
+      with2: "Book REDX, Pathao or Steadfast in a click",
+      with3: "Stock, invoices and history kept automatically",
+      with4: "COD, cards and bKash/Nagad recorded per order",
+    },
+    showcase: {
+      title: "Built for the way stores here actually run",
+      subtitle: "Pick a topic — every piece is in the product today.",
+      writer: {
+        title: "AI that writes your catalogue",
+        desc: "Turn a few keywords into a product description and SEO metadata, in Bengali or English.",
+        b1: "Product-description writer",
+        b2: "SEO title + meta auto-fill",
+        b3: "Runs offline until you add a key",
+      },
+      storefront: {
+        title: "A storefront you don't have to build",
+        desc: "A fast, mobile-first shop with a clean starter theme — categories, search, cart and checkout ready to go.",
+        b1: "Your subdomain or custom domain",
+        b2: "Bengali & English, remembered",
+        b3: "Appearance, menu and homepage controls",
+      },
+      orders: {
+        title: "Every order, one pipeline",
+        desc: "Placed to delivered with one-click steps, plus manual entry for phone and social-media orders.",
+        b1: "One-click status steps",
+        b2: "Manual order entry",
+        b3: "Guest tracking by phone",
+      },
+      payments: {
+        title: "The payments Bangladesh actually uses",
+        desc: "COD out of the box, SSLCommerz for cards and mobile banking, and manual bKash/Nagad with TrxID confirmation.",
+        b1: "COD enabled by default",
+        b2: "SSLCommerz IPN + validation",
+        b3: "Manual wallet confirm flow",
+      },
+      courier: {
+        title: "Three couriers, one interface",
+        desc: "Book REDX, Pathao or Steadfast and pull tracking without leaving the admin — with your own credentials.",
+        b1: "One adapter per courier",
+        b2: "A4 shipping labels",
+        b3: "Delivery zones with their own charges",
+      },
+      invoices: {
+        title: "Invoices and tracking, automatically",
+        desc: "A branded PDF invoice is generated for every order, and customers track delivery by phone number.",
+        b1: "Auto PDF per order",
+        b2: "No customer account needed",
+        b3: "Generated in the background",
+      },
+      analytics: {
+        title: "Know what to restock",
+        desc: "Sales, orders and customers at a glance, low-stock alerts, and a 30-day velocity forecast of what runs out first.",
+        b1: "Today vs week vs month",
+        b2: "Per-store low-stock threshold",
+        b3: "Restock-soon panel",
+      },
+      digital: {
+        title: "Sell digital products too",
+        desc: "Attach PDFs to a product and sell them with secure, payment-gated download links — no stock, no shipping.",
+        b1: "Up to 10 files per product",
+        b2: "Download released on payment",
+        b3: "Physical + digital in one cart",
+      },
+    },
+    how: {
+      title: "Three steps to your first order",
+      step1Title: "Choose a plan",
+      step1Desc: "Start on Free, or pick Starter or Business. {days}-day trial, no card.",
+      step2Title: "Build your store",
+      step2Desc: "Add products, set delivery charges, connect payment and courier.",
+      step3Title: "Share your link",
+      step3Desc: "Send your shop link and start taking orders the same day.",
+      launchNote: "Most stores are live in about {minutes} minutes.",
+    },
+    dev: {
+      title: "Building on {brand}",
+      desc: "A scoped REST API, OAuth app installs and signed order webhooks are already in the platform — wire your own tools in on-site.",
+      note: "A public third-party app marketplace is still in progress.",
+    },
+    faq: {
+      title: "Questions merchants ask",
+      q1: "Do I need a credit card to start?",
+      a1: "No. Every plan has a {days}-day trial and you can stay on the Free plan for as long as you like.",
+      q2: "Can my customers pay cash on delivery?",
+      a2: "Yes — COD is on by default. You can also add SSLCommerz and manual bKash/Nagad.",
+      q3: "Which couriers are supported?",
+      a3: "REDX, Pathao and Steadfast, all behind one interface, using your own courier credentials.",
+      q4: "Can I use my own domain?",
+      a4: "Yes, with automatic HTTPS. A free {brand} subdomain works too.",
+      q5: "Is the dashboard in Bengali?",
+      a5: "Both the storefront and the admin switch between Bengali and English, and the choice sticks across pages.",
+      q6: "What happens when I hit a plan limit?",
+      a6: "Products and staff are capped when you create them; extra orders in a month are still recorded and unlock when you upgrade.",
+      q7: "Can I change plans later?",
+      a7: "Yes, any time — every plan is self-serve.",
+      q8: "Do you take a commission on my sales?",
+      a8: "No. You pay the monthly plan price only; your customers' payments go straight to you.",
+    },
+    closing: {
+      title: "Start selling online this week",
+      subtitle: "Free plan available. {days}-day trial on paid plans, no credit card.",
+      cta: "Start your free trial",
+    },
+  },
+  pricing: {
+    hero: {
+      kicker: "Pricing",
+      title: "An affordable plan for every business",
+      subtitle: "{days}-day free trial on paid plans. No credit card. No sales commission.",
+    },
+    toggle: {
+      monthly: "Monthly",
+      yearly: "Yearly",
+      yearlyHint: "2 months free",
+    },
+    free: "Free",
+    perMonth: "৳{price}/mo",
+    billedYearly: "৳{price} billed yearly",
+    billedMonthly: "billed monthly",
+    cta: "Start free trial",
+    ctaFree: "Get started",
+    recommended: "Recommended",
+    limitProducts: "{limit} products",
+    limitProductsUnlimited: "Unlimited products",
+    limitStaff: "{limit} staff account(s)",
+    limitStaffUnlimited: "Unlimited staff",
+    limitOrders: "{limit} orders / month",
+    limitOrdersUnlimited: "Unlimited orders",
+    allTitle: "Every plan includes",
+    inc1: "Hosted storefront + custom domain",
+    inc2: "COD, SSLCommerz and manual bKash/Nagad",
+    inc3: "REDX, Pathao and Steadfast booking",
+    inc4: "Auto PDF invoices + guest order tracking",
+    inc5: "Bengali & English storefront and admin",
+    inc6: "AI writer, blog, forms and the public API",
+    trialNote: "All plans come with a {days}-day free trial — no credit card required.",
+  },
+  features: {
+    hero: {
+      kicker: "Features",
+      title: "Everything in one platform",
+      subtitle: "{count} features across 8 areas — all included on every plan.",
+    },
+    categories: {
+      ai: "AI & Intelligence",
+      store: "Store & Products",
+      orders: "Orders & Inventory",
+      payments: "Payments & Checkout",
+      delivery: "Delivery & Logistics",
+      marketing: "SEO & Marketing",
+      analytics: "Analytics & Data",
+      team: "Team & Operations",
+    },
+    items: {
+      aiWriter: {
+        title: "AI product-description writer",
+        desc: "Generate descriptions in Bengali or English from a few keywords.",
+      },
+      aiSeo: {
+        title: "AI SEO writer",
+        desc: "Auto-fill page titles and meta descriptions tuned for search.",
+      },
+      fraudScore: {
+        title: "COD fraud check",
+        desc: "Every cash-on-delivery order gets a risk score before you ship.",
+      },
+      forecast: {
+        title: "Demand forecast",
+        desc: "See which products run out first from 30-day sales velocity.",
+      },
+      storefront: {
+        title: "Hosted storefront",
+        desc: "A clean, mobile-first shop on your subdomain or custom domain.",
+      },
+      catalog: {
+        title: "Product catalogue",
+        desc: "Categories, brands, photos and video, specifications, draft/active status.",
+      },
+      variants: {
+        title: "Variants & stock",
+        desc: "Size and colour options with per-variant price and quantity.",
+      },
+      digital: {
+        title: "Digital products",
+        desc: "Sell PDFs with secure, payment-gated download links — no shipping.",
+      },
+      media: {
+        title: "Media library",
+        desc: "Upload and organise images and documents once, reuse them anywhere.",
+      },
+      domains: {
+        title: "Custom domains",
+        desc: "Connect your own domain with automatic HTTPS.",
+      },
+      pipeline: {
+        title: "Order pipeline",
+        desc: "Placed to delivered with one-click status steps.",
+      },
+      manualOrder: {
+        title: "Manual orders",
+        desc: "Enter phone and social-media orders by hand with full control.",
+      },
+      invoices: {
+        title: "Auto invoices",
+        desc: "A branded PDF invoice is generated for every order.",
+      },
+      tracking: {
+        title: "Guest order tracking",
+        desc: "Customers track their order by phone number, no account needed.",
+      },
+      stock: {
+        title: "Stock control",
+        desc: "Quantities decrement on every sale; low-stock alerts in the admin.",
+      },
+      cod: {
+        title: "Cash on delivery",
+        desc: "The default for Bangladesh — enabled out of the box.",
+      },
+      sslcommerz: {
+        title: "SSLCommerz",
+        desc: "Cards, mobile banking and net banking through one gateway.",
+      },
+      manualWallet: {
+        title: "bKash / Nagad",
+        desc: "Accept manual wallet payments — customer sends money, you confirm the TrxID.",
+      },
+      coupons: {
+        title: "Discount codes",
+        desc: "Percent, fixed or free-delivery codes with usage limits.",
+      },
+      guestCheckout: {
+        title: "Guest checkout",
+        desc: "No forced sign-up; optional SMS OTP on the phone number.",
+      },
+      redx: {
+        title: "REDX",
+        desc: "Book shipments and pull tracking without leaving the admin.",
+      },
+      pathao: {
+        title: "Pathao",
+        desc: "The same courier interface, your Pathao credentials.",
+      },
+      steadfast: {
+        title: "Steadfast",
+        desc: "The same courier interface, your Steadfast credentials.",
+      },
+      deliveryZones: {
+        title: "Delivery zones",
+        desc: "Inside Dhaka, outside Dhaka or custom areas, each with its own charge.",
+      },
+      labels: {
+        title: "Shipping labels",
+        desc: "Print an A4 label for any order ready for the courier.",
+      },
+      metaPixel: {
+        title: "Meta Pixel",
+        desc: "Add your Pixel ID and fire storefront events for ads.",
+      },
+      ga4: {
+        title: "Google Analytics 4",
+        desc: "Drop in your GA4 tag across the whole storefront.",
+      },
+      blog: {
+        title: "Blog & pages",
+        desc: "Write posts and static pages in Markdown, linked from your footer.",
+      },
+      forms: {
+        title: "Form builder",
+        desc: "Build contact or lead forms with nine field types and read submissions.",
+      },
+      seoMeta: {
+        title: "SEO metadata",
+        desc: "Per-product title and meta description, editable or AI-written.",
+      },
+      dashboard: {
+        title: "Sales dashboard",
+        desc: "Sales, orders and customers at a glance — today vs week vs month.",
+      },
+      lowStock: {
+        title: "Low-stock alerts",
+        desc: "A per-store threshold flags products before they sell out.",
+      },
+      restock: {
+        title: "Restock panel",
+        desc: "The dashboard surfaces what to reorder first.",
+      },
+      leads: {
+        title: "Incomplete checkouts",
+        desc: "Captured phone numbers for checkouts that didn't finish, for follow-up.",
+      },
+      staff: {
+        title: "Staff accounts",
+        desc: "Invite your team with their own logins.",
+      },
+      roles: {
+        title: "Roles & permissions",
+        desc: "Grant access per area — enforced on the server, not just hidden in the UI.",
+      },
+      sms: {
+        title: "SMS notifications",
+        desc: "Order-placed and shipped texts through your SMS provider.",
+      },
+      publicApi: {
+        title: "Public API",
+        desc: "Read products and orders over a scoped, rate-limited REST API.",
+      },
+      apps: {
+        title: "Installable apps",
+        desc: "Connect third-party tools through OAuth with per-store scopes.",
+      },
+    },
+  },
+  signup: {
+    title: "Self-serve signup is opening soon",
+    body: "We're finishing the self-serve trial flow. If you already have an account you can sign in now.",
+    haveAccount: "Already have an account?",
+    signIn: "Sign in",
+    back: "Back to home",
+  },
+  common: {
+    learnMore: "Learn more",
+    allFeatures: "See all features",
+    viewPricing: "View pricing",
+  },
+};
+
+type MarketingCopy = typeof en;
+
+const bn = {
+  nav: {
+    features: "ফিচার",
+    pricing: "প্রাইসিং",
+    signIn: "সাইন ইন",
+    startTrial: "ফ্রি ট্রায়াল শুরু করুন",
+  },
+  footer: {
+    tagline: "অনলাইনে বিক্রির জন্য একজন বাংলাদেশি বিক্রেতার যা যা দরকার।",
+    colProduct: "প্রোডাক্ট",
+    colCompany: "কোম্পানি",
+    linkFeatures: "ফিচার",
+    linkPricing: "প্রাইসিং",
+    linkSignIn: "সাইন ইন",
+    linkStartTrial: "ফ্রি ট্রায়াল",
+    madeIn: "বাংলাদেশের জন্য তৈরি",
+    copyright: "© {year} {brand}",
+  },
+  home: {
+    hero: {
+      kicker: "বাংলাদেশের জন্য ই-কমার্স প্ল্যাটফর্ম",
+      title: "পুরো দোকান চালান একটাই ড্যাশবোর্ড থেকে",
+      subtitle:
+        "স্টোরফ্রন্ট, অর্ডার, পেমেন্ট, কুরিয়ার বুকিং আর ইনভয়েস — বাংলা ও ইংরেজিতে, ক্যাশ অন ডেলিভারি বিল্ট-ইন।",
+      ctaPrimary: "ফ্রি ট্রায়াল শুরু করুন",
+      ctaSecondary: "প্রাইসিং দেখুন",
+      trust1: "শুরু করতে ক্রেডিট কার্ড লাগে না",
+      trust2: "বাংলা ও ইংরেজি",
+      trust3: "COD + অনলাইন পেমেন্ট",
+      trust4: "REDX · Pathao · Steadfast",
+      mockLabel: "অ্যাডমিন ড্যাশবোর্ড",
+    },
+    problem: {
+      title: "এলোমেলো DM থেকে একটাই পরিষ্কার ওয়ার্কফ্লো",
+      socialTitle: "ফেসবুক ও ইনস্টাগ্রামে বিক্রি",
+      social1: "DM আর কমেন্টে অর্ডার হারিয়ে যায়",
+      social2: "প্রতিটা পার্সেলের জন্য হাতে কুরিয়ার বুকিং",
+      social3: "স্টক নেই, ইনভয়েস নেই, হিস্ট্রি নেই",
+      social4: "পেমেন্ট রেকর্ডের বদলে স্ক্রিনশট",
+      withTitle: "{brand}-এ বিক্রি",
+      with1: "প্রতিটা অর্ডার এক তালিকায়, স্পষ্ট স্ট্যাটাসে",
+      with2: "এক ক্লিকে REDX, Pathao বা Steadfast বুকিং",
+      with3: "স্টক, ইনভয়েস আর হিস্ট্রি নিজে থেকেই রাখা",
+      with4: "COD, কার্ড আর বিকাশ/নগদ অর্ডারে রেকর্ড",
+    },
+    showcase: {
+      title: "এখানকার দোকান যেভাবে চলে, সেভাবেই তৈরি",
+      subtitle: "একটা টপিক বেছে নিন — সবগুলোই এখন প্রোডাক্টে আছে।",
+      writer: {
+        title: "AI আপনার ক্যাটালগ লিখে দেয়",
+        desc: "কয়েকটা কিওয়ার্ড থেকে পণ্যের বর্ণনা আর SEO মেটাডেটা — বাংলা বা ইংরেজিতে।",
+        b1: "পণ্যের বর্ণনা লেখক",
+        b2: "SEO টাইটেল + মেটা অটো-ফিল",
+        b3: "কী না দিলে অফলাইনেই চলে",
+      },
+      storefront: {
+        title: "যে স্টোরফ্রন্ট আপনাকে বানাতে হবে না",
+        desc: "পরিষ্কার স্টার্টার থিমসহ দ্রুত, মোবাইল-ফার্স্ট দোকান — ক্যাটাগরি, সার্চ, কার্ট আর চেকআউট রেডি।",
+        b1: "আপনার সাবডোমেইন বা কাস্টম ডোমেইন",
+        b2: "বাংলা ও ইংরেজি, মনে রাখে",
+        b3: "চেহারা, মেনু আর হোমপেজ কন্ট্রোল",
+      },
+      orders: {
+        title: "প্রতিটা অর্ডার, একটাই পাইপলাইন",
+        desc: "প্লেসড থেকে ডেলিভারড পর্যন্ত এক ক্লিকে ধাপ, সাথে ফোন ও সোশ্যাল অর্ডারের ম্যানুয়াল এন্ট্রি।",
+        b1: "এক ক্লিকে স্ট্যাটাস ধাপ",
+        b2: "ম্যানুয়াল অর্ডার এন্ট্রি",
+        b3: "ফোন দিয়ে গেস্ট ট্র্যাকিং",
+      },
+      payments: {
+        title: "বাংলাদেশ যে পেমেন্ট আসলে ব্যবহার করে",
+        desc: "COD বিল্ট-ইন, কার্ড ও মোবাইল ব্যাংকিংয়ের জন্য SSLCommerz, আর TrxID যাচাইসহ ম্যানুয়াল বিকাশ/নগদ।",
+        b1: "COD ডিফল্টেই চালু",
+        b2: "SSLCommerz IPN + ভ্যালিডেশন",
+        b3: "ম্যানুয়াল ওয়ালেট কনফার্ম ফ্লো",
+      },
+      courier: {
+        title: "তিনটা কুরিয়ার, একটাই ইন্টারফেস",
+        desc: "অ্যাডমিন ছেড়ে না গিয়েই REDX, Pathao বা Steadfast বুক করুন আর ট্র্যাকিং আনুন — নিজের ক্রেডেনশিয়ালে।",
+        b1: "প্রতি কুরিয়ারে একটা অ্যাডাপ্টার",
+        b2: "A4 শিপিং লেবেল",
+        b3: "নিজস্ব চার্জসহ ডেলিভারি জোন",
+      },
+      invoices: {
+        title: "ইনভয়েস আর ট্র্যাকিং, নিজে থেকেই",
+        desc: "প্রতিটা অর্ডারে ব্র্যান্ডেড PDF ইনভয়েস তৈরি হয়, আর কাস্টমার ফোন নম্বরে ডেলিভারি ট্র্যাক করে।",
+        b1: "প্রতি অর্ডারে অটো PDF",
+        b2: "কাস্টমার অ্যাকাউন্ট লাগে না",
+        b3: "ব্যাকগ্রাউন্ডে তৈরি হয়",
+      },
+      analytics: {
+        title: "কী রিস্টক করতে হবে জানুন",
+        desc: "বিক্রি, অর্ডার আর কাস্টমার এক নজরে, লো-স্টক অ্যালার্ট, আর কোনটা আগে ফুরাবে তার ৩০ দিনের পূর্বাভাস।",
+        b1: "আজ বনাম সপ্তাহ বনাম মাস",
+        b2: "প্রতি স্টোরে লো-স্টক থ্রেশহোল্ড",
+        b3: "শীঘ্রই রিস্টক প্যানেল",
+      },
+      digital: {
+        title: "ডিজিটাল পণ্যও বিক্রি করুন",
+        desc: "পণ্যে PDF যুক্ত করে পেমেন্ট-গেটেড নিরাপদ ডাউনলোড লিংকে বিক্রি করুন — স্টক নেই, শিপিং নেই।",
+        b1: "প্রতি পণ্যে ১০টি পর্যন্ত ফাইল",
+        b2: "পেমেন্ট হলে ডাউনলোড খোলে",
+        b3: "এক কার্টে ফিজিক্যাল + ডিজিটাল",
+      },
+    },
+    how: {
+      title: "প্রথম অর্ডার পর্যন্ত তিন ধাপ",
+      step1Title: "প্ল্যান বেছে নিন",
+      step1Desc: "ফ্রি দিয়ে শুরু করুন, বা Starter/Business নিন। {days} দিনের ট্রায়াল, কার্ড লাগে না।",
+      step2Title: "দোকান সাজান",
+      step2Desc: "পণ্য যোগ করুন, ডেলিভারি চার্জ ঠিক করুন, পেমেন্ট ও কুরিয়ার যুক্ত করুন।",
+      step3Title: "লিংক শেয়ার করুন",
+      step3Desc: "দোকানের লিংক পাঠান আর সেদিন থেকেই অর্ডার নেওয়া শুরু করুন।",
+      launchNote: "বেশির ভাগ দোকান প্রায় {minutes} মিনিটেই লাইভ হয়।",
+    },
+    dev: {
+      title: "{brand}-এর উপর তৈরি করা",
+      desc: "স্কোপড REST API, OAuth অ্যাপ ইনস্টল আর স্বাক্ষরিত অর্ডার ওয়েবহুক প্ল্যাটফর্মে আগে থেকেই আছে — নিজের টুল অন-সাইটে যুক্ত করুন।",
+      note: "পাবলিক থার্ড-পার্টি অ্যাপ মার্কেটপ্লেস এখনও তৈরি হচ্ছে।",
+    },
+    faq: {
+      title: "বিক্রেতারা যা জিজ্ঞেস করেন",
+      q1: "শুরু করতে কি ক্রেডিট কার্ড লাগবে?",
+      a1: "না। প্রতিটা প্ল্যানে {days} দিনের ট্রায়াল আছে আর Free প্ল্যানে যত দিন খুশি থাকতে পারেন।",
+      q2: "আমার কাস্টমার কি ক্যাশ অন ডেলিভারিতে পেমেন্ট করতে পারবে?",
+      a2: "হ্যাঁ — COD ডিফল্টেই চালু। সাথে SSLCommerz আর ম্যানুয়াল বিকাশ/নগদও যোগ করতে পারেন।",
+      q3: "কোন কুরিয়ারগুলো সাপোর্ট করে?",
+      a3: "REDX, Pathao আর Steadfast — সবই একটাই ইন্টারফেসে, আপনার নিজের কুরিয়ার ক্রেডেনশিয়ালে।",
+      q4: "আমি কি নিজের ডোমেইন ব্যবহার করতে পারব?",
+      a4: "হ্যাঁ, অটোমেটিক HTTPS-সহ। ফ্রি {brand} সাবডোমেইনও কাজ করে।",
+      q5: "ড্যাশবোর্ড কি বাংলায়?",
+      a5: "স্টোরফ্রন্ট আর অ্যাডমিন দুটোই বাংলা ও ইংরেজির মধ্যে বদলায়, আর পছন্দটা পেজ বদলালেও থাকে।",
+      q6: "প্ল্যানের লিমিটে পৌঁছালে কী হয়?",
+      a6: "পণ্য ও স্টাফ তৈরির সময় লিমিট ধরা হয়; মাসের বাড়তি অর্ডার রেকর্ড হয় আর আপগ্রেড করলে খুলে যায়।",
+      q7: "পরে কি প্ল্যান বদলানো যায়?",
+      a7: "হ্যাঁ, যেকোনো সময় — প্রতিটা প্ল্যান সেল্‌ফ-সার্ভ।",
+      q8: "আমার বিক্রির উপর কি কমিশন নেন?",
+      a8: "না। শুধু মাসিক প্ল্যানের দাম দেন; কাস্টমারের পেমেন্ট সরাসরি আপনার কাছে যায়।",
+    },
+    closing: {
+      title: "এই সপ্তাহেই অনলাইনে বিক্রি শুরু করুন",
+      subtitle: "Free প্ল্যান আছে। পেইড প্ল্যানে {days} দিনের ট্রায়াল, ক্রেডিট কার্ড লাগে না।",
+      cta: "ফ্রি ট্রায়াল শুরু করুন",
+    },
+  },
+  pricing: {
+    hero: {
+      kicker: "প্রাইসিং",
+      title: "প্রতিটা ব্যবসার জন্য সাশ্রয়ী প্ল্যান",
+      subtitle: "পেইড প্ল্যানে {days} দিনের ফ্রি ট্রায়াল। ক্রেডিট কার্ড লাগে না। বিক্রির কমিশন নেই।",
+    },
+    toggle: {
+      monthly: "মাসিক",
+      yearly: "বার্ষিক",
+      yearlyHint: "২ মাস ফ্রি",
+    },
+    free: "ফ্রি",
+    perMonth: "৳{price}/মাস",
+    billedYearly: "বছরে ৳{price} চার্জ",
+    billedMonthly: "মাসে চার্জ",
+    cta: "ফ্রি ট্রায়াল শুরু করুন",
+    ctaFree: "শুরু করুন",
+    recommended: "প্রস্তাবিত",
+    limitProducts: "{limit}টি পণ্য",
+    limitProductsUnlimited: "আনলিমিটেড পণ্য",
+    limitStaff: "{limit}টি স্টাফ অ্যাকাউন্ট",
+    limitStaffUnlimited: "আনলিমিটেড স্টাফ",
+    limitOrders: "মাসে {limit}টি অর্ডার",
+    limitOrdersUnlimited: "আনলিমিটেড অর্ডার",
+    allTitle: "প্রতিটা প্ল্যানে থাকে",
+    inc1: "হোস্টেড স্টোরফ্রন্ট + কাস্টম ডোমেইন",
+    inc2: "COD, SSLCommerz আর ম্যানুয়াল বিকাশ/নগদ",
+    inc3: "REDX, Pathao আর Steadfast বুকিং",
+    inc4: "অটো PDF ইনভয়েস + গেস্ট অর্ডার ট্র্যাকিং",
+    inc5: "বাংলা ও ইংরেজি স্টোরফ্রন্ট ও অ্যাডমিন",
+    inc6: "AI লেখক, ব্লগ, ফর্ম আর পাবলিক API",
+    trialNote: "প্রতিটা প্ল্যানে {days} দিনের ফ্রি ট্রায়াল — ক্রেডিট কার্ড লাগে না।",
+  },
+  features: {
+    hero: {
+      kicker: "ফিচার",
+      title: "সবকিছু একটাই প্ল্যাটফর্মে",
+      subtitle: "৮টি ক্ষেত্রে {count}টি ফিচার — প্রতিটা প্ল্যানে অন্তর্ভুক্ত।",
+    },
+    categories: {
+      ai: "AI ও ইন্টেলিজেন্স",
+      store: "স্টোর ও পণ্য",
+      orders: "অর্ডার ও ইনভেন্টরি",
+      payments: "পেমেন্ট ও চেকআউট",
+      delivery: "ডেলিভারি ও লজিস্টিকস",
+      marketing: "SEO ও মার্কেটিং",
+      analytics: "অ্যানালিটিক্স ও ডেটা",
+      team: "টিম ও অপারেশন",
+    },
+    items: {
+      aiWriter: {
+        title: "AI পণ্য-বর্ণনা লেখক",
+        desc: "কয়েকটা কিওয়ার্ড থেকে বাংলা বা ইংরেজিতে বর্ণনা তৈরি করে।",
+      },
+      aiSeo: {
+        title: "AI SEO লেখক",
+        desc: "সার্চের জন্য মানানসই পেজ টাইটেল আর মেটা বর্ণনা অটো-ফিল।",
+      },
+      fraudScore: {
+        title: "COD ফ্রড চেক",
+        desc: "শিপ করার আগে প্রতিটা ক্যাশ-অন-ডেলিভারি অর্ডারে রিস্ক স্কোর।",
+      },
+      forecast: {
+        title: "চাহিদার পূর্বাভাস",
+        desc: "৩০ দিনের বিক্রির গতি থেকে কোন পণ্য আগে ফুরাবে দেখুন।",
+      },
+      storefront: {
+        title: "হোস্টেড স্টোরফ্রন্ট",
+        desc: "আপনার সাবডোমেইন বা কাস্টম ডোমেইনে পরিষ্কার, মোবাইল-ফার্স্ট দোকান।",
+      },
+      catalog: {
+        title: "পণ্যের ক্যাটালগ",
+        desc: "ক্যাটাগরি, ব্র্যান্ড, ছবি ও ভিডিও, স্পেসিফিকেশন, ড্রাফট/অ্যাক্টিভ স্ট্যাটাস।",
+      },
+      variants: {
+        title: "ভ্যারিয়েন্ট ও স্টক",
+        desc: "সাইজ ও রঙের অপশন, প্রতি ভ্যারিয়েন্টে দাম ও পরিমাণ।",
+      },
+      digital: {
+        title: "ডিজিটাল পণ্য",
+        desc: "পেমেন্ট-গেটেড নিরাপদ ডাউনলোড লিংকে PDF বিক্রি — শিপিং নেই।",
+      },
+      media: {
+        title: "মিডিয়া লাইব্রেরি",
+        desc: "ছবি ও ডকুমেন্ট একবার আপলোড করে যেকোনো জায়গায় আবার ব্যবহার করুন।",
+      },
+      domains: {
+        title: "কাস্টম ডোমেইন",
+        desc: "অটোমেটিক HTTPS-সহ নিজের ডোমেইন যুক্ত করুন।",
+      },
+      pipeline: {
+        title: "অর্ডার পাইপলাইন",
+        desc: "প্লেসড থেকে ডেলিভারড পর্যন্ত এক ক্লিকে স্ট্যাটাস ধাপ।",
+      },
+      manualOrder: {
+        title: "ম্যানুয়াল অর্ডার",
+        desc: "ফোন ও সোশ্যাল মিডিয়ার অর্ডার হাতে বসান, পূর্ণ নিয়ন্ত্রণে।",
+      },
+      invoices: {
+        title: "অটো ইনভয়েস",
+        desc: "প্রতিটা অর্ডারে ব্র্যান্ডেড PDF ইনভয়েস তৈরি হয়।",
+      },
+      tracking: {
+        title: "গেস্ট অর্ডার ট্র্যাকিং",
+        desc: "কাস্টমার ফোন নম্বরে অর্ডার ট্র্যাক করে, অ্যাকাউন্ট লাগে না।",
+      },
+      stock: {
+        title: "স্টক নিয়ন্ত্রণ",
+        desc: "প্রতি বিক্রিতে পরিমাণ কমে; অ্যাডমিনে লো-স্টক অ্যালার্ট।",
+      },
+      cod: {
+        title: "ক্যাশ অন ডেলিভারি",
+        desc: "বাংলাদেশের ডিফল্ট — শুরু থেকেই চালু।",
+      },
+      sslcommerz: {
+        title: "SSLCommerz",
+        desc: "একটাই গেটওয়েতে কার্ড, মোবাইল ব্যাংকিং আর নেট ব্যাংকিং।",
+      },
+      manualWallet: {
+        title: "বিকাশ / নগদ",
+        desc: "ম্যানুয়াল ওয়ালেট পেমেন্ট নিন — কাস্টমার টাকা পাঠায়, আপনি TrxID যাচাই করেন।",
+      },
+      coupons: {
+        title: "ডিসকাউন্ট কোড",
+        desc: "পার্সেন্ট, নির্দিষ্ট বা ফ্রি-ডেলিভারি কোড, ব্যবহারের সীমাসহ।",
+      },
+      guestCheckout: {
+        title: "গেস্ট চেকআউট",
+        desc: "জোর করে সাইন-আপ নেই; ফোন নম্বরে ঐচ্ছিক SMS OTP।",
+      },
+      redx: {
+        title: "REDX",
+        desc: "অ্যাডমিন ছেড়ে না গিয়ে শিপমেন্ট বুক করুন আর ট্র্যাকিং আনুন।",
+      },
+      pathao: {
+        title: "Pathao",
+        desc: "একই কুরিয়ার ইন্টারফেস, আপনার Pathao ক্রেডেনশিয়াল।",
+      },
+      steadfast: {
+        title: "Steadfast",
+        desc: "একই কুরিয়ার ইন্টারফেস, আপনার Steadfast ক্রেডেনশিয়াল।",
+      },
+      deliveryZones: {
+        title: "ডেলিভারি জোন",
+        desc: "ঢাকার ভেতরে, বাইরে বা কাস্টম এলাকা — প্রতিটার নিজস্ব চার্জ।",
+      },
+      labels: {
+        title: "শিপিং লেবেল",
+        desc: "কুরিয়ারের জন্য রেডি যেকোনো অর্ডারের A4 লেবেল প্রিন্ট করুন।",
+      },
+      metaPixel: {
+        title: "Meta Pixel",
+        desc: "আপনার Pixel ID যোগ করে বিজ্ঞাপনের জন্য স্টোরফ্রন্ট ইভেন্ট পাঠান।",
+      },
+      ga4: {
+        title: "Google Analytics 4",
+        desc: "পুরো স্টোরফ্রন্টে আপনার GA4 ট্যাগ বসান।",
+      },
+      blog: {
+        title: "ব্লগ ও পেজ",
+        desc: "Markdown-এ পোস্ট আর স্ট্যাটিক পেজ লিখুন, ফুটার থেকে লিংক করা।",
+      },
+      forms: {
+        title: "ফর্ম বিল্ডার",
+        desc: "৯ ধরনের ফিল্ড দিয়ে কন্টাক্ট বা লিড ফর্ম বানান আর সাবমিশন দেখুন।",
+      },
+      seoMeta: {
+        title: "SEO মেটাডেটা",
+        desc: "প্রতি পণ্যে টাইটেল ও মেটা বর্ণনা, নিজে লিখুন বা AI দিয়ে।",
+      },
+      dashboard: {
+        title: "বিক্রির ড্যাশবোর্ড",
+        desc: "বিক্রি, অর্ডার আর কাস্টমার এক নজরে — আজ বনাম সপ্তাহ বনাম মাস।",
+      },
+      lowStock: {
+        title: "লো-স্টক অ্যালার্ট",
+        desc: "প্রতি স্টোরের থ্রেশহোল্ড পণ্য ফুরানোর আগেই সতর্ক করে।",
+      },
+      restock: {
+        title: "রিস্টক প্যানেল",
+        desc: "ড্যাশবোর্ড দেখায় আগে কী রিঅর্ডার করতে হবে।",
+      },
+      leads: {
+        title: "অসম্পূর্ণ চেকআউট",
+        desc: "যেসব চেকআউট শেষ হয়নি তার ফোন নম্বর, ফলো-আপের জন্য।",
+      },
+      staff: {
+        title: "স্টাফ অ্যাকাউন্ট",
+        desc: "নিজের লগইনসহ টিমকে আমন্ত্রণ জানান।",
+      },
+      roles: {
+        title: "রোল ও পারমিশন",
+        desc: "ক্ষেত্র অনুযায়ী অ্যাক্সেস দিন — UI-তে লুকানো নয়, সার্ভারে প্রয়োগ করা।",
+      },
+      sms: {
+        title: "SMS নোটিফিকেশন",
+        desc: "আপনার SMS প্রোভাইডার দিয়ে অর্ডার-প্লেসড ও শিপড টেক্সট।",
+      },
+      publicApi: {
+        title: "পাবলিক API",
+        desc: "স্কোপড, রেট-লিমিটেড REST API দিয়ে পণ্য ও অর্ডার পড়ুন।",
+      },
+      apps: {
+        title: "ইনস্টলযোগ্য অ্যাপ",
+        desc: "প্রতি-স্টোর স্কোপসহ OAuth দিয়ে থার্ড-পার্টি টুল যুক্ত করুন।",
+      },
+    },
+  },
+  signup: {
+    title: "সেল্‌ফ-সার্ভ সাইন-আপ শীঘ্রই আসছে",
+    body: "সেল্‌ফ-সার্ভ ট্রায়াল ফ্লো শেষ করা হচ্ছে। আগে থেকে অ্যাকাউন্ট থাকলে এখনই সাইন ইন করতে পারেন।",
+    haveAccount: "অ্যাকাউন্ট আছে?",
+    signIn: "সাইন ইন",
+    back: "হোমে ফিরুন",
+  },
+  common: {
+    learnMore: "বিস্তারিত",
+    allFeatures: "সব ফিচার দেখুন",
+    viewPricing: "প্রাইসিং দেখুন",
+  },
+} satisfies MarketingCopy;
+
+export const marketingMessages = { en, bn };

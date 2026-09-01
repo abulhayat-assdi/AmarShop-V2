@@ -1,7 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { desc, eq, and } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
-import { auth } from "@/lib/auth/config";
 import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
@@ -12,11 +12,36 @@ import { getStorefrontChrome } from "@/lib/cms/queries";
 import { getActiveMenuLinks } from "@/lib/menus/query";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
-import { signOutAction } from "./actions";
+import { getMarketingTranslator } from "@/lib/i18n/marketing-server";
+import { MarketingHeader, MarketingFooter } from "@/components/marketing/chrome";
+import {
+  Hero,
+  ProblemSolution,
+  HowItWorks,
+  DeveloperTeaser,
+  Faq,
+  ClosingCta,
+} from "@/components/marketing/sections";
+import { FeatureTabs } from "@/components/marketing/feature-tabs";
+import { PricingSection } from "@/components/marketing/pricing-section";
+import { BRAND_NAME } from "@/lib/marketing/constants";
 
 // The one URL shared between the storefront and the platform root (App
 // Router route groups can't conditionally re-layout the same path based on
 // runtime data) — see src/app/(storefront)/layout.tsx for everywhere else.
+
+// On the platform host this is the marketing landing page, so give it real
+// title/description (SITE_STRUCTURE.md Part A). On a storefront host, defer
+// to the root layout's defaults exactly as before — return nothing.
+export async function generateMetadata(): Promise<Metadata> {
+  if (await getCurrentStore()) return {};
+  const { t } = await getMarketingTranslator();
+  return {
+    title: `${t("marketing.home.hero.title")} — ${BRAND_NAME}`,
+    description: t("marketing.home.hero.subtitle"),
+  };
+}
+
 export default async function Home() {
   const store = await getCurrentStore();
 
@@ -123,41 +148,54 @@ export default async function Home() {
     );
   }
 
-  const session = await auth();
+  // No store resolved → the platform's own host: render the public
+  // marketing site (SITE_STRUCTURE.md Part A). The homepage is the one
+  // marketing path that can't live inside the (marketing) route group — it
+  // shares "/" with the storefront branch above — so it renders the same
+  // marketing chrome components directly, mirroring the storefront chrome
+  // split (see src/components/storefront-chrome.tsx).
+  const { locale, messages, t } = await getMarketingTranslator();
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-8">
-      <h1 className="text-2xl font-semibold">AmarShop</h1>
-      <p className="text-gray-600">Multi-tenant e-commerce platform — Phase 0 foundation.</p>
+    <I18nProvider locale={locale} messages={messages}>
+      <MarketingHeader t={t} locale={locale} />
+      <main className="flex-1">
+        <Hero t={t} />
+        <ProblemSolution t={t} />
 
-      {session?.user ? (
-        <div className="flex flex-col gap-2 rounded border border-green-400 bg-green-50 p-4">
-          <p className="text-green-800">
-            Signed in as <strong>{session.user.email}</strong> — role{" "}
-            <code className="rounded bg-white px-1">{session.user.role}</code>
-            {session.user.isPlatformAdmin && (
-              <>
-                {" "}
-                (<code className="rounded bg-white px-1">platform admin</code>)
-              </>
-            )}
+        <section className="mx-auto max-w-6xl px-4 py-16">
+          <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+            {t("marketing.home.showcase.title")}
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-500">
+            {t("marketing.home.showcase.subtitle")}
           </p>
-          <form action={signOutAction}>
-            <button type="submit" className="underline">
-              Sign out
-            </button>
-          </form>
-        </div>
-      ) : (
-        <div className="flex gap-4">
-          <Link href="/stores/create" className="underline">
-            Create a store
-          </Link>
-          <Link href="/login" className="underline">
-            Sign in
-          </Link>
-        </div>
-      )}
-    </main>
+          <div className="mt-10">
+            <FeatureTabs />
+          </div>
+        </section>
+
+        <HowItWorks t={t} />
+
+        <section className="mx-auto max-w-6xl px-4 py-16">
+          <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+            {t("marketing.pricing.hero.title")}
+          </h2>
+          <div className="mt-10">
+            <PricingSection />
+          </div>
+          <p className="mt-6 text-center text-sm">
+            <Link href="/pricing" className="underline">
+              {t("marketing.common.viewPricing")}
+            </Link>
+          </p>
+        </section>
+
+        <DeveloperTeaser t={t} />
+        <Faq t={t} />
+        <ClosingCta t={t} />
+      </main>
+      <MarketingFooter t={t} />
+    </I18nProvider>
   );
 }
