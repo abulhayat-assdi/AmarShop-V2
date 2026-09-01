@@ -5,6 +5,7 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { ProductCard } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "@/lib/products/media";
+import { getRatingSummaries } from "@/lib/reviews/query";
 import { getTranslator } from "@/lib/i18n/server";
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -44,10 +45,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   if (!result) notFound();
   const { category, items } = result;
-  const imageUrls = await getPrimaryImageUrls(
-    store.id,
-    items.map((item) => item.id)
-  );
+  const productIds = items.map((item) => item.id);
+  const [imageUrls, ratings] = await Promise.all([
+    getPrimaryImageUrls(store.id, productIds),
+    getRatingSummaries(store.id, productIds),
+  ]);
   const { t } = await getTranslator(store.locale);
 
   return (
@@ -60,7 +62,11 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           {items.map((item) => (
             <ProductCard
               key={item.id}
-              product={{ ...item, imageUrl: imageUrls[item.id] ?? null }}
+              product={{
+                ...item,
+                imageUrl: imageUrls[item.id] ?? null,
+                rating: ratings.get(item.id) ?? null,
+              }}
             />
           ))}
         </div>

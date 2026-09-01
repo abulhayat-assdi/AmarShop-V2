@@ -3,6 +3,7 @@ import { withStoreContext } from "@/db/context";
 import { products, productVariants } from "@/db/schema";
 import type { ProductCardData } from "@/components/storefront-chrome";
 import { getPrimaryImageUrls } from "./media";
+import { getRatingSummaries } from "@/lib/reviews/query";
 import type { SearchSort } from "./search-constants";
 
 export { SEARCH_SORTS, parseSort, type SearchSort } from "./search-constants";
@@ -83,13 +84,18 @@ export async function searchProducts(
     return { items: rows, total: n };
   });
 
-  const imageUrls = await getPrimaryImageUrls(
-    storeId,
-    items.map((item) => item.id)
-  );
+  const productIds = items.map((item) => item.id);
+  const [imageUrls, ratings] = await Promise.all([
+    getPrimaryImageUrls(storeId, productIds),
+    getRatingSummaries(storeId, productIds),
+  ]);
 
   return {
-    items: items.map((item) => ({ ...item, imageUrl: imageUrls[item.id] ?? null })),
+    items: items.map((item) => ({
+      ...item,
+      imageUrl: imageUrls[item.id] ?? null,
+      rating: ratings.get(item.id) ?? null,
+    })),
     total,
   };
 }

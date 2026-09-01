@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Store, Category } from "@/db/schema";
 import { ProductMedia } from "@/components/product-media";
+import { Stars } from "@/components/stars";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { getTranslator } from "@/lib/i18n/server";
@@ -138,6 +139,10 @@ export type ProductCardData = {
   price: string;
   discountedPrice: string | null;
   imageUrl?: string | null;
+  // Approved-review summary, when the caller has looked it up. Absent /
+  // count 0 renders no stars (SITE_STRUCTURE.md: "review count or
+  // 'No Review Yet'" — never a fabricated number).
+  rating?: { count: number; average: number } | null;
 };
 
 export function ProductCard({ product }: { product: ProductCardData }) {
@@ -154,6 +159,12 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         </span>
       ) : (
         <span className="text-sm">৳{product.price}</span>
+      )}
+      {product.rating && product.rating.count > 0 && (
+        <span className="flex items-center gap-1 text-xs text-gray-500">
+          <Stars value={product.rating.average} className="text-xs" />
+          <span>({product.rating.count})</span>
+        </span>
       )}
     </Link>
   );

@@ -1,12 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { getCurrentStore } from "@/lib/tenant/current";
 import { getOrCreateCartToken } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { carts, cartItems, productVariants, products } from "@/db/schema";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { submitReview } from "@/lib/reviews/mutate";
 
 export type AddToCartState = { error?: MessageRef; notice?: MessageRef; ok?: boolean };
 
@@ -96,4 +99,40 @@ export async function addToCart(
     }
     throw err;
   }
+}
+
+// ---- customer review submission (PDP -> Product Reviews moderation) ----
+
+export type SubmitReviewState = { error?: MessageRef; ok?: boolean };
+const HONEYPOT_FIELD = "_hp";
+
+export async function submitReviewAction(
+  _prev: SubmitReviewState,
+  formData: FormData
+): Promise<SubmitReviewState> {
+  const store = await getCurrentStore();
+  if (!store) return { error: msg("reviews.errStore") };
+
+  // Silent drop for a bot fill (hidden field a human never sees).
+  if (String(formData.get(HONEYPOT_FIELD) ?? "").trim() !== "") {
+    return { ok: true };
+  }
+
+  const headerList = await headers();
+  const ip = (headerList.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const limit = await checkRateLimit(`review:${store.id}:${ip}`, {
+    limit: 5,
+    windowSeconds: 600,
+  });
+  if (!limit.ok) return { error: msg("reviews.errRateLimited") };
+
+  const result = await submitReview(store.id, {
+    productId: String(formData.get("productId") ?? ""),
+    authorName: String(formData.get("authorName") ?? ""),
+    rating: Number(formData.get("rating") ?? 0),
+    body: String(formData.get("body") ?? ""),
+  });
+  if ("error" in result) return { error: msg(result.error) };
+
+  return { ok: true };
 }

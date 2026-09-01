@@ -330,6 +330,13 @@
       "when": 1788282465506,
       "tag": "0046_add_redirects",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788284996982,
+      "tag": "0047_add_product_reviews",
+      "breakpoints": true
     }
   ]
 }

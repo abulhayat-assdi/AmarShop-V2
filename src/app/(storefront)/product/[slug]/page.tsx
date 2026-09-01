@@ -6,8 +6,11 @@ import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { getProductMedia } from "@/lib/products/media";
 import { ProductMedia } from "@/components/product-media";
+import { Stars } from "@/components/stars";
+import { getApprovedReviews, getRatingSummaries } from "@/lib/reviews/query";
 import { getTranslator } from "@/lib/i18n/server";
 import { AddToCartForm } from "./AddToCartForm";
+import { ReviewForm } from "./ReviewForm";
 
 export async function generateMetadata({
   params,
@@ -76,7 +79,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const primary = media[0] ?? null;
   const { t } = await getTranslator(store.locale);
 
+  const [reviews, ratingSummaries] = await Promise.all([
+    getApprovedReviews(store.id, product.productId),
+    getRatingSummaries(store.id, [product.productId]),
+  ]);
+  const summary = ratingSummaries.get(product.productId) ?? null;
+  const dateFmt = new Intl.DateTimeFormat(store.locale === "bn" ? "bn-BD" : "en-GB", {
+    dateStyle: "medium",
+  });
+
   return (
+    <div className="flex flex-col gap-12">
     <div className="grid gap-8 md:grid-cols-2">
       <div className="flex flex-col gap-2">
         <ProductMedia item={primary} src={null} alt={product.name} />
@@ -94,6 +107,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <p className="text-sm text-gray-500">
             {[product.brand, product.categoryName].filter(Boolean).join(" · ")}
           </p>
+        )}
+        {summary && (
+          <a href="#reviews" className="flex items-center gap-2 text-sm text-gray-600">
+            <Stars value={summary.average} />
+            <span>
+              {summary.average.toFixed(1)} · {t("reviews.count", { count: summary.count })}
+            </span>
+          </a>
         )}
         <div className="flex items-baseline gap-2">
           {product.discountedPrice ? (
@@ -118,6 +139,41 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           maxQuantity={product.isDigital ? 99 : product.quantity}
         />
       </div>
+    </div>
+
+    <section id="reviews" className="flex max-w-3xl flex-col gap-5">
+      <div className="flex items-center gap-3">
+        <h2 className="text-xl font-semibold">{t("reviews.sectionTitle")}</h2>
+        {summary ? (
+          <span className="flex items-center gap-2 text-sm text-gray-600">
+            <Stars value={summary.average} />
+            {summary.average.toFixed(1)} · {t("reviews.count", { count: summary.count })}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-500">{t("reviews.none")}</span>
+        )}
+      </div>
+
+      {reviews.length > 0 && (
+        <ul className="flex flex-col gap-4">
+          {reviews.map((r) => (
+            <li key={r.id} className="border-b pb-4 last:border-0">
+              <div className="flex items-center gap-2">
+                <Stars value={r.rating} className="text-sm" />
+                <span className="text-sm font-medium">{r.authorName}</span>
+                <span className="text-xs text-gray-400">{dateFmt.format(r.createdAt)}</span>
+              </div>
+              {r.body && <p className="mt-1 text-sm text-gray-700">{r.body}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <h3 className="font-medium">{t("reviews.writeTitle")}</h3>
+        <ReviewForm productId={product.productId} />
+      </div>
+    </section>
     </div>
   );
 }

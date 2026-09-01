@@ -214,3 +214,9 @@ export const emailMessageStatusEnum = pgEnum("email_message_status", [
   "sent",
   "failed",
 ]);
+
+// A product_reviews row's moderation state (src/db/schema/product-reviews.ts).
+// Every review lands "pending"; only "approved" ones render on the
+// storefront or count toward a product's rating (SITE_STRUCTURE.md's
+// "don't show a review count you can't back with real reviews").
+export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected"]);

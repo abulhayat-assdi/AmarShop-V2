@@ -81,6 +81,7 @@ export const NAV_PERMISSION: Partial<Record<string, Permission>> = {
   "/content": "content:manage",
   "/media": "content:manage",
   "/forms": "content:manage",
+  "/reviews": "content:manage",
   "/courier-settings": "courier:manage",
   "/payment-settings": "payment_settings:manage",
   "/sms-settings": "sms_settings:manage",
