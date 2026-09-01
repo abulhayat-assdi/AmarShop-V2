@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { createApiKey, revokeApiKey } from "@/lib/api/keys";
 import { parseScopes } from "@/lib/api/scopes";
 
@@ -14,7 +14,7 @@ export async function createApiKeyAction(
   _prev: ApiKeyCreateState,
   formData: FormData
 ): Promise<ApiKeyCreateState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("api_keys:manage");
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "admin.apiKeys.errName" };
@@ -33,7 +33,7 @@ export async function createApiKeyAction(
 }
 
 export async function revokeApiKeyAction(keyId: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("api_keys:manage");
   await revokeApiKey(session.user.storeId, keyId);
   revalidatePath("/api-keys");
 }

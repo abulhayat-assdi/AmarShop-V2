@@ -5,6 +5,7 @@ import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter } from "@/components/storefront-chrome";
+import { StorefrontMaintenance } from "@/components/storefront-maintenance";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
 import { getStorefrontChrome } from "@/lib/cms/queries";
@@ -18,7 +19,16 @@ export default async function StorefrontLayout({ children }: { children: React.R
     notFound();
   }
 
-  const { locale, messages } = await getTranslator(store.locale);
+  const { locale, messages, t } = await getTranslator(store.locale);
+
+  // Merchant-toggled (Admin -> Account -> System), distinct from
+  // store.status === "suspended" (platform/billing-driven — that 404s at
+  // host resolution, src/lib/tenant/resolve.ts). This resolves normally
+  // and shows a friendly page instead.
+  if (store.maintenanceMode) {
+    return <StorefrontMaintenance storeName={store.name} locale={locale} messages={messages} t={t} />;
+  }
+
   const categoryRows = await withStoreContext(store.id, (tx) =>
     tx.select().from(categories).where(eq(categories.storeId, store.id))
   );

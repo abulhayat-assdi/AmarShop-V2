@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { saveSmsSettings } from "@/lib/sms/settings";
 import { SMS_PROVIDERS, SMS_PROVIDER_CREDENTIAL_FIELDS } from "@/lib/sms/providers";
 import type { SmsCredentials, SmsProvider } from "@/lib/sms/types";
@@ -12,7 +12,7 @@ export async function saveSmsSettingsAction(
   _prev: SmsSettingsState,
   formData: FormData
 ): Promise<SmsSettingsState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("sms_settings:manage");
 
   const rawProvider = String(formData.get("provider") ?? "");
   const provider: SmsProvider | null = (SMS_PROVIDERS as string[]).includes(rawProvider)

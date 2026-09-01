@@ -1,0 +1,1 @@
+ALTER TABLE "stores" ADD COLUMN "checkout_otp_required" boolean DEFAULT false NOT NULL;

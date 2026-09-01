@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import {
   createEndpoint,
   deleteEndpoint,
@@ -17,7 +17,7 @@ export async function createWebhookAction(
   _prev: WebhookCreateState,
   formData: FormData
 ): Promise<WebhookCreateState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("webhooks:manage");
 
   const url = normalizeWebhookUrl(String(formData.get("url") ?? ""));
   if (!url) return { error: "admin.webhooks.errUrl" };
@@ -35,19 +35,19 @@ export async function createWebhookAction(
 }
 
 export async function setWebhookEnabledAction(id: string, enabled: boolean) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("webhooks:manage");
   await setEndpointEnabled(session.user.storeId, id, enabled);
   revalidatePath("/webhooks");
 }
 
 export async function deleteWebhookAction(id: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("webhooks:manage");
   await deleteEndpoint(session.user.storeId, id);
   revalidatePath("/webhooks");
 }
 
 export async function resendDeliveryAction(deliveryId: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("webhooks:manage");
   await resendDelivery(session.user.storeId, deliveryId);
   revalidatePath("/webhooks");
 }

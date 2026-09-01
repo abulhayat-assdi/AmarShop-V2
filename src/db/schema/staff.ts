@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, timestamp, boolean, uniqueIndex, index } from "drizzle-orm/pg-core";
 import { stores } from "./stores";
 import { staffRoleEnum } from "./enums";
+import { customRoles } from "./custom-roles";
 
 // Tenant-scoped: every row belongs to exactly one store. RLS policy for
 // this table is defined in its migration file — see src/db/migrations.
@@ -32,6 +33,20 @@ export const staffMembers = pgTable(
     // (PROJECT_PLAN.md §8); this flag only exists so a session can tell
     // "AmarShop's own staff" apart from "a merchant's staff" going forward.
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+    // Admin -> Account (General Settings -> Profile tab). A short optional
+    // bio, shown nowhere yet outside the admin's own settings page.
+    bio: text("bio"),
+    // Admin -> Account (General Settings -> Notifications tab). Whether
+    // this staff member's own admin bell shows billing_* notices — a
+    // per-viewer preference, unlike notices themselves which are
+    // store-wide (src/db/schema/notices.ts). Defaults on so nobody misses
+    // a suspension notice by accident.
+    notifyBillingNotices: boolean("notify_billing_notices").notNull().default(true),
+    // Admin -> Roles. Only meaningful when role = "staff" — owner/admin
+    // ignore this entirely (requirePermission() in src/lib/auth/roles.ts
+    // gives them unconditional access). NULL = this staff member has none
+    // of the granular permissions in src/lib/auth/permissions.ts yet.
+    customRoleId: uuid("custom_role_id").references(() => customRoles.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

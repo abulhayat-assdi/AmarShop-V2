@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { normalizeGa4Id, normalizeMetaPixelId } from "@/lib/analytics/config";
@@ -15,7 +15,7 @@ export async function saveMarketingSettingsAction(
   _prev: MarketingState,
   formData: FormData
 ): Promise<MarketingState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("marketing:manage");
 
   const pixelRaw = String(formData.get("metaPixelId") ?? "").trim();
   const ga4Raw = String(formData.get("ga4MeasurementId") ?? "").trim();

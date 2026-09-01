@@ -1,10 +1,10 @@
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { getPaymentSettingsView } from "@/lib/payments/settings";
 import { getTranslator } from "@/lib/i18n/server";
 import { PaymentSettingsForm } from "./PaymentSettingsForm";
 
 export default async function PaymentSettingsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("payment_settings:manage");
   const view = await getPaymentSettingsView(session.user.storeId);
   const { t } = await getTranslator();
 

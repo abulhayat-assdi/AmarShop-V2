@@ -6,6 +6,7 @@ import { getCartItemCount } from "@/lib/cart";
 import { withStoreContext } from "@/db/context";
 import { categories, products, productVariants } from "@/db/schema";
 import { StorefrontHeader, StorefrontFooter, ProductCard } from "@/components/storefront-chrome";
+import { StorefrontMaintenance } from "@/components/storefront-maintenance";
 import { getPrimaryImageUrls } from "@/lib/products/media";
 import { getStorefrontChrome } from "@/lib/cms/queries";
 import { I18nProvider } from "@/components/i18n-provider";
@@ -19,6 +20,16 @@ export default async function Home() {
   const store = await getCurrentStore();
 
   if (store) {
+    // Merchant-toggled (Admin -> Account -> System). Checked before any of
+    // this page's own queries — same gate as every other storefront route
+    // (see (storefront)/layout.tsx), duplicated here because this is the
+    // one URL Next's route groups can't share a layout with (see the
+    // comment on the function below).
+    if (store.maintenanceMode) {
+      const { locale, messages, t } = await getTranslator(store.locale);
+      return <StorefrontMaintenance storeName={store.name} locale={locale} messages={messages} t={t} />;
+    }
+
     const { categoryRows, productRows } = await withStoreContext(store.id, async (tx) => {
       const categoryRows = await tx.select().from(categories).where(eq(categories.storeId, store.id));
       const productRows = await tx

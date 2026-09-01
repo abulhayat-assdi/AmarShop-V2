@@ -1,10 +1,10 @@
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { getTranslator } from "@/lib/i18n/server";
 import { listEndpoints, listRecentDeliveries } from "@/lib/webhooks/endpoints";
 import { WebhooksManager } from "./WebhooksManager";
 
 export default async function WebhooksPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("webhooks:manage");
   const { t } = await getTranslator();
 
   const [endpoints, deliveries] = await Promise.all([

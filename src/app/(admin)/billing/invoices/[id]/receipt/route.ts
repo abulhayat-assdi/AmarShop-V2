@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { platformInvoices, stores } from "@/db/schema";
 import { renderPlatformReceiptPdf } from "@/lib/billing/receipt";
@@ -8,7 +8,7 @@ import { renderPlatformReceiptPdf } from "@/lib/billing/receipt";
 // sits outside the RLS boundary (like stores), so it's scoped explicitly
 // by the session's storeId. Only a `paid` invoice has a receipt.
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("billing:manage");
   const { id } = await params;
 
   const [invoice] = await db

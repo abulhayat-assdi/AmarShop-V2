@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { saveCourierSettings } from "@/lib/courier/settings";
 import { COURIER_CREDENTIAL_FIELDS, COURIER_PROVIDERS } from "@/lib/courier/providers";
 import type { CourierCredentials, CourierProvider } from "@/lib/courier/types";
@@ -12,7 +12,7 @@ export async function saveCourierSettingsAction(
   _prev: CourierSettingsState,
   formData: FormData
 ): Promise<CourierSettingsState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("courier:manage");
 
   const rawProvider = String(formData.get("activeProvider") ?? "");
   const activeProvider: CourierProvider | null = (COURIER_PROVIDERS as string[]).includes(rawProvider)

@@ -1,7 +1,24 @@
 import { and, eq, isNotNull, lt } from "drizzle-orm";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
+import { withStoreContext } from "@/db/context";
+import { createNotice } from "@/lib/notices/create";
 import { PAST_DUE_GRACE_DAYS } from "./plans";
+
+// Best-effort notice for one transitioned store — mirrors sendOrderSms()'s
+// own-transaction, never-throws-the-caller shape. A notice failing to
+// write must never stop the lifecycle sweep from finishing the other
+// stores or from having already applied the real `stores` update above.
+async function notifyLifecycleTransition(
+  storeId: string,
+  category: Parameters<typeof createNotice>[2]
+): Promise<void> {
+  try {
+    await withStoreContext(storeId, (tx) => createNotice(tx, storeId, category));
+  } catch (err) {
+    console.error(`[billing] failed to write ${category} notice for store ${storeId}`, err);
+  }
+}
 
 // Billing v2 lifecycle sweep (CLAUDE.md rule #3 — merchant-pays-AmarShop
 // side). Idempotent: safe to run on any schedule, any number of times.
@@ -31,6 +48,7 @@ export async function runBillingLifecycle(now: Date = new Date()): Promise<Lifec
       )
     )
     .returning({ id: stores.id });
+  for (const { id } of canceled) await notifyLifecycleTransition(id, "billing_trial_ended");
 
   // 2. Paid period lapsed → past_due (banner shows; storefront still
   //    serves during the grace window).
@@ -45,6 +63,7 @@ export async function runBillingLifecycle(now: Date = new Date()): Promise<Lifec
       )
     )
     .returning({ id: stores.id });
+  for (const { id } of pastDue) await notifyLifecycleTransition(id, "billing_past_due");
 
   // 3. Still past_due past the grace window → suspend the storefront. Only
   //    flips a currently-active store; never touches `pending`, never
@@ -61,6 +80,7 @@ export async function runBillingLifecycle(now: Date = new Date()): Promise<Lifec
       )
     )
     .returning({ id: stores.id });
+  for (const { id } of suspended) await notifyLifecycleTransition(id, "billing_suspended");
 
   return {
     trialsCanceled: canceled.length,

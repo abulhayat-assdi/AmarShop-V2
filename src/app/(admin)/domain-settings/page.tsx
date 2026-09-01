@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { slugHostFor } from "@/lib/tenant/resolve";
@@ -8,7 +8,7 @@ import { getTranslator } from "@/lib/i18n/server";
 import { DomainSettingsForm } from "./DomainSettingsForm";
 
 export default async function DomainSettingsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("domain:manage");
   const [store] = await db
     .select()
     .from(stores)

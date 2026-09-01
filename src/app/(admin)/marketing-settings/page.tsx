@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { getTranslator } from "@/lib/i18n/server";
 import { MarketingSettingsForm } from "./MarketingSettingsForm";
 
 export default async function MarketingSettingsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("marketing:manage");
   const [store] = await db
     .select({ metaPixelId: stores.metaPixelId, ga4MeasurementId: stores.ga4MeasurementId })
     .from(stores)

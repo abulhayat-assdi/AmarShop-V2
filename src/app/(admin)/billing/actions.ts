@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { createPlatformInvoice, submitInvoicePayment } from "@/lib/billing/subscription";
 import { isValidCycle, isValidPlanId } from "@/lib/billing/plans";
 import { msg, type MessageRef } from "@/lib/i18n/message-ref";
@@ -13,7 +13,7 @@ export async function selectPlanAction(
   _prev: BillingActionState,
   formData: FormData
 ): Promise<BillingActionState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("billing:manage");
 
   const plan = String(formData.get("plan") ?? "");
   const cycle = String(formData.get("cycle") ?? "");
@@ -31,7 +31,7 @@ export async function submitPaymentAction(
   _prev: BillingActionState,
   formData: FormData
 ): Promise<BillingActionState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("billing:manage");
 
   const walletProvider = String(formData.get("walletProvider") ?? "");
   const senderMsisdn = String(formData.get("senderMsisdn") ?? "").trim();

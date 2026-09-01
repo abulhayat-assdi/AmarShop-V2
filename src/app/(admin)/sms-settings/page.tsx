@@ -1,5 +1,5 @@
 import { desc, eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { smsMessages } from "@/db/schema";
 import { getSmsSettingsView } from "@/lib/sms/settings";
@@ -18,7 +18,7 @@ const EVENT_KEYS: Record<string, string> = {
 };
 
 export default async function SmsSettingsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("sms_settings:manage");
   const view = await getSmsSettingsView(session.user.storeId);
   const recent = await withStoreContext(session.user.storeId, (tx) =>
     tx

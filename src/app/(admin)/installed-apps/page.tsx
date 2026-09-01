@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { getTranslator } from "@/lib/i18n/server";
 import { SCOPE_LABEL_KEYS } from "@/lib/api/scopes";
 import { listInstallations } from "@/lib/oauth/install";
@@ -9,7 +9,7 @@ function fmtDate(d: Date | string | null): string {
 }
 
 export default async function InstalledAppsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("installed_apps:manage");
   const { t } = await getTranslator();
   const apps = await listInstallations(session.user.storeId);
 

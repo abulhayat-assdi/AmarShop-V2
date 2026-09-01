@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { signOutAction } from "@/app/actions";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useTranslator } from "@/components/i18n-provider";
 import type { Locale } from "@/lib/i18n/config";
 import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
-import type { StaffMember } from "@/db/schema";
+import type { StaffMember, Notice } from "@/db/schema";
 import type { StockAlert } from "@/lib/products/stock";
+import { noticeMessage } from "@/lib/notices/message";
+import { applyFontScale, fontScaleSnapshot, subscribeFontScale } from "@/lib/appearance/font-scale";
 
 export type AdminNavItem = { href: string; labelKey: string };
 
@@ -53,6 +55,8 @@ export function AdminShell({
   locale,
   stockAlerts,
   stockAlertTotal,
+  notices,
+  noticeTotal,
   children,
 }: {
   storeName: string;
@@ -62,6 +66,8 @@ export function AdminShell({
   locale: Locale;
   stockAlerts: StockAlert[];
   stockAlertTotal: number;
+  notices: Notice[];
+  noticeTotal: number;
   children: React.ReactNode;
 }) {
   const t = useTranslator();
@@ -78,6 +84,13 @@ export function AdminShell({
   function togglePin(href: string) {
     writePins(pins.includes(href) ? pins.filter((h) => h !== href) : [...pins, href]);
   }
+
+  // Applies the Appearance tab's font-size preference on every admin page,
+  // not just /account itself — AdminShell wraps all of them.
+  const fontScale = useSyncExternalStore(subscribeFontScale, fontScaleSnapshot, () => "normal" as const);
+  useEffect(() => {
+    applyFontScale(fontScale);
+  }, [fontScale]);
 
   const pinned = nav.filter((i) => pins.includes(i.href));
   const rest = nav.filter((i) => !pins.includes(i.href));
@@ -148,17 +161,48 @@ export function AdminShell({
               title={t("admin.shell.stockAlerts")}
             >
               🔔
-              {stockAlertTotal > 0 && (
+              {stockAlertTotal + noticeTotal > 0 && (
                 <span className="absolute -right-2 -top-1 rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-tight text-white">
-                  {stockAlertTotal}
+                  {stockAlertTotal + noticeTotal}
                 </span>
               )}
             </summary>
             <div className="absolute right-0 z-10 mt-2 w-72 rounded border bg-white p-3 text-xs shadow">
-              {stockAlertTotal === 0 ? (
+              {stockAlertTotal === 0 && noticeTotal === 0 && (
                 <p className="text-gray-500">{t("admin.shell.noAlerts")}</p>
-              ) : (
+              )}
+
+              {noticeTotal > 0 && (
                 <div className="flex flex-col gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    {t("admin.notices.title")}
+                  </span>
+                  {notices.map((n) => (
+                    <div key={n.id}>
+                      <span
+                        className={`block ${
+                          n.severity === "critical"
+                            ? "text-red-600"
+                            : n.severity === "warning"
+                              ? "text-amber-600"
+                              : "text-gray-700"
+                        }`}
+                      >
+                        {noticeMessage(t, n)}
+                      </span>
+                    </div>
+                  ))}
+                  <Link href="/notices" className="mt-1 block underline">
+                    {t("admin.notices.viewAll")}
+                  </Link>
+                </div>
+              )}
+
+              {stockAlertTotal > 0 && (
+                <div className={`flex flex-col gap-2 ${noticeTotal > 0 ? "mt-3 border-t pt-3" : ""}`}>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    {t("admin.shell.stockAlerts")}
+                  </span>
                   {stockAlerts.map((a) => (
                     <Link
                       key={`${a.productId}-${a.sku}`}

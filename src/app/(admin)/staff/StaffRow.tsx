@@ -4,7 +4,12 @@ import { useActionState, useRef, useState } from "react";
 import { useTranslator } from "@/components/i18n-provider";
 import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
 import type { StaffRole } from "@/lib/auth/roles";
-import { deleteStaffAction, setStaffRoleAction, type StaffState } from "./actions";
+import {
+  deleteStaffAction,
+  setStaffCustomRoleAction,
+  setStaffRoleAction,
+  type StaffState,
+} from "./actions";
 
 const initialState: StaffState = {};
 
@@ -14,16 +19,25 @@ const initialState: StaffState = {};
 export function StaffRow({
   staffId,
   role,
+  customRoleId,
+  customRoles,
   actorIsOwner,
 }: {
   staffId: string;
   role: StaffRole;
+  customRoleId: string | null;
+  customRoles: { id: string; name: string }[];
   actorIsOwner: boolean;
 }) {
   const t = useTranslator();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, roleAction] = useActionState(
     setStaffRoleAction.bind(null, staffId),
+    initialState
+  );
+  const customRoleFormRef = useRef<HTMLFormElement>(null);
+  const [customRoleState, customRoleAction] = useActionState(
+    setStaffCustomRoleAction.bind(null, staffId),
     initialState
   );
   const [confirming, setConfirming] = useState(false);
@@ -48,6 +62,25 @@ export function StaffRow({
           </select>
         </form>
 
+        {role === "staff" && customRoles.length > 0 && (
+          <form ref={customRoleFormRef} action={customRoleAction}>
+            <select
+              name="customRoleId"
+              defaultValue={customRoleId ?? ""}
+              onChange={() => customRoleFormRef.current?.requestSubmit()}
+              title={t("admin.staff.customRole")}
+              className="rounded border border-gray-300 px-2 py-1 text-sm"
+            >
+              <option value="">{t("admin.staff.customRoleNone")}</option>
+              {customRoles.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </form>
+        )}
+
         {confirming ? (
           <span className="flex items-center gap-2 text-sm">
             <span className="text-gray-600">{t("admin.staff.deleteQ")}</span>
@@ -71,6 +104,7 @@ export function StaffRow({
         )}
       </div>
       {state.error && <p className="text-xs text-red-700">{t(state.error)}</p>}
+      {customRoleState.error && <p className="text-xs text-red-700">{t(customRoleState.error)}</p>}
     </div>
   );
 }

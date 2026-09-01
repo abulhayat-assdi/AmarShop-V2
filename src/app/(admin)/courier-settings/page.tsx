@@ -1,10 +1,10 @@
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { getCourierSettingsView } from "@/lib/courier/settings";
 import { getTranslator } from "@/lib/i18n/server";
 import { CourierSettingsForm } from "./CourierSettingsForm";
 
 export default async function CourierSettingsPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("courier:manage");
   const view = await getCourierSettingsView(session.user.storeId);
   const { t } = await getTranslator();
 

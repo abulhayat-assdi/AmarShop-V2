@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { storefrontUrlFor } from "@/lib/tenant/resolve";
@@ -8,7 +8,7 @@ import { getTranslator } from "@/lib/i18n/server";
 import { ApiKeysManager } from "./ApiKeysManager";
 
 export default async function ApiKeysPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("api_keys:manage");
   const { t } = await getTranslator();
 
   const keys = await listApiKeys(session.user.storeId);

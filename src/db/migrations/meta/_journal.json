@@ -225,6 +225,48 @@
       "when": 1788200591927,
       "tag": "0031_add_webhooks",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1788208978657,
+      "tag": "0032_add_support_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1788209327912,
+      "tag": "0033_add_notices",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1788209471552,
+      "tag": "0034_add_checkout_otp_required",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1788209574792,
+      "tag": "0035_add_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1788209811342,
+      "tag": "0036_add_general_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1788210407478,
+      "tag": "0037_add_custom_roles",
+      "breakpoints": true
     }
   ]
 }

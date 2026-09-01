@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { db } from "@/db/client";
 import { stores } from "@/db/schema";
 import { slugHostFor } from "@/lib/tenant/resolve";
@@ -35,7 +35,7 @@ export async function saveDomainAction(
   _prev: DomainActionState,
   formData: FormData
 ): Promise<DomainActionState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("domain:manage");
   const domain = normalizeCustomDomain(String(formData.get("domain") ?? ""));
 
   const valid = validateCustomDomain(domain, process.env.PLATFORM_ROOT_DOMAIN);
@@ -69,7 +69,7 @@ export async function saveDomainAction(
 // Zero params: useActionState still invokes it with (prevState, formData),
 // but neither is needed here (the domain lives in the store row).
 export async function verifyDomainAction(): Promise<DomainActionState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("domain:manage");
 
   const [store] = await db
     .select()
@@ -98,7 +98,7 @@ export async function verifyDomainAction(): Promise<DomainActionState> {
 }
 
 export async function removeDomainAction(): Promise<DomainActionState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("domain:manage");
 
   await db
     .update(stores)

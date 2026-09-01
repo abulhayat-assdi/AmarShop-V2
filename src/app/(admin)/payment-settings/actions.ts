@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { savePaymentSettings } from "@/lib/payments/settings";
 import {
   PAYMENT_GATEWAYS,
@@ -15,7 +15,7 @@ export async function savePaymentSettingsAction(
   _prev: PaymentSettingsState,
   formData: FormData
 ): Promise<PaymentSettingsState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("payment_settings:manage");
 
   const sandbox = formData.get("sandbox") === "on";
 

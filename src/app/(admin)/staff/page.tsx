@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
-import { canManageStaffRow, requireRole } from "@/lib/auth/roles";
+import { canManageStaffRow, requirePermission } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { staffMembers } from "@/db/schema";
 import { checkPlanLimit } from "@/lib/billing/limits";
 import { getTranslator } from "@/lib/i18n/server";
 import { STAFF_ROLE_KEYS } from "@/lib/enum-labels";
+import { listCustomRoles } from "@/lib/roles/query";
 import { StaffForm } from "./StaffForm";
 import { StaffRow } from "./StaffRow";
 
 export default async function StaffPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("staff:manage");
   const { t } = await getTranslator();
   const actorIsOwner = session.user.role === "owner";
   const myEmail = (session.user.email ?? "").toLowerCase();
@@ -18,6 +19,7 @@ export default async function StaffPage() {
   const rows = await withStoreContext(session.user.storeId, (tx) =>
     tx.select().from(staffMembers).where(eq(staffMembers.storeId, session.user.storeId))
   );
+  const roles = await listCustomRoles(session.user.storeId);
 
   const planLimit = await checkPlanLimit(session.user.storeId, "staff", 0);
   const atStaffLimit =
@@ -62,7 +64,13 @@ export default async function StaffPage() {
                 <td className="py-2">{row.email}</td>
                 <td className="py-2">
                   {editable ? (
-                    <StaffRow staffId={row.id} role={row.role} actorIsOwner={actorIsOwner} />
+                    <StaffRow
+                      staffId={row.id}
+                      role={row.role}
+                      customRoleId={row.customRoleId}
+                      customRoles={roles}
+                      actorIsOwner={actorIsOwner}
+                    />
                   ) : (
                     t(STAFF_ROLE_KEYS[row.role])
                   )}

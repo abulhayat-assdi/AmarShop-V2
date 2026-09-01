@@ -51,6 +51,41 @@ export const stores = pgTable(
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
     currentPeriodEndsAt: timestamp("current_period_ends_at", { withTimezone: true }),
     locale: text("locale").notNull().default("bn"),
+    // Merchant's own support contact info, shown to their customers (Admin
+    // → Support, SITE_STRUCTURE.md Part B). All optional/nullable — leave
+    // blank rather than ship a fake placeholder (CLAUDE.md rule #8).
+    supportEmail: text("support_email"),
+    supportPhone: text("support_phone"),
+    supportHours: text("support_hours"),
+    // Admin → Guest Checkout & OTP. This store is guest-checkout-only (no
+    // customer accounts — see orders.ts), so there is no "login required"
+    // mode to toggle; this is specifically "require the customer to verify
+    // their phone via SMS OTP before an order is placed" (a common
+    // BD-market anti-fake-COD-order measure). The settings page keeps this
+    // off (and disabled) until store_sms_settings has a real provider
+    // connected — see src/lib/sms/settings.ts's getSmsSettingsView().
+    checkoutOtpRequired: boolean("checkout_otp_required").notNull().default(false),
+    // Admin -> Account (General Settings -> Company tab). Business profile
+    // shown on invoices/documents down the line; `name` above already
+    // covers the store's display name, this is the rest.
+    businessAddress: text("business_address"),
+    timezone: text("timezone").notNull().default("Asia/Dhaka"),
+    currency: text("currency").notNull().default("BDT"),
+    // Admin -> Account (General Settings -> System tab). Merchant-toggled:
+    // when true, (storefront)/layout.tsx shows a "closed for maintenance"
+    // page instead of the normal storefront. Distinct from `status`
+    // ("suspended" is platform/billing-driven and 404s at resolution —
+    // src/lib/tenant/resolve.ts — this is merchant-driven and resolves
+    // normally, then renders a friendly page).
+    maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+    // Admin -> Account (General Settings -> System tab) "Request store
+    // deletion." Deliberately NOT a self-service hard delete — an owner
+    // can request it (typed store-name confirmation), which sets this
+    // timestamp, writes an audit_logs row, and raises a critical notice;
+    // a platform admin completes it via the existing slug-confirmed hard
+    // delete at /platform/stores/[id]. Irreversible data loss stays a
+    // platform-admin action, never a single in-product click.
+    deletionRequestedAt: timestamp("deletion_requested_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

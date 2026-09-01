@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { coupons, couponRedemptions } from "@/db/schema";
 import { DISCOUNT_TYPES } from "@/lib/enum-labels";
@@ -94,7 +94,7 @@ export async function createCoupon(
   _prev: CouponState,
   formData: FormData
 ): Promise<CouponState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("discounts:manage");
   const parsed = parseCouponForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
@@ -116,7 +116,7 @@ export async function updateCoupon(
   _prev: CouponState,
   formData: FormData
 ): Promise<CouponState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("discounts:manage");
   const parsed = parseCouponForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
@@ -139,7 +139,7 @@ export async function updateCoupon(
 // A coupon with redemptions can't be hard-deleted (orders reference it via
 // coupon_redemptions). Deactivate instead; hard-delete only when unused.
 export async function deleteCoupon(couponId: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("discounts:manage");
 
   await withStoreContext(session.user.storeId, async (tx) => {
     const [{ count }] = await tx

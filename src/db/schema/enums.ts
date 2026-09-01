@@ -148,3 +148,8 @@ export const oauthAppStatusEnum = pgEnum("oauth_app_status", ["active", "disable
 // after() hook, so it always resolves to one of these — there is no
 // queued "pending" state. See src/lib/webhooks.
 export const webhookDeliveryStatusEnum = pgEnum("webhook_delivery_status", ["success", "failed"]);
+
+// A notices row (src/db/schema/notices.ts) — drives the admin bell's badge
+// color/ordering. See src/lib/notices/categories.ts for which `category`
+// gets which severity.
+export const noticeSeverityEnum = pgEnum("notice_severity", ["info", "warning", "critical"]);

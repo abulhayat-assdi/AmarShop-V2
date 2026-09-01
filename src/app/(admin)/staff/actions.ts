@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { canManageStaffRow, requireRole, type StaffRole } from "@/lib/auth/roles";
+import { canManageStaffRow, requirePermission, type StaffRole } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
-import { staffMembers } from "@/db/schema";
+import { staffMembers, customRoles } from "@/db/schema";
 import { checkPlanLimit } from "@/lib/billing/limits";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -36,7 +36,7 @@ async function ownerCount(tx: Parameters<Parameters<typeof withStoreContext>[1]>
 }
 
 export async function addStaffAction(_prev: StaffState, formData: FormData): Promise<StaffState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("staff:manage");
 
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -71,7 +71,7 @@ export async function setStaffRoleAction(
   _prev: StaffState,
   formData: FormData
 ): Promise<StaffState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("staff:manage");
 
   const rawRole = String(formData.get("role") ?? "");
   if (!(ROLES as string[]).includes(rawRole)) return { error: "admin.staff.errForbidden" };
@@ -108,11 +108,52 @@ export async function setStaffRoleAction(
   return result;
 }
 
+// Only meaningful for "staff"-rank rows — owner/admin ignore customRoleId
+// entirely (requirePermission() in src/lib/auth/roles.ts). An empty value
+// clears it back to "no extra permissions".
+export async function setStaffCustomRoleAction(
+  staffId: string,
+  _prev: StaffState,
+  formData: FormData
+): Promise<StaffState> {
+  const session = await requirePermission("staff:manage");
+  const rawRoleId = String(formData.get("customRoleId") ?? "").trim();
+
+  const result = await withStoreContext(session.user.storeId, async (tx) => {
+    const [target] = await tx
+      .select()
+      .from(staffMembers)
+      .where(and(eq(staffMembers.storeId, session.user.storeId), eq(staffMembers.id, staffId)))
+      .limit(1);
+    if (!target || target.role !== "staff") return { error: "admin.staff.errForbidden" } as StaffState;
+
+    let customRoleId: string | null = null;
+    if (rawRoleId) {
+      const [role] = await tx
+        .select({ id: customRoles.id })
+        .from(customRoles)
+        .where(and(eq(customRoles.id, rawRoleId), eq(customRoles.storeId, session.user.storeId)))
+        .limit(1);
+      if (!role) return { error: "admin.staff.errForbidden" } as StaffState;
+      customRoleId = role.id;
+    }
+
+    await tx
+      .update(staffMembers)
+      .set({ customRoleId, updatedAt: new Date() })
+      .where(and(eq(staffMembers.storeId, session.user.storeId), eq(staffMembers.id, staffId)));
+    return { ok: true } as StaffState;
+  });
+
+  revalidatePath("/staff");
+  return result;
+}
+
 // Plain action (bound + <form>), silently no-ops on a guard miss — the
 // button is already hidden when the actor can't act, so this only guards
 // a race.
 export async function deleteStaffAction(staffId: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("staff:manage");
   const myEmail = (session.user.email ?? "").toLowerCase();
 
   await withStoreContext(session.user.storeId, async (tx) => {

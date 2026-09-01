@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
+import { and, eq } from "drizzle-orm";
 import { auth } from "./config";
+import { withStoreContext } from "@/db/context";
+import { staffMembers, customRoles } from "@/db/schema";
+import { parsePermissions, type Permission } from "./permissions";
 
 export type StaffRole = "owner" | "admin" | "staff";
 
@@ -26,17 +30,69 @@ export async function requireStaffSession() {
   return session;
 }
 
-// Basic role gating for Phase 0 — enforced server-side, at the call site of
-// every admin action (Server Action / Route Handler), never in the UI alone
-// (CLAUDE.md rule #8 on staff permissions). Granular per-resource RBAC is a
-// later phase (SITE_STRUCTURE.md, Settings → Roles) — this is deliberately
-// just an owner > admin > staff rank check until that lands.
+// Basic role gating — enforced server-side, at the call site of every
+// admin action (Server Action / Route Handler), never in the UI alone
+// (CLAUDE.md rule #8 on staff permissions). Just the owner > admin > staff
+// rank check; still used directly by actions that stay owner/admin-only
+// regardless of any custom role. For anything a "staff" role can be
+// granted piecemeal, use requirePermission() below instead
+// (SITE_STRUCTURE.md, Settings → Roles).
 export async function requireRole(minimumRole: StaffRole) {
   const session = await auth();
   if (!session?.user) {
     throw new Error("Not authenticated");
   }
   if (ROLE_RANK[session.user.role] < ROLE_RANK[minimumRole]) {
+    throw new Error("Insufficient permissions");
+  }
+  return session;
+}
+
+// The "staff" rank's granted permissions, via their assigned custom role
+// (Admin -> Roles). Empty when unassigned — matches the pre-/roles
+// default of zero access to any of these actions. Not called for
+// owner/admin (requirePermission() short-circuits them first), so this
+// only ever runs for the rank that previously had no path to any of
+// these actions at all. Exported so (admin)/layout.tsx can filter the
+// nav to what a "staff" viewer can actually reach — a UI nicety, not the
+// enforcement itself (that's still every call site's own
+// requirePermission()).
+export async function getStaffPermissions(storeId: string, email: string): Promise<Permission[]> {
+  return withStoreContext(storeId, async (tx) => {
+    const [me] = await tx
+      .select({ customRoleId: staffMembers.customRoleId })
+      .from(staffMembers)
+      .where(and(eq(staffMembers.storeId, storeId), eq(staffMembers.email, email)))
+      .limit(1);
+    if (!me?.customRoleId) return [];
+
+    const [role] = await tx
+      .select({ permissions: customRoles.permissions })
+      .from(customRoles)
+      .where(and(eq(customRoles.id, me.customRoleId), eq(customRoles.storeId, storeId)))
+      .limit(1);
+    return role ? parsePermissions(role.permissions) : [];
+  });
+}
+
+// Granular per-resource RBAC (SITE_STRUCTURE.md, Settings -> Roles) — the
+// later phase requireRole()'s own comment referenced. owner and admin get
+// the exact same unconditional access requireRole("admin") always gave
+// them (zero behavior change); only "staff" now has a path to any of
+// these actions, and only for whatever its assigned custom role grants.
+export async function requirePermission(permission: Permission) {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not authenticated");
+  }
+  if (ROLE_RANK[session.user.role] >= ROLE_RANK.admin) {
+    return session;
+  }
+  const granted = await getStaffPermissions(
+    session.user.storeId,
+    (session.user.email ?? "").toLowerCase()
+  );
+  if (!granted.includes(permission)) {
     throw new Error("Insufficient permissions");
   }
   return session;

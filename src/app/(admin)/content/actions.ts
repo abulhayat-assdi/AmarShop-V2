@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, ne } from "drizzle-orm";
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { withStoreContext } from "@/db/context";
 import { contentEntries, type ContentEntry } from "@/db/schema";
 import { slugify, uniqueSlug } from "@/lib/slugify";
@@ -75,7 +75,7 @@ export async function createContent(
   _prev: ContentState,
   formData: FormData
 ): Promise<ContentState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("content:manage");
   const parsed = parseForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
@@ -130,7 +130,7 @@ export async function updateContent(
   _prev: ContentState,
   formData: FormData
 ): Promise<ContentState> {
-  const session = await requireRole("admin");
+  const session = await requirePermission("content:manage");
   const parsed = parseForm(formData);
   if ("error" in parsed) return { error: parsed.error };
 
@@ -198,7 +198,7 @@ export async function updateContent(
 }
 
 export async function deleteContent(id: string) {
-  const session = await requireRole("admin");
+  const session = await requirePermission("content:manage");
 
   const deleted = await withStoreContext(session.user.storeId, async (tx) => {
     const [row] = await tx

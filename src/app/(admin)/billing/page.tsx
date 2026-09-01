@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth/roles";
+import { requirePermission } from "@/lib/auth/roles";
 import { getTranslator } from "@/lib/i18n/server";
 import {
   getPendingInvoice,
@@ -22,7 +22,7 @@ function fmtDate(d: Date | string | null): string {
 }
 
 export default async function BillingPage() {
-  const session = await requireRole("admin");
+  const session = await requirePermission("billing:manage");
   const storeId = session.user.storeId;
   const { t } = await getTranslator();
 
