@@ -49,3 +49,4 @@ export * from "./email-messages";
 export * from "./redirects";
 export * from "./product-reviews";
 export * from "./testimonials";
+export * from "./blog-posts";

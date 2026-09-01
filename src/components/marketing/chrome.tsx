@@ -13,17 +13,19 @@ import { BRAND_NAME, MARKETING_NAV } from "@/lib/marketing/constants";
 // <LocaleToggle> is a client component; both callers wrap this subtree in
 // <I18nProvider> so it resolves.
 
-// `hasTestimonials` — the /testimonials link (nav + footer) only appears
-// once a platform admin has published at least one, so the site never
-// links to an empty page (CLAUDE.md rule #8).
+// `hasTestimonials` / `hasBlog` — the /testimonials and /blog links (nav +
+// footer) only appear once a platform admin has published content there,
+// so the site never links to an empty page (CLAUDE.md rule #8).
 export function MarketingHeader({
   t,
   locale,
   hasTestimonials = false,
+  hasBlog = false,
 }: {
   t: Translator;
   locale: Locale;
   hasTestimonials?: boolean;
+  hasBlog?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur">
@@ -37,6 +39,11 @@ export function MarketingHeader({
               {t(`marketing.nav.${item.key}`)}
             </Link>
           ))}
+          {hasBlog && (
+            <Link href="/blog" className="text-gray-600 hover:text-black">
+              {t("marketing.nav.blog")}
+            </Link>
+          )}
           {hasTestimonials && (
             <Link href="/testimonials" className="text-gray-600 hover:text-black">
               {t("marketing.nav.testimonials")}
@@ -61,9 +68,11 @@ export function MarketingHeader({
 export function MarketingFooter({
   t,
   hasTestimonials = false,
+  hasBlog = false,
 }: {
   t: Translator;
   hasTestimonials?: boolean;
+  hasBlog?: boolean;
 }) {
   return (
     <footer className="mt-20 border-t border-gray-200 bg-gray-50">
@@ -89,6 +98,11 @@ export function MarketingFooter({
           <Link href="/faq" className="text-gray-500 hover:text-black">
             {t("marketing.footer.linkFaq")}
           </Link>
+          {hasBlog && (
+            <Link href="/blog" className="text-gray-500 hover:text-black">
+              {t("marketing.footer.linkBlog")}
+            </Link>
+          )}
           {hasTestimonials && (
             <Link href="/testimonials" className="text-gray-500 hover:text-black">
               {t("marketing.footer.linkTestimonials")}

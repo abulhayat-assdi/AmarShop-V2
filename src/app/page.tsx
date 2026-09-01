@@ -26,6 +26,7 @@ import { FeatureTabs } from "@/components/marketing/feature-tabs";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { TestimonialGrid } from "@/components/marketing/testimonials";
 import { getPublishedTestimonials } from "@/lib/testimonials/query";
+import { hasPublishedPosts } from "@/lib/blog/query";
 import { BRAND_NAME } from "@/lib/marketing/constants";
 
 // The one URL shared between the storefront and the platform root (App
@@ -157,15 +158,18 @@ export default async function Home() {
   // marketing chrome components directly, mirroring the storefront chrome
   // split (see src/components/storefront-chrome.tsx).
   const { locale, messages, t } = await getMarketingTranslator();
-  // One query drives both the nav/footer link and the preview section — a
-  // testimonials block only exists when a platform admin has published one
-  // (CLAUDE.md rule #8), never an empty placeholder.
-  const testimonialPreview = await getPublishedTestimonials(3);
+  // The testimonials query drives both the nav/footer link and the
+  // homepage preview section — a block only exists when a platform admin
+  // has published one (CLAUDE.md rule #8), never an empty placeholder.
+  const [testimonialPreview, hasBlog] = await Promise.all([
+    getPublishedTestimonials(3),
+    hasPublishedPosts(),
+  ]);
   const hasTestimonials = testimonialPreview.length > 0;
 
   return (
     <I18nProvider locale={locale} messages={messages}>
-      <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} />
+      <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />
       <main className="flex-1">
         <Hero t={t} />
         <ProblemSolution t={t} />
@@ -218,7 +222,7 @@ export default async function Home() {
         <Faq t={t} limit={8} />
         <ClosingCta t={t} />
       </main>
-      <MarketingFooter t={t} hasTestimonials={hasTestimonials} />
+      <MarketingFooter t={t} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />
     </I18nProvider>
   );
 }
