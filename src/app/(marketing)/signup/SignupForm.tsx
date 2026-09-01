@@ -217,6 +217,15 @@ export function SignupForm({ rootDomain }: { rootDomain: string }) {
           />
           <span>{t("marketing.signup.terms")}</span>
         </label>
+        <p className="text-xs text-gray-500">
+          <Link href="/terms" className="underline">
+            {t("marketing.footer.linkTerms")}
+          </Link>{" "}
+          ·{" "}
+          <Link href="/privacy" className="underline">
+            {t("marketing.footer.linkPrivacy")}
+          </Link>
+        </p>
 
         <button
           type="submit"

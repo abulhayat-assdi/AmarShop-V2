@@ -118,7 +118,15 @@ export function MarketingFooter({
       </div>
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 pb-10 text-xs text-gray-400">
         <span>{t("marketing.footer.copyright", { year: new Date().getFullYear(), brand: BRAND_NAME })}</span>
-        <span>{t("marketing.footer.madeIn")}</span>
+        <nav className="flex flex-wrap items-center gap-3">
+          <Link href="/terms" className="hover:text-black">
+            {t("marketing.footer.linkTerms")}
+          </Link>
+          <Link href="/privacy" className="hover:text-black">
+            {t("marketing.footer.linkPrivacy")}
+          </Link>
+          <span>{t("marketing.footer.madeIn")}</span>
+        </nav>
       </div>
     </footer>
   );

@@ -3,6 +3,7 @@ import { hasPublishedTestimonials } from "@/lib/testimonials/query";
 import { hasPublishedPosts } from "@/lib/blog/query";
 import { I18nProvider } from "@/components/i18n-provider";
 import { MarketingHeader, MarketingFooter } from "./chrome";
+import { MarketingAnalytics } from "./analytics";
 
 // The marketing chrome (header + footer + I18nProvider), the counterpart
 // to StorefrontShell. Used by any marketing route that lives OUTSIDE the
@@ -19,6 +20,7 @@ export async function MarketingShell({ children }: { children: React.ReactNode }
 
   return (
     <I18nProvider locale={locale} messages={messages}>
+      <MarketingAnalytics />
       <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />
       <main className="flex-1">{children}</main>
       <MarketingFooter t={t} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />

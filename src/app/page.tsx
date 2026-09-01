@@ -13,7 +13,7 @@ import { getActiveMenuLinks } from "@/lib/menus/query";
 import { I18nProvider } from "@/components/i18n-provider";
 import { getTranslator } from "@/lib/i18n/server";
 import { getMarketingTranslator } from "@/lib/i18n/marketing-server";
-import { MarketingHeader, MarketingFooter } from "@/components/marketing/chrome";
+import { MarketingShell } from "@/components/marketing/shell";
 import {
   Hero,
   ProblemSolution,
@@ -26,7 +26,6 @@ import { FeatureTabs } from "@/components/marketing/feature-tabs";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { TestimonialGrid } from "@/components/marketing/testimonials";
 import { getPublishedTestimonials } from "@/lib/testimonials/query";
-import { hasPublishedPosts } from "@/lib/blog/query";
 import { BRAND_NAME } from "@/lib/marketing/constants";
 
 // The one URL shared between the storefront and the platform root (App
@@ -152,77 +151,66 @@ export default async function Home() {
   }
 
   // No store resolved → the platform's own host: render the public
-  // marketing site (SITE_STRUCTURE.md Part A). The homepage is the one
-  // marketing path that can't live inside the (marketing) route group — it
-  // shares "/" with the storefront branch above — so it renders the same
-  // marketing chrome components directly, mirroring the storefront chrome
-  // split (see src/components/storefront-chrome.tsx).
-  const { locale, messages, t } = await getMarketingTranslator();
-  // The testimonials query drives both the nav/footer link and the
-  // homepage preview section — a block only exists when a platform admin
-  // has published one (CLAUDE.md rule #8), never an empty placeholder.
-  const [testimonialPreview, hasBlog] = await Promise.all([
-    getPublishedTestimonials(3),
-    hasPublishedPosts(),
-  ]);
-  const hasTestimonials = testimonialPreview.length > 0;
+  // marketing site (SITE_STRUCTURE.md Part A). The homepage shares "/" with
+  // the storefront branch above so it can't live in the (marketing) route
+  // group — it renders <MarketingShell> directly, the same split
+  // src/app/blog/ uses. The shell owns the chrome + nav flags; this page
+  // only needs `t` for its sections and the testimonial preview data.
+  const { t } = await getMarketingTranslator();
+  const testimonialPreview = await getPublishedTestimonials(3);
 
   return (
-    <I18nProvider locale={locale} messages={messages}>
-      <MarketingHeader t={t} locale={locale} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />
-      <main className="flex-1">
-        <Hero t={t} />
-        <ProblemSolution t={t} />
+    <MarketingShell>
+      <Hero t={t} />
+      <ProblemSolution t={t} />
 
+      <section className="mx-auto max-w-6xl px-4 py-16">
+        <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+          {t("marketing.home.showcase.title")}
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-500">
+          {t("marketing.home.showcase.subtitle")}
+        </p>
+        <div className="mt-10">
+          <FeatureTabs />
+        </div>
+      </section>
+
+      <HowItWorks t={t} />
+
+      <section className="mx-auto max-w-6xl px-4 py-16">
+        <h2 className="text-center text-2xl font-semibold sm:text-3xl">
+          {t("marketing.pricing.hero.title")}
+        </h2>
+        <div className="mt-10">
+          <PricingSection />
+        </div>
+        <p className="mt-6 text-center text-sm">
+          <Link href="/pricing" className="underline">
+            {t("marketing.common.viewPricing")}
+          </Link>
+        </p>
+      </section>
+
+      {testimonialPreview.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 py-16">
           <h2 className="text-center text-2xl font-semibold sm:text-3xl">
-            {t("marketing.home.showcase.title")}
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-500">
-            {t("marketing.home.showcase.subtitle")}
-          </p>
-          <div className="mt-10">
-            <FeatureTabs />
-          </div>
-        </section>
-
-        <HowItWorks t={t} />
-
-        <section className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-2xl font-semibold sm:text-3xl">
-            {t("marketing.pricing.hero.title")}
+            {t("marketing.testimonials.homeTitle")}
           </h2>
           <div className="mt-10">
-            <PricingSection />
+            <TestimonialGrid items={testimonialPreview} />
           </div>
           <p className="mt-6 text-center text-sm">
-            <Link href="/pricing" className="underline">
-              {t("marketing.common.viewPricing")}
+            <Link href="/testimonials" className="underline">
+              {t("marketing.testimonials.seeAll")}
             </Link>
           </p>
         </section>
+      )}
 
-        {hasTestimonials && (
-          <section className="mx-auto max-w-6xl px-4 py-16">
-            <h2 className="text-center text-2xl font-semibold sm:text-3xl">
-              {t("marketing.testimonials.homeTitle")}
-            </h2>
-            <div className="mt-10">
-              <TestimonialGrid items={testimonialPreview} />
-            </div>
-            <p className="mt-6 text-center text-sm">
-              <Link href="/testimonials" className="underline">
-                {t("marketing.testimonials.seeAll")}
-              </Link>
-            </p>
-          </section>
-        )}
-
-        <DeveloperTeaser t={t} />
-        <Faq t={t} limit={8} />
-        <ClosingCta t={t} />
-      </main>
-      <MarketingFooter t={t} hasTestimonials={hasTestimonials} hasBlog={hasBlog} />
-    </I18nProvider>
+      <DeveloperTeaser t={t} />
+      <Faq t={t} limit={8} />
+      <ClosingCta t={t} />
+    </MarketingShell>
   );
 }

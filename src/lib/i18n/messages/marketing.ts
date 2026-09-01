@@ -31,6 +31,8 @@ const en = {
     linkFaq: "FAQ",
     linkBlog: "Blog",
     linkTestimonials: "Testimonials",
+    linkTerms: "Terms",
+    linkPrivacy: "Privacy",
     linkSignIn: "Sign in",
     linkStartTrial: "Start free trial",
     madeIn: "Built for Bangladesh",
@@ -45,6 +47,11 @@ const en = {
     back: "All posts",
     ctaText: "Ready to open your own shop?",
     ctaButton: "Start your free trial",
+  },
+  legal: {
+    termsTitle: "Terms of Service",
+    privacyTitle: "Privacy Policy",
+    lastUpdated: "Last updated {date}",
   },
   home: {
     hero: {
@@ -499,6 +506,8 @@ const bn = {
     linkFaq: "সাধারণ প্রশ্ন",
     linkBlog: "ব্লগ",
     linkTestimonials: "মতামত",
+    linkTerms: "শর্তাবলি",
+    linkPrivacy: "প্রাইভেসি",
     linkSignIn: "সাইন ইন",
     linkStartTrial: "ফ্রি ট্রায়াল",
     madeIn: "বাংলাদেশের জন্য তৈরি",
@@ -513,6 +522,11 @@ const bn = {
     back: "সব পোস্ট",
     ctaText: "নিজের দোকান খুলতে প্রস্তুত?",
     ctaButton: "ফ্রি ট্রায়াল শুরু করুন",
+  },
+  legal: {
+    termsTitle: "সার্ভিসের শর্তাবলি",
+    privacyTitle: "প্রাইভেসি পলিসি",
+    lastUpdated: "সর্বশেষ হালনাগাদ {date}",
   },
   home: {
     hero: {
